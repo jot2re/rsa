@@ -7,7 +7,7 @@ import java.util.Map;
 public class DummyNetwork implements INetwork {
     private final int myId;
     private final int peers;
-    private final Map<Integer, IP2P> networks;
+    private final Map<Integer, DummyP2P> networks;
     public DummyNetwork(DummyState state, int myId) {
         this.myId = myId;
         this.peers = state.parties();
@@ -50,4 +50,21 @@ public class DummyNetwork implements INetwork {
     public int myId() {
         return myId;
     }
+
+    public long getBytesSent() {
+        long bytes = 0L;
+        for (DummyP2P network: networks.values()) {
+            bytes += network.getBytesSent();
+        }
+        return bytes;
+    }
+
+    public long getTransfers() {
+        long transfers = 0L;
+        for (DummyP2P network: networks.values()) {
+            transfers += network.getTransfers();
+        }
+        return transfers;
+    }
+
 }

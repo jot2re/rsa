@@ -9,9 +9,9 @@ public class DummyNetworkFactory {
         this.parties = parties;
     }
 
-    public Map<Integer, INetwork> getNetworks() {
+    public Map<Integer, DummyNetwork> getNetworks() {
         DummyState state = new DummyState(parties);
-        Map<Integer, INetwork> map = new HashMap<>(parties);
+        Map<Integer, DummyNetwork> map = new HashMap<>(parties);
         for (int i = 0; i < parties; i++) {
             DummyNetwork network = new DummyNetwork(state, i);
             network.init();
