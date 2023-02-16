@@ -20,13 +20,13 @@ public class DummyNetworkTest {
         DummyNetworkFactory factory = new DummyNetworkFactory(parties);
         Map<Integer, DummyNetwork> networks = factory.getNetworks();
         for (int i = 0; i < parties; i++) {
-            for (int j = 0; j < parties; j++) {
+            for (int j : networks.get(i).peers()) {
                 networks.get(i).send(j, message.add(BigInteger.valueOf(i)));
                 networks.get(i).send(j, BigInteger.valueOf(42));
             }
         }
         for (int i = 0; i < parties; i++) {
-            for (int j = 0; j < parties; j++) {
+            for (int j : networks.get(i).peers()) {
                 BigInteger msg1 = (BigInteger) networks.get(i).receive(j);
                 assertEquals(message.add(BigInteger.valueOf(j)), msg1);
                 BigInteger msg2 = (BigInteger) networks.get(i).receive(j);
@@ -47,10 +47,12 @@ public class DummyNetworkTest {
             networks.get(i).sendToAll(BigInteger.valueOf(42));
         }
         for (int i = 0; i < parties; i++) {
-            BigInteger msg1 = (BigInteger) networks.get(i).receive(i);
-            assertEquals(message.add(BigInteger.valueOf(i)), msg1);
-            BigInteger msg2 = (BigInteger) networks.get(i).receive(i);
-            assertEquals(BigInteger.valueOf(42), msg2);
+            for (int j : networks.get(i).peers()) {
+                BigInteger msg1 = (BigInteger) networks.get(i).receive(j);
+                assertEquals(message.add(BigInteger.valueOf(j)), msg1);
+                BigInteger msg2 = (BigInteger) networks.get(i).receive(j);
+                assertEquals(BigInteger.valueOf(42), msg2);
+            }
         }
     }
 
@@ -65,7 +67,7 @@ public class DummyNetworkTest {
     public void networkGetters() {
         DummyNetwork network = new DummyNetwork(new DummyState(3), 1);
         assertEquals(1, network.myId());
-        assertEquals(3, network.peers());
+        assertEquals(2, network.peers().size());
     }
 
     @Test

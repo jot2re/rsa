@@ -8,8 +8,10 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DummyMultTest {
     @ParameterizedTest
@@ -32,6 +34,7 @@ public class DummyMultTest {
             C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI])));
         }
         executor.shutdown();
+        assertTrue(executor.awaitTermination(3, TimeUnit.SECONDS));
 
         BigInteger refA = Arrays.stream(A).reduce(BigInteger.ZERO, BigInteger::add);
         BigInteger refB = Arrays.stream(B).reduce(BigInteger.ZERO, BigInteger::add);

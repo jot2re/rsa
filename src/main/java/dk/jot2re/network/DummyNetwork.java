@@ -2,10 +2,11 @@ package dk.jot2re.network;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DummyNetwork implements INetwork {
-    public static final long TIME_OUT_MS  = 10000;
+    public static long TIME_OUT_MS  = 10000;
     public static final long WAIT_MS  = 20;
     private final int myId;
     private final int peers;
@@ -18,6 +19,9 @@ public class DummyNetwork implements INetwork {
         this.peers = state.parties();
         this.networks = new HashMap<>(peers);
         for (int i = 0; i < peers; i++) {
+            if (i == myId) {
+                continue;
+            }
             DummyP2P p2p = new DummyP2P(state, myId, i);
             p2p.init();
             networks.put(i, p2p);
@@ -59,8 +63,8 @@ public class DummyNetwork implements INetwork {
     }
 
     @Override
-    public int peers() {
-        return peers;
+    public List<Integer> peers() {
+        return networks.keySet().stream().toList();
     }
 
     @Override

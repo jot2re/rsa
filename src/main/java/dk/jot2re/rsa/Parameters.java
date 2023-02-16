@@ -34,7 +34,7 @@ public class Parameters {
     }
 
     public int getParties() {
-        return network.peers();
+        return network.peers().size();
     }
 
     public int getMyId() {

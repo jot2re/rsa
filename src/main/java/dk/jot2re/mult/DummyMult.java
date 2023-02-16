@@ -33,9 +33,9 @@ public class DummyMult implements IMult {
     public BigInteger mult(BigInteger shareA, BigInteger shareB) {
         try {
             calls++;
-            network.send(0, shareA);
-            network.send(0, shareB);
             if (network.myId() != 0) {
+                network.send(0, shareA);
+                network.send(0, shareB);
                 // All except the pivot party picks their own shares
                 BigInteger shareC = new BigInteger(shareSizeBits, rand);
                 network.send(0, shareC);
@@ -44,12 +44,13 @@ public class DummyMult implements IMult {
             BigInteger A = shareA;
             BigInteger B = shareB;
             BigInteger C = BigInteger.ZERO;
-            for (int i = 1; i < network.peers(); i++) {
+            for (int i : network.peers()) {
                 A = A.add((BigInteger) network.receive(i));
                 B = B.add((BigInteger) network.receive(i));
                 C = C.add((BigInteger) network.receive(i));
             }
             BigInteger refC = A.multiply(B);
+            // Compute the share of the pivot party
             BigInteger shareC = refC.subtract(C);
             if (modulo != null) {
                 return shareC.mod(modulo);

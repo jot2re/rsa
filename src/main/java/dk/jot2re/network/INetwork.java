@@ -11,17 +11,16 @@ public interface INetwork {
     void sendToAll(Serializable data) throws NetworkException;
 
     /**
-     * @return Amount of peers, excluding the current party. Thus a positive number of at least 1.
+     * @return Peers, excluding the current party.
      */
-    int peers();
+    List<Integer> peers();
     int myId();
 
     default <T extends Serializable> List<T> receiveList() {
-        List<T> values = new ArrayList<>(peers());
-        for (int i = 0; i < peers(); i++)
-            if (i != myId()) {
-                values.add((T) receive(i));
-            }
+        List<T> values = new ArrayList<>(peers().size());
+        for (int i : peers()) {
+            values.add((T) receive(i));
+        }
         return values;
     }
 }

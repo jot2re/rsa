@@ -13,30 +13,35 @@ public class Protocol {
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        BigInteger gamma, exponentNumerator;
-        if (params.getMyId() == 0) {
-            if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
-                    !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
-                throw new IllegalArgumentException("P or Q share is congruent to 3 mod 4 for pivot party");
+        for (int i = 0; i < params.getStatBits(); i++) {
+            BigInteger gamma, exponentNumerator;
+            if (params.getMyId() == 0) {
+                if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
+                        !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
+                    throw new IllegalArgumentException("P or Q share is congruent to 3 mod 4 for pivot party");
+                }
+                gamma = sampleGamma(N);
+                params.getNetwork().sendToAll(gamma);
+                exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
+            } else {
+                if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
+                        !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
+                    throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
+                }
+                gamma = (BigInteger) params.getNetwork().receive(0);
+                exponentNumerator = pShare.negate().subtract(qShare);
             }
-            gamma = sampleGamma(N);
-            params.getNetwork().sendToAll(gamma);
-            exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
-        } else {
-            if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
-                    !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
-                throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
+            BigInteger exponentDenominator = BigInteger.valueOf(4);
+            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
+            BigInteger nuShare = gamma.modPow(exponent, N);
+            params.getNetwork().sendToAll(nuShare);
+            List<BigInteger> nuShares = params.getNetwork().receiveList();
+            BigInteger nu = nuShares.stream().reduce(nuShare, (a, b) -> a.multiply(b).mod(N));
+            if (!nu.equals(BigInteger.ONE) && !nu.equals(N.subtract(BigInteger.ONE))) {
+                return false;
             }
-            gamma = (BigInteger) params.getNetwork().receive(0);
-            exponentNumerator = pShare.negate().subtract(qShare);
         }
-        BigInteger exponentDenominator = BigInteger.valueOf(4);
-        BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-        BigInteger nuShare = gamma.modPow(exponent, N);
-        params.getNetwork().sendToAll(nuShare);
-        List<BigInteger> nuShares = params.getNetwork().receiveList();
-        BigInteger nu = nuShares.stream().reduce(nuShare, (a, b) -> a.multiply(b).mod(N));
-        return nu.equals(BigInteger.ONE) || nu.equals(N.subtract(BigInteger.ONE));
+        return true;
     }
 
     private BigInteger sampleGamma(BigInteger N) {
