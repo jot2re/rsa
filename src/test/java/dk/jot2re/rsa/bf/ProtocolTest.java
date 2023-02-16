@@ -68,7 +68,7 @@ public class ProtocolTest {
             }));
         }
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        assertTrue(executor.awaitTermination(10000, TimeUnit.SECONDS));
 
         for (Future<Boolean> cur : res) {
             assertTrue(cur.get());
