@@ -8,7 +8,7 @@ import java.util.Map;
 public interface INetwork {
     void init();
     void send(int recipientId, Serializable data) throws NetworkException;
-    Serializable receive(int senderId);
+    <T extends Serializable> T receive(int senderId);
     void sendToAll(Serializable data) throws NetworkException;
 
     /**
@@ -20,7 +20,7 @@ public interface INetwork {
     default <T extends Serializable> Map<Integer, T> receiveFromAllPeers() {
         Map<Integer, T> values = new HashMap<>(peers().size());
         for (int i : peers()) {
-            values.put(i, (T) receive(i));
+            values.put(i, receive(i));
         }
         return values;
     }
@@ -35,7 +35,7 @@ public interface INetwork {
             if (i == 0) {
                 continue;
             }
-            values.put(i, (T) receive(i));
+            values.put(i, receive(i));
         }
         return values;
     }

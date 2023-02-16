@@ -7,9 +7,9 @@ import java.util.Random;
 
 public class DummyMult implements IMult {
     public static final int DEFAULT_SHARE_SIZE = 128;
-    private final BigInteger modulo;
+    private BigInteger modulo;
     private Random rand;
-    private final int shareSizeBits;
+    private int shareSizeBits;
     private INetwork network;
     private int calls = 0;
 
@@ -18,13 +18,10 @@ public class DummyMult implements IMult {
         this.shareSizeBits = DEFAULT_SHARE_SIZE;
     }
 
-    public DummyMult(BigInteger modulo) {
+    @Override
+    public void init(BigInteger modulo, INetwork network) {
         this.modulo = modulo;
         this.shareSizeBits = modulo.bitLength();
-    }
-
-    @Override
-    public void init(INetwork network) {
         this.network = network;
         this.rand = new Random(DummyMult.class.hashCode() + network.myId());
     }
@@ -45,9 +42,9 @@ public class DummyMult implements IMult {
             BigInteger B = shareB;
             BigInteger C = BigInteger.ZERO;
             for (int i : network.peers()) {
-                A = A.add((BigInteger) network.receive(i));
-                B = B.add((BigInteger) network.receive(i));
-                C = C.add((BigInteger) network.receive(i));
+                A = A.add(network.receive(i));
+                B = B.add(network.receive(i));
+                C = C.add(network.receive(i));
             }
             BigInteger refC = A.multiply(B);
             // Compute the share of the pivot party

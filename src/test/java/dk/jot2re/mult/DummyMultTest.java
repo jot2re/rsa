@@ -21,7 +21,7 @@ public class DummyMultTest {
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         DummyMultFactory factory = new DummyMultFactory(parties);
-        Map<Integer, DummyMult> mults = factory.getMults(modulo);
+        Map<Integer, IMult> mults = factory.getMults(modulo);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(32, rand);
@@ -44,7 +44,7 @@ public class DummyMultTest {
         }
         assertEquals(refC.mod(modulo), refA.multiply(refB).mod(modulo));
         for (int i = 0; i < parties; i++) {
-            assertEquals(1, mults.get(i).getCalls());
+            assertEquals(1, ((DummyMult) mults.get(i)).getCalls());
         }
     }
 }

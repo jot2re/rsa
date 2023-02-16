@@ -15,12 +15,12 @@ public class DummyMultFactory {
         this.networkFactory = new DummyNetworkFactory(parties);
     }
 
-    public Map<Integer, DummyMult> getMults(BigInteger modulo) {
-        Map<Integer, DummyMult> mults = new HashMap<>(parties);
+    public Map<Integer, IMult> getMults(BigInteger modulo) {
+        Map<Integer, IMult> mults = new HashMap<>(parties);
         Map<Integer, DummyNetwork> networks = networkFactory.getNetworks();
         for (int i = 0; i < parties; i++) {
-            mults.put(i, new DummyMult(modulo));
-            mults.get(i).init(networks.get(i));
+            mults.put(i, new DummyMult());
+            mults.get(i).init(modulo, networks.get(i));
         }
         return mults;
     }

@@ -5,7 +5,7 @@ import dk.jot2re.network.INetwork;
 import java.math.BigInteger;
 
 public interface IMult {
-    void init(INetwork network);
+    void init(BigInteger modulo, INetwork network);
 
     /**
      * @param shareA The additive share of a number A

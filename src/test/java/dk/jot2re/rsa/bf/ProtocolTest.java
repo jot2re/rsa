@@ -1,5 +1,7 @@
 package dk.jot2re.rsa.bf;
 
+import dk.jot2re.mult.DummyMultFactory;
+import dk.jot2re.mult.IMult;
 import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.DummyNetworkFactory;
 import org.junit.jupiter.api.Test;
@@ -19,14 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProtocolTest {
     private Map<Integer, BFParameters> getParameters(int bits, int statSec, int parties) throws Exception {
-        DummyNetworkFactory factory = new DummyNetworkFactory(parties);
-        Map<Integer, DummyNetwork> networks = factory.getNetworks();
+        DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
+        DummyMultFactory multFactory = new DummyMultFactory(parties);
+        Map<Integer, DummyNetwork> networks = netFactory.getNetworks();
         Map<Integer, BFParameters> params = new HashMap<>(parties);
-        for (DummyNetwork network : networks.values()) {
+        BigInteger multMod = BigInteger.TWO.pow(3*bits+statSec+2);
+        Map<Integer, IMult> mults = multFactory.getMults(multMod);
+        for (int i = 0; i < networks.size(); i++) {
             // Unique but deterministic seed for each set of parameters
             SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
-            rand.setSeed((byte)network.myId());
-            params.put(network.myId(), new BFParameters(bits, statSec, network, rand));
+            rand.setSeed((byte)networks.get(i).myId());
+            params.put(networks.get(i).myId(), new BFParameters(bits, statSec, networks.get(i), mults.get(i), rand));
         }
         return params;
     }

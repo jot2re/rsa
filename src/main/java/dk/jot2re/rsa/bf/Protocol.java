@@ -24,18 +24,30 @@ public class Protocol {
                 Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
                 params.getNetwork().sendToAll(dto);
                 Map<Integer, Phase1Other> receivedDto = params.getNetwork().receiveFromAllPeers();
-                return executePhase2(receivedDto, dto.getNuShares(), N);
+                if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
+                    return false;
+                }
+                BigInteger myS = executePhase3Pivot(pShare, qShare, N);
+                params.getNetwork().sendToAll(myS);
+                Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
+                return executePhase4(myS, sShares, N);
             } else {
                 if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
                         !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
                     throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
                 }
-                Phase1Pivot receivedDto = (Phase1Pivot) params.getNetwork().receive(0);
+                Phase1Pivot receivedDto = params.getNetwork().receive(0);
                 Phase1Other dto = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
                 params.getNetwork().sendToAll(dto);
                 Map<Integer, Phase1Other> nuShares = params.getNetwork().receiveFromNonPivotPeers();
                 nuShares.put(0, new Phase1Other(receivedDto.getNuShares()));
-                return executePhase2(nuShares, dto.getNuShares(),  N);
+                if (!executePhase2(nuShares, dto.getNuShares(),  N)) {
+                    return false;
+                }
+                BigInteger myS = executePhase3Other(pShare, qShare, N);
+                params.getNetwork().sendToAll(myS);
+                Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
+                return executePhase4(myS, sShares, N);
             }
     }
 
@@ -75,6 +87,21 @@ public class Protocol {
             }
         }
         return true;
+    }
+
+    protected BigInteger executePhase3Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
+        BigInteger r = new BigInteger(2*params.getPrimeBits()+params.getStatBits(), params.getRandom());
+        return params.getMult().mult(r.mod(N), pShare.add(qShare).subtract(BigInteger.ONE));
+    }
+
+    protected BigInteger executePhase3Other(BigInteger pShare, BigInteger qShare, BigInteger N) {
+        BigInteger r = new BigInteger(2*params.getPrimeBits()+params.getStatBits(), params.getRandom());
+        return params.getMult().mult(r.mod(N), pShare.add(qShare));
+    }
+
+    protected boolean executePhase4(BigInteger myS, Map<Integer, BigInteger> sShares, BigInteger N) {
+        BigInteger s = sShares.values().stream().reduce(myS, BigInteger::add);
+        return s.gcd(N).equals(BigInteger.ONE);
     }
 
     private BigInteger sampleGamma(BigInteger N) {
