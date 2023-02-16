@@ -5,9 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DummyNetwork implements INetwork {
+    public static final long TIME_OUT_MS  = 10000;
+    public static final long WAIT_MS  = 20;
     private final int myId;
     private final int peers;
     private final Map<Integer, DummyP2P> networks;
+
+    private int networkTime = 0;
+
     public DummyNetwork(DummyState state, int myId) {
         this.myId = myId;
         this.peers = state.parties();
@@ -31,7 +36,19 @@ public class DummyNetwork implements INetwork {
 
     @Override
     public Serializable receive(int senderId) {
-        return networks.get(senderId).receive();
+        long startTime = System.currentTimeMillis();
+        Serializable res = null;
+        while (res == null && System.currentTimeMillis() < startTime + TIME_OUT_MS){
+            res = networks.get(senderId).receive();
+            try {
+                Thread.sleep(WAIT_MS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        long nowTime = System.currentTimeMillis();
+        networkTime += nowTime-startTime;
+        return res;
     }
 
     @Override
@@ -59,12 +76,24 @@ public class DummyNetwork implements INetwork {
         return bytes;
     }
 
-    public long getTransfers() {
-        long transfers = 0L;
+    public int getTransfers() {
+        int transfers = 0;
         for (DummyP2P network: networks.values()) {
             transfers += network.getTransfers();
         }
         return transfers;
+    }
+
+    public int getRounds() {
+        int rounds = 0;
+        for (DummyP2P network: networks.values()) {
+            rounds = Math.max(network.getRounds(), rounds);
+        }
+        return rounds;
+    }
+
+    public int getNetworkTime() {
+        return networkTime;
     }
 
 }
