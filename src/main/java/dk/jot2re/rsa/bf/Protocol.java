@@ -1,10 +1,10 @@
 package dk.jot2re.rsa.bf;
 
 import dk.jot2re.network.NetworkException;
-import dk.jot2re.rsa.bf.dto.Phase1Other;
 import dk.jot2re.rsa.bf.dto.Phase1Pivot;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,39 +16,47 @@ public class Protocol {
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-            if (params.getMyId() == 0) {
-                if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
-                        !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
-                    throw new IllegalArgumentException("P or Q share is congruent to 3 mod 4 for pivot party");
-                }
-                Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
-                params.getNetwork().sendToAll(dto);
-                Map<Integer, Phase1Other> receivedDto = params.getNetwork().receiveFromAllPeers();
-                if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
-                    return false;
-                }
-                BigInteger myS = executePhase3Pivot(pShare, qShare, N);
-                params.getNetwork().sendToAll(myS);
-                Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
-                return executePhase4(myS, sShares, N);
-            } else {
-                if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
-                        !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
-                    throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
-                }
-                Phase1Pivot receivedDto = params.getNetwork().receive(0);
-                Phase1Other dto = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
-                params.getNetwork().sendToAll(dto);
-                Map<Integer, Phase1Other> nuShares = params.getNetwork().receiveFromNonPivotPeers();
-                nuShares.put(0, new Phase1Other(receivedDto.getNuShares()));
-                if (!executePhase2(nuShares, dto.getNuShares(),  N)) {
-                    return false;
-                }
-                BigInteger myS = executePhase3Other(pShare, qShare, N);
-                params.getNetwork().sendToAll(myS);
-                Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
-                return executePhase4(myS, sShares, N);
+        if (params.getMyId() == 0) {
+            if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
+                    !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
+                throw new IllegalArgumentException("P or Q share is congruent to 3 mod 4 for pivot party");
             }
+            return executePivot(pShare, qShare, N);
+        } else {
+            if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
+                    !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
+                throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
+            }
+            return executeOther(pShare, qShare, N);
+        }
+    }
+
+    protected boolean executePivot(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
+        params.getNetwork().sendToAll(dto);
+        Map<Integer, ArrayList<BigInteger>> receivedDto = params.getNetwork().receiveFromAllPeers();
+        if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
+            return false;
+        }
+        BigInteger myS = executePhase3Pivot(pShare, qShare, N);
+        params.getNetwork().sendToAll(myS);
+        Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
+        return executePhase4(myS, sShares, N);
+    }
+
+    protected boolean executeOther(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        Phase1Pivot receivedDto = params.getNetwork().receive(0);
+        ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
+        params.getNetwork().sendToAll(myNuShare);
+        Map<Integer, ArrayList<BigInteger>> nuShares = params.getNetwork().receiveFromNonPivotPeers();
+        nuShares.put(0, receivedDto.getNuShares());
+        if (!executePhase2(nuShares, myNuShare,  N)) {
+            return false;
+        }
+        BigInteger myS = executePhase3Other(pShare, qShare, N);
+        params.getNetwork().sendToAll(myS);
+        Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
+        return executePhase4(myS, sShares, N);
     }
 
     protected Phase1Pivot executePhase1Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
@@ -64,23 +72,23 @@ public class Protocol {
         return dto;
     }
 
-    protected Phase1Other executePhase1Other(List<BigInteger> gammas, BigInteger pShare, BigInteger qShare, BigInteger N) {
-        Phase1Other dto = new Phase1Other();
+    protected ArrayList<BigInteger> executePhase1Other(List<BigInteger> gammas, BigInteger pShare, BigInteger qShare, BigInteger N) {
+        ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
         for (int i = 0; i < params.getStatBits(); i++) {
             BigInteger exponentNumerator = pShare.negate().subtract(qShare);
             BigInteger exponentDenominator = BigInteger.valueOf(4);
             BigInteger exponent = exponentNumerator.divide(exponentDenominator);
             BigInteger nuShare = gammas.get(i).modPow(exponent, N);
-            dto.addElements(nuShare);
+            dto.add(nuShare);
         }
         return dto;
     }
 
-    protected boolean executePhase2(Map<Integer, Phase1Other> nuShares, List<BigInteger> myNuShares, BigInteger N) {
+    protected boolean executePhase2(Map<Integer, ArrayList<BigInteger>> nuShares, List<BigInteger> myNuShares, BigInteger N) {
         for (int i = 0; i < params.getStatBits(); i++) {
             BigInteger nu = myNuShares.get(i);
             for (int j : params.getNetwork().peers()) {
-                nu = nuShares.get(j).getNuShares().get(i).multiply(nu).mod(N);
+                nu = nuShares.get(j).get(i).multiply(nu).mod(N);
             }
             if (!nu.equals(BigInteger.ONE) && !nu.equals(N.subtract(BigInteger.ONE))) {
                 return false;
