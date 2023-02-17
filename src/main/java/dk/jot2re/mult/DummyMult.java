@@ -6,35 +6,28 @@ import java.math.BigInteger;
 import java.util.Random;
 
 public class DummyMult implements IMult {
-    public static final int DEFAULT_SHARE_SIZE = 128;
-    private BigInteger modulo;
     private Random rand;
-    private int shareSizeBits;
     private INetwork network;
     private int calls = 0;
 
     public DummyMult() {
-        this.modulo = null;
-        this.shareSizeBits = DEFAULT_SHARE_SIZE;
     }
 
     @Override
-    public void init(BigInteger modulo, INetwork network) {
-        this.modulo = modulo;
-        this.shareSizeBits = modulo.bitLength();
+    public void init(INetwork network) {
         this.network = network;
         this.rand = new Random(DummyMult.class.hashCode() + network.myId());
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB) {
+    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
         try {
             calls++;
             if (network.myId() != 0) {
                 network.send(0, shareA);
                 network.send(0, shareB);
                 // All except the pivot party picks their own shares
-                BigInteger shareC = new BigInteger(shareSizeBits, rand);
+                BigInteger shareC = new BigInteger(modulo.bitLength(), rand);
                 network.send(0, shareC);
                 return shareC;
             }

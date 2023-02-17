@@ -17,10 +17,13 @@ public class RSAUtil {
         return r.mod(modulo);
     }
 
-    public static BigInteger multList(BFParameters params, List<BigInteger> shares) {
-        BigInteger temp = shares.get(0);
-        for (int i = 1; i < shares.size(); i++) {
-            temp = params.getMult().mult(temp, shares.get(i));
+    public static BigInteger multList(BFParameters params, BigInteger[] shares, BigInteger modulo) {
+        if (shares.length < 2) {
+            throw new IllegalArgumentException("Empty or singleton list");
+        }
+        BigInteger temp = params.getMult().mult(shares[0], shares[1], modulo);
+        for (int i = 2; i < shares.length; i++) {
+            temp = params.getMult().mult(temp, shares[i], modulo);
         }
         return temp;
     }

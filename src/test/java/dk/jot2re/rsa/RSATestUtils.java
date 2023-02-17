@@ -18,8 +18,7 @@ public class RSATestUtils {
         DummyMultFactory multFactory = new DummyMultFactory(parties);
         Map<Integer, DummyNetwork> networks = netFactory.getNetworks();
         Map<Integer, BFParameters> params = new HashMap<>(parties);
-        BigInteger multMod = BigInteger.TWO.pow(3*bits+statSec+2);
-        Map<Integer, IMult> mults = multFactory.getMults(multMod);
+        Map<Integer, IMult> mults = multFactory.getMults();
         for (int i = 0; i < networks.size(); i++) {
             // Unique but deterministic seed for each set of parameters
             SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
@@ -35,5 +34,13 @@ public class RSATestUtils {
             cand = BigInteger.probablePrime(bits, rand);
         } while (!cand.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)));
         return cand;
+    }
+
+    public static Map<Integer, BigInteger> randomSharing(BigInteger modulo, int parties, Random rand) {
+        Map<Integer, BigInteger> res = new HashMap<>(parties);
+        for (int i = 0; i < parties; i++) {
+            res.put(i, new BigInteger(modulo.bitLength(), rand));
+        }
+        return res;
     }
 }

@@ -1,6 +1,5 @@
 package dk.jot2re.rsa.bf;
 
-import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,11 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProtocolTest {
 
+    // TODO test for more parties
+    // TODO negative tests
     @Test
     public void sunshine() throws Exception {
         int primeBits = 1024;
         int statSec = 40;
-        DummyNetwork.TIME_OUT_MS = 100000000;
         Random rand = new Random(42);
         BigInteger p = RSATestUtils.prime(primeBits, rand);
         BigInteger q = RSATestUtils.prime(primeBits, rand);
@@ -49,7 +49,7 @@ public class ProtocolTest {
             }));
         }
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10000, TimeUnit.SECONDS));
+        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
 
         for (Future<Boolean> cur : res) {
             assertTrue(cur.get());

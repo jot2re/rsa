@@ -6,7 +6,6 @@ import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class MultToAdd {
@@ -17,22 +16,33 @@ public class MultToAdd {
     }
 
     public BigInteger execute(BigInteger x, BigInteger modulo) throws NetworkException {
+        RandomShare randomShare =  correlatedRandomness(modulo);
+        BigInteger paddedShare = executePhase3(randomShare.getMultiplicative(), x, modulo);
+        params.getNetwork().sendToAll(paddedShare);
+        Map<Integer, BigInteger> otherPaddings = params.getNetwork().receiveFromAllPeers();
+        return executePhase4(paddedShare, otherPaddings, randomShare.getAdditive(), modulo);
+    }
+
+    protected RandomShare correlatedRandomness(BigInteger modulo) throws NetworkException {
         if (params.getMyId() == 0) {
             BigInteger myAdditiveRShare = executePhase1Pivot(modulo);
             Map<Integer, BigInteger> qShares = params.getNetwork().receiveFromAllPeers();
-            BigInteger myMultRShare = executePhase2Pivot(qShares, myAdditiveRShare);
+            BigInteger myQShare = executePhase2Pivot(qShares, myAdditiveRShare, modulo);
             Map<Integer, BigInteger> otherMultRShares = params.getNetwork().receiveFromAllPeers();
-            return executePhase3Pivot(otherMultRShares, myMultRShare, myAdditiveRShare, x, modulo);
+            BigInteger myMultRShare = otherMultRShares.values().stream().reduce(myQShare, (a, b) -> a.add(b).mod(modulo));
+            return new RandomShare(myAdditiveRShare, myMultRShare);
         } else {
             Phase1OtherRes res = executePhase1Other(modulo);
             Map<Integer, BigInteger> othersQShares = new HashMap<>(params.getParties());
             for (int party : params.getNetwork().peers()) {
                 params.getNetwork().send(party, res.myQShares.get(party));
-                othersQShares.put(party, params.getNetwork().receive(party));
+                if (party != 0) {
+                    othersQShares.put(party, params.getNetwork().receive(party));
+                }
             }
-            BigInteger myMultRShare = executePhase2Other(othersQShares, res.myQShares.get(params.getMyId()), res.myAdditiveRShare);
-            params.getNetwork().send(0, myMultRShare);
-            return executePhase3Other(myMultRShare, res.myAdditiveRShare, x, modulo);
+            BigInteger pivotMultRShare = executePhase2Other(othersQShares, res.myQShares.get(params.getMyId()), res.myAdditiveRShare, modulo);
+            params.getNetwork().send(0, pivotMultRShare);
+            return new RandomShare(res.myAdditiveRShare, res.myMultRShare);
         }
     }
 
@@ -42,33 +52,37 @@ public class MultToAdd {
 
     protected Phase1OtherRes executePhase1Other(BigInteger modulo) {
         BigInteger myAdditiveRShare = RSAUtil.sample(params, modulo);
-        Map<Integer, BigInteger> myQShares = inverse(RSAUtil.sample(params, modulo), modulo);
-        return new Phase1OtherRes(myAdditiveRShare, myQShares);
+        BigInteger myMultRShare = RSAUtil.sample(params, modulo);
+        Map<Integer, BigInteger> myQShares = inverse(myMultRShare, modulo);
+        return new Phase1OtherRes(myAdditiveRShare, myMultRShare, myQShares);
     }
 
-    protected BigInteger executePhase2Pivot(Map<Integer, BigInteger> qShares, BigInteger rShare) {
-        List<BigInteger> toMultiply = qShares.values().stream().sorted().toList();
-        toMultiply.add(rShare);
-        return RSAUtil.multList(params, toMultiply);
+    protected BigInteger executePhase2Pivot(Map<Integer, BigInteger> qShares, BigInteger myAdditiveRShare, BigInteger modulo) {
+        BigInteger[] toMultiply = new BigInteger[params.getParties()+1];
+        qShares.keySet().stream().forEach(i -> toMultiply[i] = qShares.get(i));
+        toMultiply[0] = myAdditiveRShare;
+        return RSAUtil.multList(params, toMultiply, modulo);
     }
 
-    protected BigInteger executePhase2Other(Map<Integer, BigInteger> otherQShares, BigInteger myQShare, BigInteger myRShare) {
+    protected BigInteger executePhase2Other(Map<Integer, BigInteger> otherQShares, BigInteger myQShare, BigInteger myAdditiveRShare, BigInteger modulo) {
         // todo side-effect since the qShares map is now modified
         otherQShares.put(params.getMyId(), myQShare);
-        List<BigInteger> toMultiply = otherQShares.values().stream().sorted().toList();
-        toMultiply.add(myRShare);
-        return RSAUtil.multList(params, toMultiply);
+        BigInteger[] toMultiply = new BigInteger[params.getParties()+1];
+        for (int party : otherQShares.keySet()) {
+            toMultiply[party] = otherQShares.get(party);
+        }
+        toMultiply[0] = myAdditiveRShare;
+        return RSAUtil.multList(params, toMultiply, modulo);
     }
 
-    protected BigInteger executePhase3Pivot(Map<Integer, BigInteger> otherRMultShares, BigInteger myRMult, BigInteger myRAdditiveShare, BigInteger x, BigInteger modulo) {
-        BigInteger rMult = otherRMultShares.values().stream().reduce(myRMult, (a, b) -> a.add(b).mod(modulo));
-        BigInteger paddedShare = rMult.modInverse(modulo).multiply(x).mod(modulo);
-        return paddedShare.multiply(myRAdditiveShare).mod(modulo);
+    protected BigInteger executePhase3(BigInteger myRMultShare, BigInteger x, BigInteger modulo) {
+        return myRMultShare.modInverse(modulo).multiply(x).mod(modulo);
     }
 
-    protected BigInteger executePhase3Other(BigInteger rMult, BigInteger myRAdditiveShare, BigInteger x, BigInteger modulo) {
-        BigInteger paddedShare = rMult.modInverse(modulo).multiply(x).mod(modulo);
-        return paddedShare.multiply(myRAdditiveShare).mod(modulo);
+    protected BigInteger executePhase4(BigInteger paddedShare, Map<Integer, BigInteger> otherPaddings, BigInteger myRAdditiveShare, BigInteger modulo) {
+
+        BigInteger combinedPadding = otherPaddings.values().stream().reduce(paddedShare, (a,b) -> a.multiply(b).mod(modulo));
+        return combinedPadding.multiply(myRAdditiveShare).mod(modulo);
     }
 
     protected Map<Integer, BigInteger> inverse(BigInteger val, BigInteger modulo) {
@@ -79,18 +93,35 @@ public class MultToAdd {
             shares.put(i, sampled);
             sum = sum.add(sampled).mod(modulo);
         }
-        BigInteger myShares = val.modInverse(modulo).subtract(sum).mod(modulo);
-        shares.put(params.getMyId(), myShares);
+        BigInteger myShare = val.modInverse(modulo).subtract(sum).mod(modulo);
+        shares.put(params.getMyId(), myShare);
         return shares;
     }
 
     private class Phase1OtherRes {
         private final BigInteger myAdditiveRShare;
+        private final BigInteger myMultRShare;
         private final Map<Integer, BigInteger> myQShares;
 
-        public Phase1OtherRes(BigInteger myAdditiveRShare, Map<Integer, BigInteger> myQShares) {
+        public Phase1OtherRes(BigInteger myAdditiveRShare, BigInteger myMultRShare, Map<Integer, BigInteger> myQShares) {
             this.myAdditiveRShare = myAdditiveRShare;
+            this.myMultRShare = myMultRShare;
             this.myQShares = myQShares;
+        }
+    }
+
+    class RandomShare {
+        private final BigInteger additive;
+        private final BigInteger multiplicative;
+        public RandomShare(BigInteger additive, BigInteger multiplicative) {
+            this.additive = additive;
+            this.multiplicative = multiplicative;
+        }
+        public BigInteger getAdditive() {
+            return additive;
+        }
+        public BigInteger getMultiplicative() {
+            return multiplicative;
         }
     }
 }

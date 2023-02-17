@@ -21,7 +21,7 @@ public class DummyMultTest {
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         DummyMultFactory factory = new DummyMultFactory(parties);
-        Map<Integer, IMult> mults = factory.getMults(modulo);
+        Map<Integer, IMult> mults = factory.getMults();
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(32, rand);
@@ -31,7 +31,7 @@ public class DummyMultTest {
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI])));
+            C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI], modulo)));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(3, TimeUnit.SECONDS));

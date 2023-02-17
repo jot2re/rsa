@@ -99,12 +99,12 @@ public class Protocol {
 
     protected BigInteger executePhase3Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
         BigInteger r = new BigInteger(2*params.getPrimeBits()+params.getStatBits(), params.getRandom());
-        return params.getMult().mult(r.mod(N), pShare.add(qShare).subtract(BigInteger.ONE));
+        return params.getMult().mult(r.mod(N), pShare.add(qShare).subtract(BigInteger.ONE), N);
     }
 
     protected BigInteger executePhase3Other(BigInteger pShare, BigInteger qShare, BigInteger N) {
         BigInteger r = new BigInteger(2*params.getPrimeBits()+params.getStatBits(), params.getRandom());
-        return params.getMult().mult(r.mod(N), pShare.add(qShare));
+        return params.getMult().mult(r.mod(N), pShare.add(qShare), N);
     }
 
     protected boolean executePhase4(BigInteger myS, Map<Integer, BigInteger> sShares, BigInteger N) {
