@@ -1,15 +1,12 @@
 package dk.jot2re.rsa.bf;
 
-import dk.jot2re.mult.DummyMultFactory;
-import dk.jot2re.mult.IMult;
 import dk.jot2re.network.DummyNetwork;
-import dk.jot2re.network.DummyNetworkFactory;
+import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -20,36 +17,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProtocolTest {
-    private Map<Integer, BFParameters> getParameters(int bits, int statSec, int parties) throws Exception {
-        DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
-        DummyMultFactory multFactory = new DummyMultFactory(parties);
-        Map<Integer, DummyNetwork> networks = netFactory.getNetworks();
-        Map<Integer, BFParameters> params = new HashMap<>(parties);
-        BigInteger multMod = BigInteger.TWO.pow(3*bits+statSec+2);
-        Map<Integer, IMult> mults = multFactory.getMults(multMod);
-        for (int i = 0; i < networks.size(); i++) {
-            // Unique but deterministic seed for each set of parameters
-            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
-            rand.setSeed((byte)networks.get(i).myId());
-            params.put(networks.get(i).myId(), new BFParameters(bits, statSec, networks.get(i), mults.get(i), rand));
-        }
-        return params;
-    }
-    private BigInteger prime(int bits, Random rand) {
-        BigInteger cand;
-        do {
-            cand = BigInteger.probablePrime(bits, rand);
-        } while (!cand.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)));
-        return cand;
-    }
+
     @Test
     public void sunshine() throws Exception {
         int primeBits = 1024;
         int statSec = 40;
         DummyNetwork.TIME_OUT_MS = 100000000;
         Random rand = new Random(42);
-        BigInteger p = prime(primeBits, rand);
-        BigInteger q = prime(primeBits, rand);
+        BigInteger p = RSATestUtils.prime(primeBits, rand);
+        BigInteger q = RSATestUtils.prime(primeBits, rand);
         List<BigInteger> pShares = new ArrayList<>(2);
         List<BigInteger> qShares = new ArrayList<>(2);
         pShares.add((new BigInteger(primeBits-4, rand)).multiply(BigInteger.valueOf(4)).add(BigInteger.valueOf(3)));
@@ -57,7 +33,7 @@ public class ProtocolTest {
         qShares.add((new BigInteger(primeBits-4, rand)).multiply(BigInteger.valueOf(4)).add(BigInteger.valueOf(3)));
         qShares.add(q.subtract(qShares.get(0)));
         BigInteger N = p.multiply(q);
-        Map<Integer, BFParameters> params = getParameters(primeBits, statSec, 2);
+        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, 2);
         Map<Integer, Protocol> protocols = new HashMap<>(2);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<Boolean>> res = new ArrayList<>(2);
