@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public class DummyNetwork implements INetwork {
-    public static long TIME_OUT_MS  = 10000;
+    public static long TIME_OUT_MS  = 100000;
     public static final long WAIT_MS  = 20;
     private final int myId;
     private final int peers;

@@ -5,7 +5,7 @@ import java.util.*;
 
 public class DummyState {
     /**
-     * Thread safe map, mapping from *recipient* to the a deque of message pairs, of the sender and receiver
+     * Thread safe map, mapping from *recipient* to the deque of message pairs, of the sender and receiver
      */
     private final Map<Integer, Map<Integer, Deque<Serializable>>> messages;
 

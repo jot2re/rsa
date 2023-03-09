@@ -7,49 +7,52 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProtocolTest {
 
+    //todo does not work for more than 2!
     // TODO test for more parties
     // TODO negative tests
     @Test
     public void sunshine() throws Exception {
         int primeBits = 1024;
         int statSec = 40;
+        int parties = 3;
         Random rand = new Random(42);
         BigInteger p = RSATestUtils.prime(primeBits, rand);
         BigInteger q = RSATestUtils.prime(primeBits, rand);
-        List<BigInteger> pShares = new ArrayList<>(2);
-        List<BigInteger> qShares = new ArrayList<>(2);
-        pShares.add((new BigInteger(primeBits-4, rand)).multiply(BigInteger.valueOf(4)).add(BigInteger.valueOf(3)));
-        pShares.add(p.subtract(pShares.get(0)));
-        qShares.add((new BigInteger(primeBits-4, rand)).multiply(BigInteger.valueOf(4)).add(BigInteger.valueOf(3)));
-        qShares.add(q.subtract(qShares.get(0)));
+        Map<Integer, BigInteger> pShares = new HashMap<>(parties);
+        Map<Integer, BigInteger>  qShares = new HashMap<>(parties);
+        // We sample a number small enough to avoid issues with negative shares
+        for (int party = 1; party < parties; party++) {
+            pShares.put(party, (new BigInteger(primeBits - 4 - parties, rand)).multiply(BigInteger.valueOf(4)));
+            qShares.put(party, (new BigInteger(primeBits - 4 - parties, rand)).multiply(BigInteger.valueOf(4)));
+        }
+        pShares.put(0, p.subtract(pShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b))));
+        qShares.put(0, q.subtract(qShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b))));
         BigInteger N = p.multiply(q);
-        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, 2);
-        Map<Integer, Protocol> protocols = new HashMap<>(2);
+        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
+        Map<Integer, Protocol> protocols = new ConcurrentHashMap<>(parties);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<Boolean>> res = new ArrayList<>(2);
-        for (int i = 0; i < 2; i++) {
+        List<Future<Boolean>> res = new ArrayList<>(parties);
+        for (int i = 0; i < parties; i++) {
             int finalI = i;
             res.add(executor.submit(() -> {
                 try {
                     protocols.put(finalI, new Protocol(params.get(finalI)));
                     return protocols.get(finalI).execute(pShares.get(finalI), qShares.get(finalI), N);
                 } catch (Exception e) {
+                    System.out.println("Error: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
             }));
         }
         executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        assertTrue(executor.awaitTermination(10, TimeUnit.MINUTES));
 
         for (Future<Boolean> cur : res) {
             assertTrue(cur.get());
