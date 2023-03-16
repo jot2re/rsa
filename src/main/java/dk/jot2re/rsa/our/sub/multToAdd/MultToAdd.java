@@ -33,7 +33,7 @@ public class MultToAdd {
             return new RandomShare(myAdditiveRShare, myMultRShare);
         } else {
             Phase1OtherRes res = executePhase1Other(modulo);
-            Map<Integer, BigInteger> othersQShares = new HashMap<>(params.getParties());
+            Map<Integer, BigInteger> othersQShares = new HashMap<>(params.getAmountOfPeers());
             for (int party : params.getNetwork().peers()) {
                 params.getNetwork().send(party, res.myQShares.get(party));
                 if (party != 0) {
@@ -58,7 +58,7 @@ public class MultToAdd {
     }
 
     protected BigInteger executePhase2Pivot(Map<Integer, BigInteger> qShares, BigInteger myAdditiveRShare, BigInteger modulo) {
-        BigInteger[] toMultiply = new BigInteger[params.getParties()+1];
+        BigInteger[] toMultiply = new BigInteger[params.getAmountOfPeers()+1];
         qShares.keySet().stream().forEach(i -> toMultiply[i] = qShares.get(i));
         toMultiply[0] = myAdditiveRShare;
         return RSAUtil.multList(params, toMultiply, modulo);
@@ -67,7 +67,7 @@ public class MultToAdd {
     protected BigInteger executePhase2Other(Map<Integer, BigInteger> otherQShares, BigInteger myQShare, BigInteger myAdditiveRShare, BigInteger modulo) {
         // todo side-effect since the qShares map is now modified
         otherQShares.put(params.getMyId(), myQShare);
-        BigInteger[] toMultiply = new BigInteger[params.getParties()+1];
+        BigInteger[] toMultiply = new BigInteger[params.getAmountOfPeers()+1];
         for (int party : otherQShares.keySet()) {
             toMultiply[party] = otherQShares.get(party);
         }
@@ -86,7 +86,7 @@ public class MultToAdd {
     }
 
     protected Map<Integer, BigInteger> inverse(BigInteger val, BigInteger modulo) {
-        Map<Integer, BigInteger> shares = new HashMap<>(params.getParties());
+        Map<Integer, BigInteger> shares = new HashMap<>(params.getAmountOfPeers()+1);
         BigInteger sum = BigInteger.ZERO;
         for (int i : params.getNetwork().peers()) {
             BigInteger sampled = RSAUtil.sample(params, modulo);

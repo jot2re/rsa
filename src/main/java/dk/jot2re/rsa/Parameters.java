@@ -33,7 +33,7 @@ public class Parameters {
         return rand;
     }
 
-    public int getParties() {
+    public int getAmountOfPeers() {
         return network.peers().size();
     }
 

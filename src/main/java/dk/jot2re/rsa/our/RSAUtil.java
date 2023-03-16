@@ -1,9 +1,11 @@
 package dk.jot2re.rsa.our;
 
+import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -15,6 +17,12 @@ public class RSAUtil {
     public static BigInteger sample(BFParameters params, BigInteger modulo) {
         BigInteger r = new BigInteger(modulo.bitLength()+params.getStatBits(), params.getRandom());
         return r.mod(modulo);
+    }
+
+    public static BigInteger open(BFParameters params, BigInteger share, BigInteger modulo) throws NetworkException {
+        params.getNetwork().sendToAll(share);
+        Map<Integer, BigInteger> otherShares = params.getNetwork().receiveFromAllPeers();
+        return otherShares.values().stream().reduce(share, (a, b) -> a.add(b).mod(modulo));
     }
 
     public static BigInteger multList(BFParameters params, BigInteger[] shares, BigInteger modulo) {

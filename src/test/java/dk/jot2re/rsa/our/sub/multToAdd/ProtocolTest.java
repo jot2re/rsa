@@ -10,10 +10,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,7 +46,7 @@ public class ProtocolTest {
             refValue = refValue.multiply(multShare).mod(modulo);
         }
         Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
-        Map<Integer, MultToAdd> protocols = new HashMap<>(parties);
+        Map<Integer, MultToAdd> protocols = new ConcurrentHashMap<>(parties);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> res = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {

@@ -13,9 +13,12 @@ public class Invert {
         this.params = params;
     }
 
-    public boolean execute(BigInteger modulo) throws NetworkException {
+    public BigInteger execute(BigInteger xShare, BigInteger modulo) throws NetworkException {
         BigInteger rShare = RSAUtil.sample(params, modulo);
-        return false;
+        BigInteger rxShare = params.getMult().mult(rShare, xShare, modulo);
+        BigInteger rx = RSAUtil.open(params, rxShare, modulo);
+        BigInteger y = rx.modInverse(modulo);
+        return y.multiply(rShare).mod(modulo);
     }
 }
 

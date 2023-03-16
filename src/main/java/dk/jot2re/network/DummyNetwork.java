@@ -56,7 +56,7 @@ public class DummyNetwork implements INetwork {
     }
 
     @Override
-    public void sendToAll(Serializable data) throws NetworkException {
+    public synchronized void sendToAll(Serializable data) throws NetworkException {
         for (IP2P network: networks.values()) {
             network.send(data);
         }

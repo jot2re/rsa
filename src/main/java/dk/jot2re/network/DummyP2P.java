@@ -35,7 +35,7 @@ public class DummyP2P implements IP2P {
     }
 
     @Override
-    public void send(Serializable data) throws NetworkException {
+    public synchronized void send(Serializable data) throws NetworkException {
         try {
             writer.writeObject(data);
             writer.flush();
@@ -54,7 +54,7 @@ public class DummyP2P implements IP2P {
     }
 
     @Override
-    public Serializable receive() {
+    public synchronized Serializable receive() {
         Serializable res = state.get(peerId, myId);
         if (res != null && lastOpSend) {
             rounds++;

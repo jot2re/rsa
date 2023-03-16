@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProtocolTest {
 
-    //todo does not work for more than 2!
     // TODO test for more parties
     // TODO negative tests
     @Test
@@ -46,7 +45,7 @@ public class ProtocolTest {
                     protocols.put(finalI, new Protocol(params.get(finalI)));
                     return protocols.get(finalI).execute(pShares.get(finalI), qShares.get(finalI), N);
                 } catch (Exception e) {
-                    System.out.println("Error: " + e.getMessage());
+                    System.err.println("Error: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
             }));
