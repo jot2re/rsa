@@ -4,6 +4,7 @@ import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -12,9 +13,19 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static dk.jot2re.rsa.RSATestUtils.share;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RSAUtilTest {
+    @ParameterizedTest
+    @ValueSource(ints = {2, 3, 5})
+    void testShare(int parties) {
+        BigInteger modulo = BigInteger.TWO.pow(60);
+        BigInteger ref = BigInteger.valueOf(1337);
+        Map<Integer, BigInteger> shares = share(ref, parties, modulo, new Random(42));
+        assertEquals(ref, shares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b).mod(modulo)));
+        assertEquals(shares.size(), parties);
+    }
 
     @ParameterizedTest
     @CsvSource({"2,2", "2,5", "3,2", "3,13", "5,8"})

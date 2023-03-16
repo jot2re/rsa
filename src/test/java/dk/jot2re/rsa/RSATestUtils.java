@@ -13,6 +13,19 @@ import java.util.Map;
 import java.util.Random;
 
 public class RSATestUtils {
+    public static Map<Integer, BigInteger> share(BigInteger value, int parties, BigInteger modulus, Random rand) {
+        Map<Integer, BigInteger> shares = new HashMap<>(parties);
+        BigInteger sum = BigInteger.ZERO;
+        for (int i = 1; i < parties; i++) {
+            BigInteger randomNumber = new BigInteger(modulus.bitLength(), rand);
+            sum = sum.add(randomNumber);
+            shares.put(i, randomNumber);
+        }
+        // Compute pivot
+        shares.put(0, value.subtract(sum).mod(modulus));
+        return shares;
+    }
+
     public static Map<Integer, BFParameters> getParameters(int bits, int statSec, int parties) throws Exception {
         DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
         DummyMultFactory multFactory = new DummyMultFactory(parties);
