@@ -44,14 +44,14 @@ public class ProtocolTest {
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(12), BigInteger.valueOf(2544), BigInteger.valueOf(42), BigInteger.valueOf(1000));
         Map<Integer, BigInteger> shares = share(input, parties, modulo, rand);
         Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
-        Map<Integer, MembershipLinear> protocols = new ConcurrentHashMap<>(parties);
+        Map<Integer, MembershipLog> protocols = new ConcurrentHashMap<>(parties);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> res = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             res.add(executor.submit(() -> {
                 try {
-                    protocols.put(finalI, new MembershipLinear(params.get(finalI)));
+                    protocols.put(finalI, new MembershipLog(params.get(finalI)));
                     return protocols.get(finalI).execute(shares.get(finalI), set, modulo);
                 } catch (Exception e) {
                     System.err.println("Error: " + e.getMessage());
@@ -84,14 +84,14 @@ public class ProtocolTest {
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(12), BigInteger.valueOf(2544), BigInteger.valueOf(41), BigInteger.valueOf(1000));
         Map<Integer, BigInteger> shares = share(input, parties, modulo, rand);
         Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
-        Map<Integer, MembershipLinear> protocols = new ConcurrentHashMap<>(parties);
+        Map<Integer, MembershipLog> protocols = new ConcurrentHashMap<>(parties);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> res = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             res.add(executor.submit(() -> {
                 try {
-                    protocols.put(finalI, new MembershipLinear(params.get(finalI)));
+                    protocols.put(finalI, new MembershipLog(params.get(finalI)));
                     return protocols.get(finalI).execute(shares.get(finalI), set, modulo);
                 } catch (Exception e) {
                     System.err.println("Error: " + e.getMessage());
