@@ -8,7 +8,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MembershipLog {
+public class MembershipLog implements IMembership {
     private final BFParameters params;
 
     public MembershipLog(BFParameters params) {

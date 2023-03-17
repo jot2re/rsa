@@ -6,7 +6,7 @@ import dk.jot2re.rsa.bf.BFParameters;
 import java.math.BigInteger;
 import java.util.List;
 
-public class MembershipConst {
+public class MembershipConst implements IMembership {
     private final BFParameters params;
 
     public MembershipConst(BFParameters params) {

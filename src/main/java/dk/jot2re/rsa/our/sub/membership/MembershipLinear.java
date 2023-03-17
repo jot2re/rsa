@@ -7,7 +7,7 @@ import dk.jot2re.rsa.our.RSAUtil;
 import java.math.BigInteger;
 import java.util.List;
 
-public class MembershipLinear {
+public class MembershipLinear implements IMembership {
     private final BFParameters params;
 
     public MembershipLinear(BFParameters params) {
