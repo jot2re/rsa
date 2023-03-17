@@ -4,17 +4,19 @@ import dk.jot2re.mult.DummyMultFactory;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.DummyNetworkFactory;
+import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RSATestUtils {
     public static Map<Integer, BigInteger> share(BigInteger value, int parties, BigInteger modulus, Random rand) {
-        Map<Integer, BigInteger> shares = new HashMap<>(parties);
+        Map<Integer, BigInteger> shares = new ConcurrentHashMap<>(parties);
         BigInteger sum = BigInteger.ZERO;
         for (int i = 1; i < parties; i++) {
             BigInteger randomNumber = new BigInteger(modulus.bitLength(), rand);
@@ -55,5 +57,36 @@ public class RSATestUtils {
             res.put(i, new BigInteger(modulo.bitLength(), rand));
         }
         return res;
+    }
+
+    public static  <T> void runProtocolTest(int primeBits, int statSec, int parties, RunProtocol<T> protocolRunner, ResultCheck<T> resultChecker) throws Exception {
+        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        List<Future<T>> res = new ArrayList<>(parties);
+        for (int i = 0; i < parties; i++) {
+            int finalI = i;
+            res.add(executor.submit(() -> {
+                try {
+                    return protocolRunner.apply(params.get(finalI));
+                } catch (Exception e) {
+                    System.err.println("Error: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            }));
+        }
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(10000, TimeUnit.SECONDS));
+
+        resultChecker.check(res);
+    }
+
+    @FunctionalInterface
+    public interface RunProtocol<OutputT> {
+        OutputT apply(Parameters params) throws NetworkException;
+    }
+
+    @FunctionalInterface
+    public interface ResultCheck<ResultT> {
+        void check(List<Future<ResultT>> params) throws ExecutionException, InterruptedException;
     }
 }
