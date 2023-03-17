@@ -4,15 +4,14 @@ import dk.jot2re.mult.DummyMultFactory;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.DummyNetworkFactory;
-import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.util.*;
-import java.util.concurrent.*;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RSATestUtils {
     public static Map<Integer, BigInteger> share(BigInteger value, int parties, BigInteger modulus, Random rand) {
@@ -28,21 +27,27 @@ public class RSATestUtils {
         return shares;
     }
 
-    public static Map<Integer, BFParameters> getParameters(int bits, int statSec, int parties) throws Exception {
-        DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
-        DummyMultFactory multFactory = new DummyMultFactory(parties);
-        Map<Integer, DummyNetwork> networks = netFactory.getNetworks();
-        Map<Integer, BFParameters> params = new HashMap<>(parties);
-        Map<Integer, IMult> mults = multFactory.getMults();
-        for (int i = 0; i < networks.size(); i++) {
-            // Unique but deterministic seed for each set of parameters
-            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
-            // Note that seed is only updated if different from 0
-            rand.setSeed(networks.get(i).myId()+1);
-            params.put(networks.get(i).myId(), new BFParameters(bits, statSec, networks.get(i), mults.get(i), rand));
+    public static Map<Integer, BFParameters> getParameters(int bits, int statSec, int parties) {
+        try {
+            DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
+            DummyMultFactory multFactory = new DummyMultFactory(parties);
+            Map<Integer, DummyNetwork> networks = netFactory.getNetworks();
+            Map<Integer, BFParameters> params = new HashMap<>(parties);
+            Map<Integer, IMult> mults = multFactory.getMults();
+            for (int i = 0; i < networks.size(); i++) {
+                // Unique but deterministic seed for each set of parameters
+                SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
+                // Note that seed is only updated if different from 0
+                rand.setSeed(networks.get(i).myId() + 1);
+                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, networks.get(i), mults.get(i), rand));
+            }
+            return params;
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            throw new RuntimeException(e);
         }
-        return params;
     }
+
     public static BigInteger prime(int bits, Random rand) {
         BigInteger cand;
         do {
@@ -57,36 +62,5 @@ public class RSATestUtils {
             res.put(i, new BigInteger(modulo.bitLength(), rand));
         }
         return res;
-    }
-
-    public static  <T> void runProtocolTest(int primeBits, int statSec, int parties, RunProtocol<T> protocolRunner, ResultCheck<T> resultChecker) throws Exception {
-        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<T>> res = new ArrayList<>(parties);
-        for (int i = 0; i < parties; i++) {
-            int finalI = i;
-            res.add(executor.submit(() -> {
-                try {
-                    return protocolRunner.apply(params.get(finalI));
-                } catch (Exception e) {
-                    System.err.println("Error: " + e.getMessage());
-                    throw new RuntimeException(e);
-                }
-            }));
-        }
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(10000, TimeUnit.SECONDS));
-
-        resultChecker.check(res);
-    }
-
-    @FunctionalInterface
-    public interface RunProtocol<OutputT> {
-        OutputT apply(Parameters params) throws NetworkException;
-    }
-
-    @FunctionalInterface
-    public interface ResultCheck<ResultT> {
-        void check(List<Future<ResultT>> params) throws ExecutionException, InterruptedException;
     }
 }

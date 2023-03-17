@@ -1,5 +1,6 @@
 package dk.jot2re.rsa.our.sub.multToAdd;
 
+import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.bf.BFParameters;
 import org.junit.jupiter.api.BeforeAll;
@@ -10,24 +11,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Future;
 
-import static dk.jot2re.rsa.RSATestUtils.runProtocolTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ProtocolTest {
-    private static final int DEFAULT_BIT_LENGTH = 1024;
-    private static final int DEFAULT_STAT_SEC = 40;
-    private static final int DEFAULT_PARTIES = 3;
-    private static final Random rand = new Random(42);
-    private static final BigInteger modulo = BigInteger.probablePrime(DEFAULT_BIT_LENGTH, rand);
-    private static Map<Integer, BFParameters> params;
+public class MultToAddProtocolTest extends AbstractProtocolTest {
     private static Map<Integer, MultToAdd> multToAddMap;
 
     @BeforeAll
-    public static void setup() throws Exception {
+    public static void setup() {
         params = RSATestUtils.getParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
         multToAddMap = new HashMap<>(DEFAULT_PARTIES);
         for (BFParameters cur : params.values()) {
@@ -46,13 +39,13 @@ public class ProtocolTest {
             refValue = refValue.multiply(multShare).mod(modulo);
         }
 
-        RSATestUtils.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
             MultToAdd protocol = new MultToAdd((BFParameters) param);
             return protocol.execute(multShares.get(param.getMyId()), modulo);
         };
 
         BigInteger finalRefValue = refValue;
-        RSATestUtils.ResultCheck<BigInteger> checker = (res) -> {
+        AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
             BigInteger finalValue = BigInteger.ZERO;
             for (Future<BigInteger> cur : res) {
                 finalValue = finalValue.add(cur.get()).mod(modulo);
@@ -76,12 +69,12 @@ public class ProtocolTest {
             refValue = refValue.multiply(multShare).mod(modulo);
         }
 
-        RSATestUtils.RunProtocol<MultToAdd.RandomShare> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<MultToAdd.RandomShare> protocolRunner = (param) -> {
             MultToAdd protocol = new MultToAdd((BFParameters) param);
             return protocol.correlatedRandomness(modulo);
         };
 
-        RSATestUtils.ResultCheck<MultToAdd.RandomShare> checker = (res) -> {
+        AbstractProtocolTest.ResultCheck<MultToAdd.RandomShare> checker = (res) -> {
             BigInteger additiveRef = BigInteger.ZERO;
             BigInteger multiplicativeRef = BigInteger.ONE;
             for (Future<MultToAdd.RandomShare> cur : res) {

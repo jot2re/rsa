@@ -1,61 +1,51 @@
 package dk.jot2re.rsa.bf;
 
+import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.rsa.RSATestUtils;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ProtocolTest {
-
+public class ProtocolTest extends AbstractProtocolTest {
     // TODO test for more parties
     // TODO negative tests
-    @Test
-    public void sunshine() throws Exception {
-        int primeBits = 1024;
-        int statSec = 40;
-        int parties = 3;
-        Random rand = new Random(42);
-        BigInteger p = RSATestUtils.prime(primeBits, rand);
-        BigInteger q = RSATestUtils.prime(primeBits, rand);
+    @ParameterizedTest
+    @ValueSource(ints = {2, 3, 5})
+    public void sunshine(int parties) throws Exception {
+        BigInteger p = RSATestUtils.prime(DEFAULT_BIT_LENGTH, rand);
+        BigInteger q = RSATestUtils.prime(DEFAULT_BIT_LENGTH, rand);
         Map<Integer, BigInteger> pShares = new HashMap<>(parties);
         Map<Integer, BigInteger>  qShares = new HashMap<>(parties);
         // We sample a number small enough to avoid issues with negative shares
         for (int party = 1; party < parties; party++) {
-            pShares.put(party, (new BigInteger(primeBits - 4 - parties, rand)).multiply(BigInteger.valueOf(4)));
-            qShares.put(party, (new BigInteger(primeBits - 4 - parties, rand)).multiply(BigInteger.valueOf(4)));
+            pShares.put(party, (new BigInteger(DEFAULT_BIT_LENGTH - 4 - parties, rand)).multiply(BigInteger.valueOf(4)));
+            qShares.put(party, (new BigInteger(DEFAULT_BIT_LENGTH - 4 - parties, rand)).multiply(BigInteger.valueOf(4)));
         }
         pShares.put(0, p.subtract(pShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b))));
         qShares.put(0, q.subtract(qShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b))));
         BigInteger N = p.multiply(q);
-        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
-        Map<Integer, Protocol> protocols = new ConcurrentHashMap<>(parties);
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<Boolean>> res = new ArrayList<>(parties);
-        for (int i = 0; i < parties; i++) {
-            int finalI = i;
-            res.add(executor.submit(() -> {
-                try {
-                    protocols.put(finalI, new Protocol(params.get(finalI)));
-                    return protocols.get(finalI).execute(pShares.get(finalI), qShares.get(finalI), N);
-                } catch (Exception e) {
-                    System.err.println("Error: " + e.getMessage());
-                    throw new RuntimeException(e);
-                }
-            }));
-        }
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(10, TimeUnit.MINUTES));
 
-        for (Future<Boolean> cur : res) {
-            assertTrue(cur.get());
-        }
+
+        RunProtocol<Boolean> protocolRunner = (param) -> {
+            Protocol protocol = new Protocol((BFParameters) param);
+            return protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
+        };
+
+        ResultCheck<Boolean> checker = (res) -> {
+            for (Future<Boolean> cur : res) {
+                assertTrue(cur.get());
+            }
+        };
+
+        runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties, protocolRunner, checker);
     }
 
     // First 3 tests are from https://www.mathworks.com/help/symbolic/jacobisymbol.html
