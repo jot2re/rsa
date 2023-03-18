@@ -18,6 +18,28 @@ public class MembershipConst implements IMembership {
     public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
         // TODO handle edgecase when set is smaller than 2
         int m = set.size();
+        if (m == 0) {
+            throw new RuntimeException("empty set");
+        }
+        if (m == 1) {
+            BigInteger rho = RSAUtil.sample(params, modulo);
+            BigInteger temp = xShare;
+            if (params.getMyId() == 0) {
+               temp = temp.subtract(set.get(0));
+            }
+            return params.getMult().mult(rho, temp, modulo);
+        }
+        if (m == 2) {
+            BigInteger rho = RSAUtil.sample(params, modulo);
+            BigInteger left = xShare;
+            BigInteger right = xShare;
+            if (params.getMyId() == 0) {
+                left = left.subtract(set.get(0));
+                right = right.subtract(set.get(1));
+            }
+            BigInteger temp = params.getMult().mult(left, right, modulo);
+            return params.getMult().mult(rho, temp, modulo);
+        }
         // Step 1; sample
         BigInteger rho = RSAUtil.sample(params, modulo);
         Map<Integer, BigInteger> rShares = new HashMap<>(m);

@@ -23,7 +23,7 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
     public void sunshine(int parties, String type) throws Exception {
         BigInteger mod = BigInteger.valueOf(132432449);
         BigInteger input = BigInteger.valueOf(42);
-        List<BigInteger> set = Arrays.asList(BigInteger.valueOf(34535), BigInteger.valueOf(5534315), BigInteger.valueOf(42));
+        List<BigInteger> set = Arrays.asList(BigInteger.valueOf(34535), BigInteger.valueOf(5534315), BigInteger.valueOf(42), BigInteger.valueOf(890637));
         Map<Integer, BigInteger> shares = share(input, parties, mod, rand);
 
         AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
@@ -47,6 +47,56 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         };
 
         runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties, protocolRunner, checker);
+    }
+
+    @Test
+    public void oneSetConst() throws Exception {
+        BigInteger mod = BigInteger.valueOf(132432449);
+        BigInteger input = BigInteger.valueOf(42);
+        List<BigInteger> set = Arrays.asList(BigInteger.valueOf(42));
+        Map<Integer, BigInteger> shares = share(input, DEFAULT_PARTIES, mod, rand);
+
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+            IMembership protocol = new MembershipConst((BFParameters) param);
+            return protocol.execute(shares.get(param.getMyId()), set, mod);
+        };
+
+        AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
+            BigInteger finalValue = BigInteger.ZERO;
+            for (Future<BigInteger> cur : res) {
+                finalValue = finalValue.add(cur.get()).mod(mod);
+                assertNotEquals(BigInteger.ONE, cur.get());
+            }
+            // Ensure the result is 0
+            assertEquals(BigInteger.ZERO, finalValue);
+        };
+
+        runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES, protocolRunner, checker);
+    }
+
+    @Test
+    public void twoSetConst() throws Exception {
+        BigInteger mod = BigInteger.valueOf(132432449);
+        BigInteger input = BigInteger.valueOf(42);
+        List<BigInteger> set = Arrays.asList(BigInteger.valueOf(42), BigInteger.valueOf(43));
+        Map<Integer, BigInteger> shares = share(input, DEFAULT_PARTIES, mod, rand);
+
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+            IMembership protocol = new MembershipConst((BFParameters) param);
+            return protocol.execute(shares.get(param.getMyId()), set, mod);
+        };
+
+        AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
+            BigInteger finalValue = BigInteger.ZERO;
+            for (Future<BigInteger> cur : res) {
+                finalValue = finalValue.add(cur.get()).mod(mod);
+                assertNotEquals(BigInteger.ONE, cur.get());
+            }
+            // Ensure the result is 0
+            assertEquals(BigInteger.ZERO, finalValue);
+        };
+
+        runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES, protocolRunner, checker);
     }
 
     @ParameterizedTest
