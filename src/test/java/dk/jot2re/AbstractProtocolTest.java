@@ -20,7 +20,7 @@ public abstract class AbstractProtocolTest {
     protected static final int DEFAULT_PARTIES = 3;
     protected static final Random rand = new Random(42);
     protected static final BigInteger modulo = BigInteger.probablePrime(DEFAULT_BIT_LENGTH, rand);
-    protected static Map<Integer, BFParameters> params = RSATestUtils.getParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
+
 
     public <T> void runProtocolTest(int primeBits, int statSec, int parties, RunProtocol<T> protocolRunner, ResultCheck<T> resultChecker) throws Exception {
         // NOTE: ENABLE FOR DEBUGGING

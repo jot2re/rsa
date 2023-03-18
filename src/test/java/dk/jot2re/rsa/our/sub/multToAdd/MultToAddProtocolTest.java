@@ -21,7 +21,7 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
 
     @BeforeAll
     public static void setup() {
-        params = RSATestUtils.getParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
+        Map<Integer, BFParameters> params = RSATestUtils.getParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
         multToAddMap = new HashMap<>(DEFAULT_PARTIES);
         for (BFParameters cur : params.values()) {
             multToAddMap.put(cur.getMyId(), new MultToAdd(cur));

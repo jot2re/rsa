@@ -65,22 +65,26 @@ public class MembershipConst implements IMembership {
         for (int i: vValues.keySet()) {
             BigInteger currentY = vValues.get(i);
             for (int j = 2; j <= i; j++) {
-                currentY.multiply(wValues.get(j)).mod(modulo);
+                currentY = currentY.multiply(wValues.get(j)).mod(modulo);
             }
             yValues.put(i, currentY);
         }
         // Step 5; compute coefficients
         BigInteger[] coef = computePolyConsts(set, modulo);
         // Step 6; compute result
+        //      x term
         BigInteger zShare = coef[1].multiply(xShare).mod(modulo);
         if (params.getMyId() == 0) {
+            //  constant term
             zShare = zShare.add(coef[0]).mod(modulo);
         }
+        //      x^2 to x^(m-1) terms
         for (int i = 2; i < coef.length; i++) {
-            zShare = zShare.add(yValues.get(i).multiply(coef[i]).multiply(alphaShares.get(i))).mod(modulo);
+            zShare = zShare.add(yValues.get(i).multiply(coef[i]).multiply(invertedAlphaShares.get(i))).mod(modulo);
         }
-        zShare = zShare.add(alphaShares.get(m).multiply(yValues.get(m))).mod(modulo);
-        return zShare; //params.getMult().mult(zShare, rho, modulo);
+        //      x^m term
+        zShare = zShare.add(invertedAlphaShares.get(m).multiply(yValues.get(m))).mod(modulo);
+        return params.getMult().mult(zShare, rho, modulo);
     }
 
     protected BigInteger[] computePolyConsts(List<BigInteger> roots, BigInteger modulo) {
@@ -90,7 +94,7 @@ public class MembershipConst implements IMembership {
         BigInteger[] lastCoef = new BigInteger[roots.size()];
         lastCoef[0] = roots.get(0).negate().mod(modulo);
         for (int i = 1; i < roots.size(); i++) {
-            BigInteger curRoot = roots.get(i).negate();
+            BigInteger curRoot = roots.get(i).negate().mod(modulo);
             BigInteger[] curCoef = new BigInteger[roots.size()];
             for (int j = 0; j <= i; j++) {
                 BigInteger sum = BigInteger.ZERO;

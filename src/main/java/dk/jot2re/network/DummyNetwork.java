@@ -9,16 +9,16 @@ public class DummyNetwork implements INetwork {
     public static long TIME_OUT_MS  = 100000;
     public static final long WAIT_MS  = 20;
     private final int myId;
-    private final int peers;
+    private final int parties;
     private final Map<Integer, DummyP2P> networks;
 
     private int networkTime = 0;
 
     public DummyNetwork(DummyState state, int myId) {
         this.myId = myId;
-        this.peers = state.parties();
-        this.networks = new HashMap<>(peers);
-        for (int i = 0; i < peers; i++) {
+        this.parties = state.parties();
+        this.networks = new HashMap<>(parties);
+        for (int i = 0; i < parties; i++) {
             if (i == myId) {
                 continue;
             }
