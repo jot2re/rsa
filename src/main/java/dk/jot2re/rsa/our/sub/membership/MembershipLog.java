@@ -19,11 +19,7 @@ public class MembershipLog implements IMembership {
         BigInteger temp = BigInteger.ONE;
         List<BigInteger> toMult = new ArrayList<>(set.size());
         for (int i = 0; i < set.size(); i++) {
-            if (params.getMyId() == 0) {
-                toMult.add(params.getMult().mult(temp, xShare.subtract(set.get(i)).mod(modulo), modulo));
-            } else {
-                toMult.add(params.getMult().mult(temp, xShare, modulo));
-            }
+            toMult.add(params.getMult().mult(temp, RSAUtil.subConst(params, xShare, set.get(i), modulo), modulo));
         }
         while (toMult.size() > 1) {
             List<BigInteger> nextToMult = new ArrayList<>(1+toMult.size()/2);

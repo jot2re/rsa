@@ -17,11 +17,7 @@ public class MembershipLinear implements IMembership {
     public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
         BigInteger temp = BigInteger.ONE;
         for (BigInteger cur: set) {
-            if (params.getMyId() == 0) {
-                temp = params.getMult().mult(temp, xShare.subtract(cur).mod(modulo), modulo);
-            } else {
-                temp = params.getMult().mult(temp, xShare, modulo);
-            }
+            temp = params.getMult().mult(temp, RSAUtil.subConst(params, xShare, cur, modulo), modulo);
         }
         BigInteger rShare = RSAUtil.sample(params, modulo);
         temp = params.getMult().mult(temp, rShare, modulo);

@@ -28,12 +28,8 @@ public class MembershipConst implements IMembership {
         }
         if (m == 2) {
             BigInteger rho = RSAUtil.sample(params, modulo);
-            BigInteger left = xShare;
-            BigInteger right = xShare;
-            if (params.getMyId() == 0) {
-                left = left.subtract(set.get(0));
-                right = right.subtract(set.get(1));
-            }
+            BigInteger left = RSAUtil.subConst(params, xShare, set.get(0), modulo);;
+            BigInteger right = RSAUtil.subConst(params, xShare, set.get(1), modulo);;
             BigInteger temp = params.getMult().mult(left, right, modulo);
             return params.getMult().mult(rho, temp, modulo);
         }
