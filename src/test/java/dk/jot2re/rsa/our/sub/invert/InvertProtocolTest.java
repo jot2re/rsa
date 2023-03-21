@@ -1,8 +1,8 @@
-package dk.jot2re.rsa.out.sub.invert;
+package dk.jot2re.rsa.our.sub.invert;
 
 import dk.jot2re.AbstractProtocolTest;
+import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.bf.BFParameters;
-import dk.jot2re.rsa.our.sub.invert.Invert;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -19,24 +19,25 @@ public class InvertProtocolTest extends AbstractProtocolTest {
     @ValueSource(ints = {2, 3, 5})
     public void sunshine(int parties) throws Exception {
         BigInteger input = BigInteger.valueOf(42);
-        BigInteger refValue = input.modInverse(modulo);
-        Map<Integer, BigInteger> shares = share(input, parties, modulo, rand);
+        BigInteger refValue = input.modInverse(DEFAULT_MODULO);
+        Map<Integer, BigInteger> shares = share(input, parties, DEFAULT_MODULO, rand);
 
         RunProtocol<BigInteger> protocolRunner = (param) -> {
             Invert protocol = new Invert((BFParameters) param);
-            return protocol.execute(shares.get(param.getMyId()), modulo);
+            return protocol.execute(shares.get(param.getMyId()), DEFAULT_MODULO);
         };
 
         ResultCheck<BigInteger> checker = (res) -> {
             BigInteger finalValue = BigInteger.ZERO;
             for (Future<BigInteger> cur : res) {
-                finalValue = finalValue.add(cur.get()).mod(modulo);
+                finalValue = finalValue.add(cur.get()).mod(DEFAULT_MODULO);
                 assertNotEquals(BigInteger.ZERO, cur.get());
                 assertNotEquals(BigInteger.ONE, cur.get());
             }
             assertEquals(refValue, finalValue);
         };
 
-        runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties, protocolRunner, checker);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
+        runProtocolTest(parameters, protocolRunner, checker);
     }
 }

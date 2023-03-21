@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class Protocol {
+public class BFProtocol {
     private final BFParameters params;
 
-    public Protocol(BFParameters params) {
+    public BFProtocol(BFParameters params) {
         this.params = params;
     }
 

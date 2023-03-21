@@ -1,6 +1,7 @@
 package dk.jot2re.rsa.our;
 
 import dk.jot2re.network.NetworkException;
+import dk.jot2re.rsa.Parameters;
 import dk.jot2re.rsa.bf.BFParameters;
 
 import java.math.BigInteger;
@@ -10,19 +11,35 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class RSAUtil {
-    public static List<BigInteger> sample(BFParameters params, BigInteger modulo, int amount) {
+    public static List<BigInteger> sample(Parameters params, BigInteger modulo, int amount) {
         return IntStream.range(0, amount).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
     }
 
-    public static BigInteger sample(BFParameters params, BigInteger modulo) {
+    public static BigInteger sample(Parameters params, BigInteger modulo) {
         BigInteger r = new BigInteger(modulo.bitLength()+params.getStatBits(), params.getRandom());
         return r.mod(modulo);
     }
 
-    public static BigInteger open(BFParameters params, BigInteger share, BigInteger modulo) throws NetworkException {
+    public static BigInteger open(Parameters params, BigInteger share, BigInteger modulo) throws NetworkException {
         params.getNetwork().sendToAll(share);
         Map<Integer, BigInteger> otherShares = params.getNetwork().receiveFromAllPeers();
         return otherShares.values().stream().reduce(share, (a, b) -> a.add(b).mod(modulo));
+    }
+
+    public static BigInteger addConst(Parameters params, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
+        if (params.getMyId() == 0) {
+            return share.add(constant).mod(modulo);
+        } else {
+            return share;
+        }
+    }
+
+    public static BigInteger subConst(Parameters params, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
+        if (params.getMyId() == 0) {
+            return share.subtract(constant).mod(modulo);
+        } else {
+            return share;
+        }
     }
 
     public static BigInteger multList(BFParameters params, BigInteger[] shares, BigInteger modulo) {

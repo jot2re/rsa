@@ -30,8 +30,8 @@ public class RSAUtilTest {
     @ParameterizedTest
     @CsvSource({"2,2", "2,5", "3,2", "3,13", "5,8"})
     public void testMultList(int parties, int amount) throws Exception {
-        int bits = 10;
-        Map<Integer, BFParameters> params = RSATestUtils.getParameters(bits, 20, parties);
+        int bits = 32;
+        Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(bits, 20, parties);
         BigInteger modulo = BigInteger.probablePrime(bits, params.get(0).getRandom());
         BigInteger[] ref = new BigInteger[amount];
         for (int j = 0; j < amount; j++) {

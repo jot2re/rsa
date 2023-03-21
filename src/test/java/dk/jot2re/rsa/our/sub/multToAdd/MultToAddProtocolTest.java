@@ -3,6 +3,7 @@ package dk.jot2re.rsa.our.sub.multToAdd;
 import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.bf.BFParameters;
+import dk.jot2re.rsa.our.OurParameters;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -21,7 +22,7 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
 
     @BeforeAll
     public static void setup() {
-        Map<Integer, BFParameters> params = RSATestUtils.getParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
+        Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
         multToAddMap = new HashMap<>(DEFAULT_PARTIES);
         for (BFParameters cur : params.values()) {
             multToAddMap.put(cur.getMyId(), new MultToAdd(cur));
@@ -36,26 +37,27 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
         for (int i = 0; i < parties; i++) {
             BigInteger multShare = new BigInteger(DEFAULT_BIT_LENGTH, rand);
             multShares.put(i, multShare);
-            refValue = refValue.multiply(multShare).mod(modulo);
+            refValue = refValue.multiply(multShare).mod(DEFAULT_MODULO);
         }
 
         AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
             MultToAdd protocol = new MultToAdd((BFParameters) param);
-            return protocol.execute(multShares.get(param.getMyId()), modulo);
+            return protocol.execute(multShares.get(param.getMyId()), DEFAULT_MODULO);
         };
 
         BigInteger finalRefValue = refValue;
         AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
             BigInteger finalValue = BigInteger.ZERO;
             for (Future<BigInteger> cur : res) {
-                finalValue = finalValue.add(cur.get()).mod(modulo);
+                finalValue = finalValue.add(cur.get()).mod(DEFAULT_MODULO);
                 assertNotEquals(BigInteger.ONE, cur.get());
                 assertNotEquals(BigInteger.ZERO, cur.get());
             }
             assertEquals(finalRefValue, finalValue);
         };
 
-        runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties, protocolRunner, checker);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
+        runProtocolTest(parameters, protocolRunner, checker);
     }
 
     @ParameterizedTest
@@ -66,20 +68,20 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
         for (int i = 0; i < parties; i++) {
             BigInteger multShare = new BigInteger(32, rand);
             multShares.put(i, multShare);
-            refValue = refValue.multiply(multShare).mod(modulo);
+            refValue = refValue.multiply(multShare).mod(DEFAULT_MODULO);
         }
 
         AbstractProtocolTest.RunProtocol<MultToAdd.RandomShare> protocolRunner = (param) -> {
             MultToAdd protocol = new MultToAdd((BFParameters) param);
-            return protocol.correlatedRandomness(modulo);
+            return protocol.correlatedRandomness(DEFAULT_MODULO);
         };
 
         AbstractProtocolTest.ResultCheck<MultToAdd.RandomShare> checker = (res) -> {
             BigInteger additiveRef = BigInteger.ZERO;
             BigInteger multiplicativeRef = BigInteger.ONE;
             for (Future<MultToAdd.RandomShare> cur : res) {
-                additiveRef = additiveRef.add(cur.get().getAdditive()).mod(modulo);
-                multiplicativeRef = multiplicativeRef.multiply(cur.get().getMultiplicative()).mod(modulo);
+                additiveRef = additiveRef.add(cur.get().getAdditive()).mod(DEFAULT_MODULO);
+                multiplicativeRef = multiplicativeRef.multiply(cur.get().getMultiplicative()).mod(DEFAULT_MODULO);
                 assertNotEquals(BigInteger.ZERO, cur.get().getAdditive());
                 assertNotEquals(BigInteger.ONE, cur.get().getAdditive());
                 assertNotEquals(BigInteger.ZERO, cur.get().getMultiplicative());
@@ -88,7 +90,8 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
             assertEquals(additiveRef, multiplicativeRef);
         };
 
-        runProtocolTest(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties, protocolRunner, checker);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
+        runProtocolTest(parameters, protocolRunner, checker);
     }
 
     @ParameterizedTest

@@ -2,8 +2,6 @@ package dk.jot2re;
 
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.Parameters;
-import dk.jot2re.rsa.RSATestUtils;
-import dk.jot2re.rsa.bf.BFParameters;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -15,19 +13,19 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractProtocolTest {
-    protected static final int DEFAULT_BIT_LENGTH = 1024;
+    protected static final int DEFAULT_BIT_LENGTH = 128;
     protected static final int DEFAULT_STAT_SEC = 40;
     protected static final int DEFAULT_PARTIES = 3;
     protected static final Random rand = new Random(42);
-    protected static final BigInteger modulo = BigInteger.probablePrime(DEFAULT_BIT_LENGTH, rand);
+    protected static final BigInteger DEFAULT_MODULO = BigInteger.probablePrime(DEFAULT_BIT_LENGTH, rand);
 
 
-    public <T> void runProtocolTest(int primeBits, int statSec, int parties, RunProtocol<T> protocolRunner, ResultCheck<T> resultChecker) throws Exception {
+    public <ReturnT, ParameterT extends Parameters> void runProtocolTest(Map<Integer, ParameterT> params, RunProtocol<ReturnT> protocolRunner, ResultCheck<ReturnT> resultChecker) throws Exception {
         // NOTE: ENABLE FOR DEBUGGING
         //        DummyNetwork.TIME_OUT_MS = 100000000;
-        Map<Integer, BFParameters> params = RSATestUtils.getParameters(primeBits, statSec, parties);
+        int parties = params.get(0).getAmountOfPeers()+1;
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<T>> res = new ArrayList<>(parties);
+        List<Future<ReturnT>> res = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             res.add(executor.submit(() -> {

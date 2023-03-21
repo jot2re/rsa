@@ -23,10 +23,7 @@ public class MembershipConst implements IMembership {
         }
         if (m == 1) {
             BigInteger rho = RSAUtil.sample(params, modulo);
-            BigInteger temp = xShare;
-            if (params.getMyId() == 0) {
-               temp = temp.subtract(set.get(0));
-            }
+            BigInteger temp = RSAUtil.subConst(params, xShare, set.get(0), modulo);
             return params.getMult().mult(rho, temp, modulo);
         }
         if (m == 2) {
