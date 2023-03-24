@@ -14,18 +14,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DummyMultTest {
+    private static final int DEFAULT_BIT_LENGTH = 1024;
     @ParameterizedTest
     @ValueSource(ints = { 2, 3, 5})
     public void sunshine(int parties) throws Exception {
-        BigInteger modulo = BigInteger.TWO.pow(32);
+        BigInteger modulo = BigInteger.TWO.pow(DEFAULT_BIT_LENGTH);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         DummyMultFactory factory = new DummyMultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults();
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(32, rand);
-            B[i] = new BigInteger(32, rand);
+            A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
+            B[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OurProtocol {
-    enum MembershipProtocol {
+    public enum MembershipProtocol {
         CONST,
         LOG,
         LINEAR
@@ -36,7 +36,7 @@ public class OurProtocol {
             default -> throw new IllegalArgumentException("Unknown membership protocol");
         }
         partySet = new ArrayList<>(params.getAmountOfPeers()+1);
-        for (int i = 1; i <= params.getAmountOfPeers()+2; i++) {
+        for (int i = 1; i <= params.getAmountOfPeers()+1; i++) {
             partySet.add(BigInteger.valueOf(i));
         }
 
@@ -112,8 +112,8 @@ public class OurProtocol {
         BigInteger bShare = params.getMult().mult(delta, inverseShareQ, params.getQ());
         BigInteger zShare = aShare.subtract(bShare).mod(params.getQ());
         BigInteger temp = zShare.multiply(params.getPInverseModQ()).mod(params.getQ());
-        BigInteger zAdjusted = RSAUtil.addConst(params, temp, BigInteger.ONE, params.getQ());
-        BigInteger yShare = membership.execute(zAdjusted, partySet, params.getQ());
+//        BigInteger zAdjusted = RSAUtil.addConst(params, temp, BigInteger.ONE, params.getQ());
+        BigInteger yShare = membership.execute(temp, partySet, params.getQ());
         BigInteger y = RSAUtil.open(params, yShare, params.getQ());
         return y.equals(BigInteger.ZERO);
     }

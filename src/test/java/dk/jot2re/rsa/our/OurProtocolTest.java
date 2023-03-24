@@ -14,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class OurProtocolTest extends AbstractProtocolTest {
     // TODO negative tests
     @ParameterizedTest
-    @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log","2,const", "3,const", "5,const"})
+    @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log", "2,const", "3,const", "5,const"})
     public void sunshine(int parties, String type) throws Exception {
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, DEFAULT_BIT_LENGTH, rand);
         Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, DEFAULT_BIT_LENGTH, rand);
-        BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
-        BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
+        BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
+        BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
         BigInteger N = p.multiply(q);
 
         AbstractProtocolTest.RunProtocol<Boolean> protocolRunner = (param) -> {
