@@ -10,9 +10,11 @@ import java.util.*;
 
 public class MembershipConst implements IMembership {
     private final BFParameters params;
+    private final Invert inverter;
 
     public MembershipConst(BFParameters params) {
         this.params = params;
+        this.inverter = new Invert(params);
     }
 
     public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
@@ -34,6 +36,8 @@ public class MembershipConst implements IMembership {
             return params.getMult().mult(rho, temp, modulo);
         }
         // Step 1; sample
+        long start, stop;
+        start = System.currentTimeMillis();
         BigInteger rho = RSAUtil.sample(params, modulo);
         Map<Integer, BigInteger> rShares = new HashMap<>(m);
         rShares.put(1, RSAUtil.sample(params, modulo));
@@ -42,8 +46,10 @@ public class MembershipConst implements IMembership {
             rShares.put(i, RSAUtil.sample(params, modulo));
             alphaShares.put(i, RSAUtil.sample(params, modulo));
         }
+        stop = System.currentTimeMillis();
+        System.out.println("step 1: " + (stop-start));
         // Step 2; invert
-        Invert inverter = new Invert(params);
+        start = System.currentTimeMillis();
         Map<Integer, BigInteger> invertedRShares = new HashMap<>(m);
         for (int i: rShares.keySet()) {
             invertedRShares.put(i, inverter.execute(rShares.get(i), modulo));
@@ -52,7 +58,10 @@ public class MembershipConst implements IMembership {
         for (int i: alphaShares.keySet()) {
             invertedAlphaShares.put(i, inverter.execute(alphaShares.get(i), modulo));
         }
+        stop = System.currentTimeMillis();
+        System.out.println("step 2: " + (stop-start));
         // Step 3; compute products
+        start = System.currentTimeMillis();
         Map<Integer, BigInteger> tShares = new HashMap<>(m);
         for (int i: invertedRShares.keySet()) {
             tShares.put(i, params.getMult().mult(xShare, invertedRShares.get(i), modulo));
@@ -66,7 +75,10 @@ public class MembershipConst implements IMembership {
         for (int i = 2; i <= m; i++) {
             wShares.put(i, params.getMult().mult(tShares.get(i-1), rShares.get(i), modulo));
         }
+        stop = System.currentTimeMillis();
+        System.out.println("step 3: " + (stop-start));
         // ... and open these
+        start = System.currentTimeMillis();
         Map<Integer, BigInteger> vValues = new HashMap<>(m-1);
         for (int i: vShares.keySet()) {
             vValues.put(i, RSAUtil.open(params, vShares.get(i), modulo));
@@ -75,7 +87,10 @@ public class MembershipConst implements IMembership {
         for (int i: wShares.keySet()) {
             wValues.put(i, RSAUtil.open(params, wShares.get(i), modulo));
         }
+        stop = System.currentTimeMillis();
+        System.out.println("step 3 open : " + (stop-start));
         // Step 4; compute y values
+        start = System.currentTimeMillis();
         Map<Integer, BigInteger> yValues = new HashMap<>(m-1);
         for (int i: vValues.keySet()) {
             BigInteger currentY = vValues.get(i);
@@ -84,10 +99,16 @@ public class MembershipConst implements IMembership {
             }
             yValues.put(i, currentY);
         }
+        stop = System.currentTimeMillis();
+        System.out.println("step 4 open : " + (stop-start));
         // Step 5; compute coefficients
+        start = System.currentTimeMillis();
         BigInteger[] coef = computePolyConsts(set, modulo);
+        stop = System.currentTimeMillis();
+        System.out.println("step 5 : " + (stop-start));
         // Step 6; compute result
         //      x term
+        start = System.currentTimeMillis();
         BigInteger zShare = coef[1].multiply(xShare).mod(modulo);
         if (params.getMyId() == 0) {
             //  constant term
@@ -99,6 +120,8 @@ public class MembershipConst implements IMembership {
         }
         //      x^m term
         zShare = zShare.add(invertedAlphaShares.get(m).multiply(yValues.get(m))).mod(modulo);
+        stop = System.currentTimeMillis();
+        System.out.println("step 6 : " + (stop-start));
         return params.getMult().mult(zShare, rho, modulo);
     }
 
