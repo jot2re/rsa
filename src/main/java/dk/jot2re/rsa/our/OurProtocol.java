@@ -25,6 +25,17 @@ public class OurProtocol {
     // List of the set of parties, shifted to ensure positive indexes, plus 1 to account for overflow
     private final List<BigInteger> partySet;
 
+    public OurProtocol(OurParameters params, IMembership membership, Invert inverter, MultToAdd multToAdd) {
+        this.params = params;
+        this.inverter = inverter;
+        this.multToAdd = multToAdd;
+        this.membership = membership;
+        partySet = new ArrayList<>(params.getAmountOfPeers()+1);
+        for (int i = 1; i <= params.getAmountOfPeers()+1; i++) {
+            partySet.add(BigInteger.valueOf(i));
+        }
+    }
+
     public OurProtocol(OurParameters params, MembershipProtocol membershipProtocolType) {
         this.params = params;
         this.inverter = new Invert(params);
@@ -39,7 +50,6 @@ public class OurProtocol {
         for (int i = 1; i <= params.getAmountOfPeers()+1; i++) {
             partySet.add(BigInteger.valueOf(i));
         }
-
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
@@ -78,7 +88,7 @@ public class OurProtocol {
 
     protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, params.getM());
-        BigInteger NPrime = RSAUtil.open(params, NPrimeShare, params.getM());
+        BigInteger NPrime = params.getMult().open(params, NPrimeShare, params.getM());
         if (!NPrime.equals(N)) {
             return false;
         }
@@ -88,7 +98,7 @@ public class OurProtocol {
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
         BigInteger multGammaShare;
         if (params.getMyId() == 0) {
-            BigInteger v = RSAUtil.sample(params, N);
+            BigInteger v = params.getMult().sample(params, N);
             params.getNetwork().sendToAll(v);
             multGammaShare = v.modPow(share.subtract(BigInteger.valueOf(1)).shiftRight(1), N);
         } else {
@@ -98,8 +108,8 @@ public class OurProtocol {
         BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
         BigInteger inverseShareP = inverter.execute(share, params.getP());
         BigInteger inverseShareQ = inverter.execute(share, params.getQ());
-        BigInteger gammaAdd = RSAUtil.addConst(params, addGammaShare, BigInteger.ONE, N);
-        BigInteger gammaSub = RSAUtil.subConst(params, addGammaShare, BigInteger.ONE, N);
+        BigInteger gammaAdd = params.getMult().addConst(params, addGammaShare, BigInteger.ONE, N);
+        BigInteger gammaSub = params.getMult().subConst(params, addGammaShare, BigInteger.ONE, N);
         if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &&
                 !validateGamma(gammaAdd, inverseShareP, inverseShareQ, N)) {
             return false;
@@ -114,7 +124,7 @@ public class OurProtocol {
         BigInteger temp = zShare.multiply(params.getPInverseModQ()).mod(params.getQ());
 //        BigInteger zAdjusted = RSAUtil.addConst(params, temp, BigInteger.ONE, params.getQ());
         BigInteger yShare = membership.execute(temp, partySet, params.getQ());
-        BigInteger y = RSAUtil.open(params, yShare, params.getQ());
+        BigInteger y = params.getMult().open(params, yShare, params.getQ());
         return y.equals(BigInteger.ZERO);
     }
 }
