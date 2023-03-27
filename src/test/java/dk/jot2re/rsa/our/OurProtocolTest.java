@@ -30,6 +30,9 @@ public class OurProtocolTest extends AbstractProtocolTest {
                 default -> throw new RuntimeException("unknown type");
             };
             OurProtocol protocol = new OurProtocol((OurParameters) param, membership);
+            if (!protocol.validateParameters(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N)) {
+                return false;
+            }
             return protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
         };
 

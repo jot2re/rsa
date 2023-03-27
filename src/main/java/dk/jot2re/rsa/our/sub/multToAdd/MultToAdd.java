@@ -23,7 +23,7 @@ public class MultToAdd {
         return executePhase4(paddedShare, otherPaddings, randomShare.getAdditive(), modulo);
     }
 
-    protected RandomShare correlatedRandomness(BigInteger modulo) throws NetworkException {
+    public RandomShare correlatedRandomness(BigInteger modulo) throws NetworkException {
         if (params.getMyId() == 0) {
             BigInteger myAdditiveRShare = executePhase1Pivot(modulo);
             Map<Integer, BigInteger> qShares = params.getNetwork().receiveFromAllPeers();
@@ -110,7 +110,7 @@ public class MultToAdd {
         }
     }
 
-    class RandomShare {
+    public class RandomShare {
         private final BigInteger additive;
         private final BigInteger multiplicative;
         public RandomShare(BigInteger additive, BigInteger multiplicative) {

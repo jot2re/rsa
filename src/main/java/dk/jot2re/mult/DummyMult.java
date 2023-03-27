@@ -8,7 +8,7 @@ import java.util.Random;
 public class DummyMult implements IMult {
     private Random rand;
     private INetwork network;
-    private int calls = 0;
+    private int multCalls = 0;
 
     public DummyMult() {
     }
@@ -25,7 +25,7 @@ public class DummyMult implements IMult {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }
         try {
-            calls++;
+            multCalls++;
             if (network.myId() != 0) {
                 network.send(0, shareA);
                 network.send(0, shareB);
@@ -55,7 +55,7 @@ public class DummyMult implements IMult {
         }
     }
 
-    public int getCalls() {
-        return calls;
+    public int getMultCalls() {
+        return multCalls;
     }
 }

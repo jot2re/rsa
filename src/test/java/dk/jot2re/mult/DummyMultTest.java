@@ -45,7 +45,7 @@ public class DummyMultTest {
         }
         assertEquals(refC.mod(modulo), refA.multiply(refB).mod(modulo));
         for (int i = 0; i < parties; i++) {
-            assertEquals(1, ((DummyMult) mults.get(i)).getCalls());
+            assertEquals(1, ((DummyMult) mults.get(i)).getMultCalls());
         }
     }
 }

@@ -7,12 +7,15 @@ import dk.jot2re.rsa.our.sub.membership.MembershipConst;
 import dk.jot2re.rsa.our.sub.membership.MembershipLinear;
 import dk.jot2re.rsa.our.sub.membership.MembershipLog;
 import dk.jot2re.rsa.our.sub.multToAdd.MultToAdd;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 public class OurProtocol {
+    private static final Logger logger = LoggerFactory.getLogger(OurProtocol.class);
     public enum MembershipProtocol {
         CONST,
         LOG,
@@ -52,35 +55,42 @@ public class OurProtocol {
         }
     }
 
-    public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+    public boolean validateParameters(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         // TODO validate M bound
         if (params.getP().compareTo(N.multiply(BigInteger.valueOf(params.getAmountOfPeers()+1))) <= 0) {
-            throw new IllegalArgumentException("P bound is too small");
+            logger.error("P bound is too small");
+            return false;
         }
         if (params.getQ().compareTo(params.getP()) <= 0) {
-            throw new IllegalArgumentException("Q bound is too small");
+            logger.error("Q bound is too small");
+            return false;
         }
         if (N.compareTo(params.getM()) >= 0) {
-            throw new IllegalArgumentException("Input share is too large");
+            logger.error("Input share is too large");
+            return false;
         }
         if (params.getMyId() == 0) {
             if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
                     !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
-                throw new IllegalArgumentException("P or Q share is congruent to 3 mod 4 for pivot party");
+                logger.error("P or Q share is congruent to 3 mod 4 for pivot party");
+                return false;
             }
         } else {
             if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
                     !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
-                throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
+                logger.error("P or Q share is not divisible by 4 for non-pivot party");
+                return false;
             }
         }
         if (!verifyInputs(pShare, qShare, N)) {
+            logger.error("Product of P and Q is not the canidate N");
             return false;
         }
-        if (!verifyPrimality(pShare, N)) {
-            return false;
-        }
-        if (!verifyPrimality(qShare, N)) {
+        return true;
+    }
+
+    public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        if (!verifyPrimality(pShare, N) | !verifyPrimality(qShare, N)) {
             return false;
         }
         return true;
@@ -88,7 +98,7 @@ public class OurProtocol {
 
     protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, params.getM());
-        BigInteger NPrime = params.getMult().open(params, NPrimeShare, params.getM());
+        BigInteger NPrime = RSAUtil.open(params, NPrimeShare, params.getM());
         if (!NPrime.equals(N)) {
             return false;
         }
@@ -98,7 +108,7 @@ public class OurProtocol {
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
         BigInteger multGammaShare;
         if (params.getMyId() == 0) {
-            BigInteger v = params.getMult().sample(params, N);
+            BigInteger v = RSAUtil.sample(params, N);
             params.getNetwork().sendToAll(v);
             multGammaShare = v.modPow(share.subtract(BigInteger.valueOf(1)).shiftRight(1), N);
         } else {
@@ -108,9 +118,9 @@ public class OurProtocol {
         BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
         BigInteger inverseShareP = inverter.execute(share, params.getP());
         BigInteger inverseShareQ = inverter.execute(share, params.getQ());
-        BigInteger gammaAdd = params.getMult().addConst(params, addGammaShare, BigInteger.ONE, N);
-        BigInteger gammaSub = params.getMult().subConst(params, addGammaShare, BigInteger.ONE, N);
-        if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &&
+        BigInteger gammaAdd = RSAUtil.addConst(params, addGammaShare, BigInteger.ONE, N);
+        BigInteger gammaSub = RSAUtil.subConst(params, addGammaShare, BigInteger.ONE, N);
+        if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &
                 !validateGamma(gammaAdd, inverseShareP, inverseShareQ, N)) {
             return false;
         }
@@ -124,7 +134,7 @@ public class OurProtocol {
         BigInteger temp = zShare.multiply(params.getPInverseModQ()).mod(params.getQ());
 //        BigInteger zAdjusted = RSAUtil.addConst(params, temp, BigInteger.ONE, params.getQ());
         BigInteger yShare = membership.execute(temp, partySet, params.getQ());
-        BigInteger y = params.getMult().open(params, yShare, params.getQ());
+        BigInteger y = RSAUtil.open(params, yShare, params.getQ());
         return y.equals(BigInteger.ZERO);
     }
 }

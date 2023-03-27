@@ -26,6 +26,9 @@ public class BFProtocolTest extends AbstractProtocolTest {
 
         RunProtocol<Boolean> protocolRunner = (param) -> {
             BFProtocol protocol = new BFProtocol((BFParameters) param);
+            if (!protocol.validateParameters(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N)) {
+                return false;
+            }
             return protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
         };
 

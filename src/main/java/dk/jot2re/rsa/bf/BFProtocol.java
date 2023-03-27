@@ -2,6 +2,9 @@ package dk.jot2re.rsa.bf;
 
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.dto.Phase1Pivot;
+import dk.jot2re.rsa.our.RSAUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -9,24 +12,38 @@ import java.util.List;
 import java.util.Map;
 
 public class BFProtocol {
+    private static final Logger logger = LoggerFactory.getLogger(BFProtocol.class);
     private final BFParameters params;
 
     public BFProtocol(BFParameters params) {
         this.params = params;
     }
 
-    public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+    public boolean validateParameters(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         if (params.getMyId() == 0) {
             if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
                     !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
-                throw new IllegalArgumentException("P or Q share is congruent to 3 mod 4 for pivot party");
+                logger.error("P or Q share is congruent to 3 mod 4 for pivot party");
+                return false;
             }
-            return executePivot(pShare, qShare, N);
         } else {
             if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO) ||
                     !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.ZERO)) {
-                throw new IllegalArgumentException("P or Q share is not divisible by 4 for non-pivot party");
+                logger.error("P or Q share is not divisible by 4 for non-pivot party");
+                return false;
             }
+        }
+        if (!verifyInputs(pShare, qShare, N)) {
+            logger.error("Product of P and Q is not the candidate N");
+            return false;
+        }
+        return true;
+    }
+
+    public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        if (params.getMyId() == 0) {
+            return executePivot(pShare, qShare, N);
+        } else {
             return executeOther(pShare, qShare, N);
         }
     }
@@ -118,6 +135,15 @@ public class BFProtocol {
             candidate = new BigInteger(N.bitLength() + params.getStatBits(), params.getRandom());
         } while (jacobiSymbol(candidate, N) != 1);
         return candidate;
+    }
+
+    protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, N);
+        BigInteger NPrime = RSAUtil.open(params, NPrimeShare, N);
+        if (!NPrime.equals(BigInteger.ZERO)) {
+            return false;
+        }
+        return true;
     }
 
     // Code shamelessly stolen from https://rosettacode.org/wiki/Jacobi_symbol and adapted to work with big integers.
