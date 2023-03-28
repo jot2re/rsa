@@ -15,7 +15,7 @@ public class DrngImpl implements Drng {
    * @param drbg a deterministic random bit generator
    */
   public DrngImpl(SecureRandom drbg) {
-    this.random = random;
+    this.random = drbg;
   }
 
   @Override
