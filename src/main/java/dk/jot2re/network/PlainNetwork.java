@@ -35,7 +35,7 @@ public class PlainNetwork<T extends Serializable> implements INetwork {
     }
 
     @Override
-    public void send(int recipientId, Serializable data) throws NetworkException {
+    public void send(int recipientId, Serializable data) {
 
     }
 

@@ -35,7 +35,7 @@ public class DummyP2P implements IP2P {
     }
 
     @Override
-    public synchronized void send(Serializable data) throws NetworkException {
+    public synchronized void send(Serializable data) {
         try {
             writer.writeObject(data);
             writer.flush();
@@ -49,7 +49,7 @@ public class DummyP2P implements IP2P {
 
             state.put(myId, peerId, data);
         } catch (Exception e) {
-            throw new NetworkException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 

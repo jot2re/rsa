@@ -34,7 +34,7 @@ public class DummyNetwork implements INetwork {
     }
 
     @Override
-    public void send(int recipientId, Serializable data) throws NetworkException {
+    public void send(int recipientId, Serializable data) {
         networks.get(recipientId).send(data);
     }
 

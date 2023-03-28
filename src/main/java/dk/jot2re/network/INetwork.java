@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface INetwork {
     void init();
-    void send(int recipientId, Serializable data) throws NetworkException;
+    void send(int recipientId, Serializable data);
     <T extends Serializable> T receive(int senderId);
     void sendToAll(Serializable data) throws NetworkException;
 
