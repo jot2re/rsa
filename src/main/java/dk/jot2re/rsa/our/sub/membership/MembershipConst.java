@@ -18,7 +18,6 @@ public class MembershipConst implements IMembership {
     }
 
     public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
-        // TODO handle edgecase when set is smaller than 2
         int m = set.size();
         if (m == 0) {
             throw new RuntimeException("empty set");
@@ -30,8 +29,8 @@ public class MembershipConst implements IMembership {
         }
         if (m == 2) {
             BigInteger rho = RSAUtil.sample(params, modulo);
-            BigInteger left = RSAUtil.subConst(params, xShare, set.get(0), modulo);;
-            BigInteger right = RSAUtil.subConst(params, xShare, set.get(1), modulo);;
+            BigInteger left = RSAUtil.subConst(params, xShare, set.get(0), modulo);
+            BigInteger right = RSAUtil.subConst(params, xShare, set.get(1), modulo);
             BigInteger temp = params.getMult().mult(left, right, modulo);
             return params.getMult().mult(rho, temp, modulo);
         }

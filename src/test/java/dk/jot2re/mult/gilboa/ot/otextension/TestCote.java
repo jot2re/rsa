@@ -38,7 +38,7 @@ public class TestCote {
     received.set(seedOts, true);
     CoinTossing ct = new CoinTossing(1, 2, rand);
     OtExtensionResourcePool resources = new OtExtensionResourcePoolImpl(1, 2,
-        128, 40, 1, rand, ct, seedOts);
+        128, 40, 1, rand, network, ct, seedOts);
     this.cote = new CoteFactory(resources, network);
   }
 

@@ -20,6 +20,8 @@ dependencies {
     testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.5'
     testImplementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.36'
     testImplementation group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.36'
+    // this is the line that solves the missing /META-INF/BenchmarkList error
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
 }
 
 test {

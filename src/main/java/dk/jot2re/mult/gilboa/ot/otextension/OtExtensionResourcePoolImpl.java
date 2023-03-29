@@ -2,6 +2,7 @@ package dk.jot2re.mult.gilboa.ot.otextension;
 
 import dk.jot2re.mult.gilboa.cointossing.CoinTossing;
 import dk.jot2re.mult.gilboa.util.ExceptionConverter;
+import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -43,6 +44,7 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
   private final MessageDigest digest;
   private final RotList seedOts;
   private final CoinTossing ct;
+  private final INetwork network;
   private final SecureRandom drbg;
   private final int myId;
 
@@ -68,7 +70,7 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
    */
   public OtExtensionResourcePoolImpl(int myId, int otherId,
       int computationalSecurityParam, int lambdaSecurityParam, int instanceId,
-      SecureRandom drbg, CoinTossing ct, RotList seedOts) {
+      SecureRandom drbg, INetwork network, CoinTossing ct, RotList seedOts) {
     if (computationalSecurityParam < 1 || lambdaSecurityParam < 1
         || lambdaSecurityParam % 8 != 0 || computationalSecurityParam
             % 8 != 0) {
@@ -81,6 +83,7 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
     this.computationalSecurityParam = computationalSecurityParam;
     this.lambdaSecurityParam = lambdaSecurityParam;
     this.instanceId = instanceId;
+    this.network = network;
     this.digest = ExceptionConverter.safe(() -> MessageDigest
         .getInstance("SHA-256"),
         "Configuration error, SHA-256 is needed for OT extension");
@@ -137,5 +140,10 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
   @Override
   public SecureRandom getRandomGenerator() {
     return drbg;
+  }
+
+  @Override
+  public INetwork getNetwork() {
+    return network;
   }
 }

@@ -9,7 +9,7 @@ public class DummyNetworkFactory {
         this.parties = parties;
     }
 
-    public Map<Integer, DummyNetwork> getNetworks() {
+    public <T extends INetwork> Map<Integer, T> getNetworks() {
         DummyState state = new DummyState(parties);
         Map<Integer, DummyNetwork> map = new HashMap<>(parties);
         for (int i = 0; i < parties; i++) {
@@ -17,6 +17,6 @@ public class DummyNetworkFactory {
             network.init();
             map.put(i, network);
         }
-        return map;
+        return (Map<Integer, T>) map;
     }
 }

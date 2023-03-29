@@ -2,6 +2,7 @@ package dk.jot2re.mult.gilboa.ot.otextension;
 
 
 import dk.jot2re.mult.gilboa.cointossing.CoinTossing;
+import dk.jot2re.network.INetwork;
 
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -74,5 +75,7 @@ public interface OtExtensionResourcePool {
    * @return An instance of a DRBG.
    */
   SecureRandom getRandomGenerator();
+
+  INetwork getNetwork();
 
 }
