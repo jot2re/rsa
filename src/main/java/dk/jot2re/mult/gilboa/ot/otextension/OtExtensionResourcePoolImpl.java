@@ -1,12 +1,12 @@
 package dk.jot2re.mult.gilboa.ot.otextension;
 
 import dk.jot2re.mult.gilboa.cointossing.CoinTossing;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.ExceptionConverter;
 import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 
 public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
   // TODO move somewhere reasonable
@@ -45,7 +45,7 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
   private final RotList seedOts;
   private final CoinTossing ct;
   private final INetwork network;
-  private final SecureRandom drbg;
+  private final Drbg drbg;
   private final int myId;
 
   /**
@@ -69,8 +69,8 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
    *          The seed OTs to be used as the base of the extension
    */
   public OtExtensionResourcePoolImpl(int myId, int otherId,
-      int computationalSecurityParam, int lambdaSecurityParam, int instanceId,
-      SecureRandom drbg, INetwork network, CoinTossing ct, RotList seedOts) {
+                                     int computationalSecurityParam, int lambdaSecurityParam, int instanceId,
+                                     Drbg drbg, INetwork network, CoinTossing ct, RotList seedOts) {
     if (computationalSecurityParam < 1 || lambdaSecurityParam < 1
         || lambdaSecurityParam % 8 != 0 || computationalSecurityParam
             % 8 != 0) {
@@ -138,7 +138,7 @@ public class OtExtensionResourcePoolImpl implements OtExtensionResourcePool {
   }
 
   @Override
-  public SecureRandom getRandomGenerator() {
+  public Drbg getRandomGenerator() {
     return drbg;
   }
 

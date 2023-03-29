@@ -49,7 +49,7 @@ public class StrictBitVector implements BitVector {
    * @param size the bit size of the vector
    * @param rand secure source of randomness
    */
-  public StrictBitVector(int size, SecureRandom rand) {
+  public StrictBitVector(int size, Drbg rand) {
     this(size);
     rand.nextBytes(bits);
   }

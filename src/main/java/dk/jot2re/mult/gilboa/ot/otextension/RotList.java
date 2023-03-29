@@ -1,10 +1,10 @@
 package dk.jot2re.mult.gilboa.ot.otextension;
 
 import dk.jot2re.mult.gilboa.ot.base.Ot;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.Pair;
 import dk.jot2re.mult.gilboa.util.StrictBitVector;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class RotList {
    * @param amount
    *          The amount of OTs to construct
    */
-  public RotList(SecureRandom rand, int amount) {
+  public RotList(Drbg rand, int amount) {
     this.amount = amount;
     sendMessages = new ArrayList<>(amount);
     learnedMessages = new ArrayList<>(amount);

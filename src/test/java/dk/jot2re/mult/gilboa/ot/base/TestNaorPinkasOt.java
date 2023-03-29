@@ -1,7 +1,7 @@
 package dk.jot2re.mult.gilboa.ot.base;
 
 import dk.jot2re.mult.gilboa.helper.HelperForTests;
-import dk.jot2re.mult.gilboa.util.Pair;
+import dk.jot2re.mult.gilboa.util.*;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.PlainNetwork;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,7 +11,6 @@ import javax.crypto.spec.DHParameterSpec;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,7 +19,7 @@ public class TestNaorPinkasOt {
   private NaorPinkasOt ot;
   private Method encryptMessage;
   private Method decryptMessage;
-  private SecureRandom randNum;
+  private Drng randNum;
   private DHParameterSpec staticSpec;
 
   /**
@@ -31,11 +30,12 @@ public class TestNaorPinkasOt {
    */
   @BeforeEach
   public void setup() throws NoSuchMethodException, SecurityException {
-    randNum = new SecureRandom(HelperForTests.seedOne);
+    Drbg randBit = new AesCtrDrbg(HelperForTests.seedOne);
+    randNum = new DrngImpl(randBit);
     // fake network
     INetwork network = new PlainNetwork<>(0, 2, 0, null);
     staticSpec = DhParameters.getStaticDhParams();
-    this.ot = new NaorPinkasOt(2, randNum, network, staticSpec);
+    this.ot = new NaorPinkasOt(2, randBit, network, staticSpec);
     // Change visibility of private methods so they can be tested
     this.encryptMessage =
         NaorPinkasOt.class.getDeclaredMethod("encryptRandomMessage", BigInteger.class);
@@ -51,7 +51,7 @@ public class TestNaorPinkasOt {
   @Test
   public void testEncDec()
       throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-    BigInteger privateKey = new BigInteger(staticSpec.getP().bitLength(), randNum);
+    BigInteger privateKey = randNum.nextBigInteger(staticSpec.getP());
     BigInteger publicKey = staticSpec.getG().modPow(privateKey, staticSpec.getP());
     Pair<BigInteger, byte[]> encryptionData =
         (Pair<BigInteger, byte[]>) encryptMessage.invoke(ot, publicKey);
@@ -68,7 +68,7 @@ public class TestNaorPinkasOt {
   @Test
   public void testFailedEncDec()
       throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-    BigInteger privateKey = new BigInteger(staticSpec.getP().bitLength(), randNum);
+    BigInteger privateKey = randNum.nextBigInteger(staticSpec.getP());
     BigInteger publicKey = staticSpec.getG().modPow(privateKey, staticSpec.getP());
     Pair<BigInteger, byte[]> encryptionData =
         (Pair<BigInteger, byte[]>) encryptMessage.invoke(ot, publicKey);

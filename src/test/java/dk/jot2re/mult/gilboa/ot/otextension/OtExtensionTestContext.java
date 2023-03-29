@@ -3,10 +3,12 @@ package dk.jot2re.mult.gilboa.ot.otextension;
 import dk.jot2re.mult.gilboa.cointossing.CoinTossing;
 import dk.jot2re.mult.gilboa.helper.HelperForTests;
 import dk.jot2re.mult.gilboa.ot.base.DummyOt;
+import dk.jot2re.mult.gilboa.util.AesCtrDrbg;
+import dk.jot2re.mult.gilboa.util.AesCtrDrbgFactory;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.network.INetwork;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 
 public class OtExtensionTestContext {
   private final INetwork network;
@@ -32,7 +34,7 @@ public class OtExtensionTestContext {
       int lambdaSecurityParam, INetwork network) {
     this.network = network;
     DummyOt dummyOt = new DummyOt(otherId, network);
-    SecureRandom rand = new SecureRandom(HelperForTests.seedOne);
+    Drbg rand = new AesCtrDrbg(HelperForTests.seedOne);
     this.seedOts = new RotList(rand, kbitLength);
     if (myId < otherId) {
       this.seedOts.send(dummyOt);
@@ -61,7 +63,7 @@ public class OtExtensionTestContext {
    * @return A new resources pool
    */
   public OtExtensionResourcePool createResources(int instanceId) {
-    SecureRandom rand = createRand(instanceId);
+    Drbg rand = createRand(instanceId);
     CoinTossing ct = new CoinTossing(myId, otherId, rand);
     ct.initialize(network);
     return new OtExtensionResourcePoolImpl(myId, otherId, kbitLength,
@@ -75,9 +77,9 @@ public class OtExtensionTestContext {
    *          The ID which we wish to base the randomness generator on.
    * @return A new randomness generator unique for {@code instanceId}
    */
-  public SecureRandom createRand(int instanceId) {
+  public Drbg createRand(int instanceId) {
     ByteBuffer idBuffer = ByteBuffer.allocate(HelperForTests.seedOne.length + Integer.BYTES);
     byte[] seedBytes = idBuffer.putInt(instanceId).put(HelperForTests.seedOne).array();
-    return new SecureRandom(seedBytes);
+    return AesCtrDrbgFactory.fromDerivedSeed(seedBytes);
   }
 }

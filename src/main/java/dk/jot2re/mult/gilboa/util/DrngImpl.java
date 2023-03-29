@@ -8,13 +8,13 @@ import java.security.SecureRandom;
  */
 public class DrngImpl implements Drng {
 
-  private SecureRandom random;
+  private Drbg random;
 
   /**
    * Creates a number generator from a bit generator.
    * @param drbg a deterministic random bit generator
    */
-  public DrngImpl(SecureRandom drbg) {
+  public DrngImpl(Drbg drbg) {
     this.random = drbg;
   }
 

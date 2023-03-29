@@ -2,10 +2,10 @@ package dk.jot2re.mult.gilboa.ot.otextension;
 
 
 import dk.jot2re.mult.gilboa.cointossing.CoinTossing;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.network.INetwork;
 
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 
 public interface OtExtensionResourcePool {
   int getMyId();
@@ -70,11 +70,11 @@ public interface OtExtensionResourcePool {
    * The DRBG is useful for protocols which needs a form of shared randomness where the random bytes
    * are not easily guessed by an adversary. This generator will provide exactly that. For explicit
    * security guarantees, we refer to implementations of
-   * {@link dk.alexandra.fresco.framework.util.Drbg}.
+   * {@link Drbg}.
    *
    * @return An instance of a DRBG.
    */
-  SecureRandom getRandomGenerator();
+  Drbg getRandomGenerator();
 
   INetwork getNetwork();
 

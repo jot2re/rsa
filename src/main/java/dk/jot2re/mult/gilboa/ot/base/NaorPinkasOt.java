@@ -35,7 +35,7 @@ public class NaorPinkasOt implements Ot {
    * @param network The underlying network to use
    * @param params The Diffie-Hellman parameters to use
    */
-  public NaorPinkasOt(int otherId, SecureRandom randBit, INetwork network, DHParameterSpec params) {
+  public NaorPinkasOt(int otherId, Drbg randBit, INetwork network, DHParameterSpec params) {
     this.otherId = otherId;
     this.network = network;
     this.hashDigest = ExceptionConverter.safe(() -> MessageDigest.getInstance(HASH_ALGORITHM),

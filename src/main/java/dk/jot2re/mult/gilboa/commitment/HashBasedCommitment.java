@@ -1,11 +1,11 @@
 package dk.jot2re.mult.gilboa.commitment;
 
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.ExceptionConverter;
 import dk.jot2re.mult.gilboa.util.MaliciousException;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Arrays;
 
 /**
@@ -21,7 +21,7 @@ import java.util.Arrays;
  * </p>
  *
  */
-public class HashBasedCommitment implements Serializable {
+public class HashBasedCommitment implements  Serializable{
 
   private static final String HASH_ALGORITHM = "SHA-256";
   /**
@@ -32,12 +32,12 @@ public class HashBasedCommitment implements Serializable {
    * The actual value representing the commitment.
    */
   private byte[] commitmentVal = null;
-  private final MessageDigest digest;
+  private transient final MessageDigest digest;
 
   /**
    * Constructs a new commitment, not yet committed to any value.
    */
-  public HashBasedCommitment() {
+  public HashBasedCommitment(){
     digest = ExceptionConverter.safe(
         () -> MessageDigest.getInstance(HASH_ALGORITHM),
         "Missing secure, hash function which is dependent in this library");
@@ -52,7 +52,7 @@ public class HashBasedCommitment implements Serializable {
    *          The element to commit to.
    * @return The opening information needed to open the commitment.
    */
-  public byte[] commit(SecureRandom rand, byte[] value) {
+  public byte[] commit(Drbg rand, byte[] value) {
     if (commitmentVal != null) {
       throw new IllegalStateException("Already committed");
     }

@@ -50,22 +50,30 @@ public class GilboaMult implements IMult {
     }
 
     private BigInteger senderRole(BigInteger value, BigInteger modulo) {
-        int amount = modulo.bitLength();
-        int amountBytes = amount + ceil(resources.getLambdaSecurityParam(), 8);
-        Pair<List<StrictBitVector>, List<StrictBitVector>> seedRes = sender.extend(amount);
-        List<byte[]> expandedZero = new ArrayList<>(amount);
-        ArrayList<byte[]> correction = new ArrayList<>(amount);
+        // todo check amount size is divisible by 8 and after that a two power
+        int amountBits = modulo.bitLength();
+        int amountBytes = amountBits/8;
+        int expansionSizeBytes = amountBytes + ceil(resources.getLambdaSecurityParam(), 8);
+        Pair<List<StrictBitVector>, List<StrictBitVector>> seedRes = sender.extend(amountBits);
+        List<byte[]> expandedZero = new ArrayList<>(amountBits);
+        ArrayList<byte[]> correction = new ArrayList<>(amountBits);
         BigInteger z = BigInteger.ZERO;
-        for (int i = 0; i < amount; i++) {
-            byte[] curZero = expand(seedRes.getFirst().get(i), amountBytes);
+        for (int i = 0; i < amountBits; i++) {
+            byte[] curZero = expand(seedRes.getFirst().get(i), expansionSizeBytes);
             BigInteger curZeroVal = new BigInteger(1, curZero).mod(modulo);
             BigInteger actualOneVal = curZeroVal.add(value).mod(modulo);
-            byte[] actualOneBytes = actualOneVal.toByteArray();
-            byte[] curOne = expand(seedRes.getSecond().get(i), amount);
+            byte[] oneBytes = actualOneVal.toByteArray();
+            byte[] actualOneBytes = new byte[amountBytes];
+            for (int j = 0; j < amountBytes; j++) {
+                if (oneBytes.length > j) {
+                    actualOneBytes[actualOneBytes.length-j-1] = oneBytes[oneBytes.length-j-1];
+                }
+            }
+            byte[] curOne = expand(seedRes.getSecond().get(i), amountBytes);
             ByteArrayHelper.xor(curOne, actualOneBytes);
             correction.add(curOne);
             expandedZero.add(curZero);
-            z.add(curZeroVal.multiply(BigInteger.TWO.pow(i))).mod(modulo);
+            z = z.add(curZeroVal.multiply(BigInteger.TWO.pow(i))).mod(modulo);
         }
         z = z.negate().mod(modulo);
         network.send(resources.getOtherId(), correction);
@@ -73,26 +81,27 @@ public class GilboaMult implements IMult {
     }
 
     private BigInteger receiverRole(BigInteger value, BigInteger modulo) {
-        int amount = modulo.bitLength();
-        int amountBytes = amount + ceil(resources.getLambdaSecurityParam(), 8);
-        StrictBitVector choice = choices(value, amount);
+        int amountBits = modulo.bitLength();
+        int amountBytes = amountBits/8;
+        int expansionSizeBytes = amountBytes + ceil(resources.getLambdaSecurityParam(), 8);
+        StrictBitVector choice = choices(value, amountBits);
         List<StrictBitVector> results = receiver.extend(choice);
         ArrayList<byte[]> correction = network.receive(resources.getOtherId());
-        List<byte[]> expandedBytes = new ArrayList<>(amount);
-        List<BigInteger> expandedVals = new ArrayList<>(amount);
+        List<byte[]> expandedBytes = new ArrayList<>(amountBits);
+        List<BigInteger> expandedVals = new ArrayList<>(amountBits);
         BigInteger z = BigInteger.ZERO;
-        for (int i = 0; i < amount; i++) {
+        for (int i = 0; i < amountBits; i++) {
             byte[] curExpanded;
-            if (choice.getBit(i)) {
+            if (choice.getBit(i, false)) {
                 // choice bit=1 so we must correct
-                curExpanded = expand(results.get(i), amount);
+                curExpanded = expand(results.get(i), amountBytes);
                 ByteArrayHelper.xor(curExpanded, correction.get(i));
             } else {
                 // choice bit=0 so we must expand enough and do modulo
-                curExpanded = expand(results.get(i), amountBytes);
+                curExpanded = expand(results.get(i), expansionSizeBytes);
             }
             BigInteger curVal = new BigInteger(1, curExpanded).mod(modulo);
-            z.add(curVal.multiply(BigInteger.TWO.pow(i))).mod(modulo);
+            z = z.add(curVal.multiply(BigInteger.TWO.pow(i))).mod(modulo);
             expandedVals.add(curVal);
             expandedBytes.add(curExpanded);
         }
@@ -103,7 +112,7 @@ public class GilboaMult implements IMult {
         StrictBitVector res = new StrictBitVector(bits);
         for (int i = 0; i < bits; i++) {
             int currentBit = value.shiftRight(i).and(BigInteger.ONE).intValueExact();
-            res.setBit(i, currentBit == 1 ? true : false);
+            res.setBit(i, currentBit == 1 ? true : false, false);
         }
         return res;
     }

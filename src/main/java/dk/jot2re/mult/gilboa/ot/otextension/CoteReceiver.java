@@ -1,11 +1,11 @@
 package dk.jot2re.mult.gilboa.ot.otextension;
 
 
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.Pair;
 import dk.jot2re.mult.gilboa.util.StrictBitVector;
 import dk.jot2re.network.INetwork;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,7 +18,7 @@ import java.util.stream.IntStream;
 public class CoteReceiver extends CoteShared {
   private final OtExtensionResourcePool resources;
   private final INetwork network;
-  private final List<Pair<SecureRandom, SecureRandom>> prgs;
+  private final List<Pair<Drbg, Drbg>> prgs;
 
   /**
    * Constructs a correlated OT extension with errors receiver instance.
@@ -33,8 +33,8 @@ public class CoteReceiver extends CoteShared {
     this.prgs = new ArrayList<>(resources.getComputationalSecurityParameter());
     for (Pair<StrictBitVector, StrictBitVector> pair : resources.getSeedOts()
         .getSentMessages()) {
-      SecureRandom prgZero = initPrg(pair.getFirst());
-      SecureRandom prgOne = initPrg(pair.getSecond());
+      Drbg prgZero = initPrg(pair.getFirst());
+      Drbg prgOne = initPrg(pair.getSecond());
       prgs.add(new Pair<>(prgZero, prgOne));
     }
     this.resources = resources;

@@ -1,11 +1,11 @@
 package dk.jot2re.mult.gilboa.cointossing;
 
 import dk.jot2re.mult.gilboa.commitment.HashBasedCommitment;
+import dk.jot2re.mult.gilboa.util.AesCtrDrbg;
 import dk.jot2re.mult.gilboa.util.ByteArrayHelper;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.StrictBitVector;
 import dk.jot2re.network.INetwork;
-
-import java.security.SecureRandom;
 
 /**
  * Class implementing two-party coin-tossing. That is, agreement on a random
@@ -20,9 +20,9 @@ import java.security.SecureRandom;
 public class CoinTossing {
   private final int otherId;
   private final int myId;
-  private final SecureRandom rand;
+  private final Drbg rand;
   private boolean initialized = false;
-  private SecureRandom coinTossingPrg;
+  private Drbg coinTossingPrg;
 
   /**
    * Constructs a coin-tossing protocol between two parties.
@@ -35,7 +35,7 @@ public class CoinTossing {
    * @param rand
    *          Object used for randomness generation
    */
-  public CoinTossing(int myId, int otherId, SecureRandom rand) {
+  public CoinTossing(int myId, int otherId, Drbg rand) {
     this.myId = myId;
     this.otherId = otherId;
     this.rand = rand;
@@ -57,7 +57,7 @@ public class CoinTossing {
     rand.nextBytes(seed);
     byte[] otherSeed = exchangeSeeds(seed, network);
     ByteArrayHelper.xor(seed, otherSeed);
-    this.coinTossingPrg = new SecureRandom(seed);
+    this.coinTossingPrg = new AesCtrDrbg(seed);
     initialized = true;
   }
 

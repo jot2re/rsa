@@ -1,9 +1,9 @@
 package dk.jot2re.mult.gilboa.ot.otextension;
 
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.StrictBitVector;
 import dk.jot2re.network.INetwork;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,7 +16,7 @@ public class CoteSender extends CoteShared {
   private final OtExtensionResourcePool resources;
   private final INetwork network;
   // The prgs based on the seeds learned from OT
-  private final List<SecureRandom> prgs;
+  private final List<Drbg> prgs;
   // The random messages choices for the random seed OTs
   private StrictBitVector otChoices;
 

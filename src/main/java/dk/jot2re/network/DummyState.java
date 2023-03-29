@@ -1,9 +1,13 @@
 package dk.jot2re.network;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.*;
 
 public class DummyState {
+    private static final Logger logger = LoggerFactory.getLogger(DummyState.class);
     /**
      * Thread safe map, mapping from *recipient* to the deque of message pairs, of the sender and receiver
      */
@@ -22,6 +26,7 @@ public class DummyState {
 
     public synchronized void put(int senderId, int receiverId, Serializable message) throws IllegalAccessException {
         if (!messages.get(receiverId).get(senderId).add(message)) {
+            logger.error("Could not add data");
             throw new IllegalAccessException("Could not add data to network");
         }
     }

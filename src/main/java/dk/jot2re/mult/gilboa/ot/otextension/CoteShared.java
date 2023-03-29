@@ -1,9 +1,10 @@
 package dk.jot2re.mult.gilboa.ot.otextension;
 
+import dk.jot2re.mult.gilboa.util.AesCtrDrbgFactory;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.StrictBitVector;
 
 import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 
 /**
  * Superclass containing the common methods for the sender and
@@ -29,10 +30,10 @@ public abstract class CoteShared {
    *          The seed to initialize the PRG from
    * @return The initialized PRG
    */
-  SecureRandom initPrg(StrictBitVector originalSeed) {
+  Drbg initPrg(StrictBitVector originalSeed) {
     byte[] seedBytes = originalSeed.toByteArray();
     ByteBuffer idBuffer = ByteBuffer.allocate(seedBytes.length + Integer.BYTES);
     byte[] newSeed = idBuffer.putInt(instanceId).put(seedBytes).array();
-    return new SecureRandom(newSeed);
+    return AesCtrDrbgFactory.fromDerivedSeed(newSeed);
   }
 }

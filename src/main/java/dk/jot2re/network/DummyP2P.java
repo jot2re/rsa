@@ -49,6 +49,7 @@ public class DummyP2P implements IP2P {
 
             state.put(myId, peerId, data);
         } catch (Exception e) {
+            logger.error("ERROR: " +  e.getMessage());
             throw new RuntimeException(e.getMessage(), e);
         }
     }

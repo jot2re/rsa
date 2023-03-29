@@ -3,6 +3,8 @@ package dk.jot2re.mult.gilboa.ot.otextension;
 
 import dk.jot2re.mult.gilboa.cointossing.CoinTossing;
 import dk.jot2re.mult.gilboa.helper.HelperForTests;
+import dk.jot2re.mult.gilboa.util.AesCtrDrbg;
+import dk.jot2re.mult.gilboa.util.Drbg;
 import dk.jot2re.mult.gilboa.util.StrictBitVector;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.PlainNetwork;
@@ -17,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestCote {
   private final int kbitSecurity = 128;
   private CoteFactory cote;
-  private SecureRandom rand;
+  private Drbg rand;
   private INetwork network;
 
   /**
@@ -26,7 +28,7 @@ public class TestCote {
   @BeforeEach
   public void setup() throws NoSuchFieldException, SecurityException,
       IllegalArgumentException, IllegalAccessException {
-    rand = new SecureRandom(HelperForTests.seedOne);
+    rand = new AesCtrDrbg(HelperForTests.seedOne);
     // fake network
     network = new PlainNetwork<>(0, 2, 0, null);
     RotList seedOts = new RotList(rand, kbitSecurity);
