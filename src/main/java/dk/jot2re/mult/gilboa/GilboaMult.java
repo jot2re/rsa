@@ -1,21 +1,18 @@
 package dk.jot2re.mult.gilboa;
 
 import dk.jot2re.mult.IMult;
-import dk.jot2re.mult.gilboa.oracle.Prg;
 import dk.jot2re.mult.gilboa.ot.otextension.OtExtensionResourcePool;
 import dk.jot2re.mult.gilboa.ot.otextension.RotFactory;
 import dk.jot2re.mult.gilboa.ot.otextension.RotReceiver;
 import dk.jot2re.mult.gilboa.ot.otextension.RotSender;
-import dk.jot2re.mult.gilboa.util.ByteArrayHelper;
-import dk.jot2re.mult.gilboa.util.Pair;
-import dk.jot2re.mult.gilboa.util.StrictBitVector;
+import dk.jot2re.mult.gilboa.util.*;
 import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static dk.jot2re.mult.gilboa.oracle.Util.ceil;
+import static dk.jot2re.mult.gilboa.util.Fiddling.ceil;
 
 
 public class GilboaMult implements IMult {
@@ -118,8 +115,9 @@ public class GilboaMult implements IMult {
     }
 
     private byte[] expand(StrictBitVector inputBits, int amountBytes) {
-        // TODO in general don't use secure random but something more efficient
-        Prg prg = new Prg(inputBits.toByteArray());
-        return prg.getBytes(amountBytes);
+        Drbg rng = new AesCtrDrbg(inputBits.toByteArray());
+        byte[] res = new byte[amountBytes];
+        rng.nextBytes(res);
+        return res;
     }
 }

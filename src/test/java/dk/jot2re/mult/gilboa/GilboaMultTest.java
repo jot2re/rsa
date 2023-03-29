@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class GilboaMultTest {
     private static final int COMP_SEC = 128;
     private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 1024-COMP_SEC-STAT_SEC;
+    private static final int DEFAULT_BIT_LENGTH = 8192-COMP_SEC-STAT_SEC;
 
     public static Map<Integer, OtExtensionResourcePool> getOtParameters(int parties, int comp_sec, int statSec) {
         try {

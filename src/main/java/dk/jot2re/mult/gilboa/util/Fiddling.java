@@ -1,6 +1,6 @@
-package dk.jot2re.mult.gilboa.oracle;
+package dk.jot2re.mult.gilboa.util;
 
-public class Util {
+public class Fiddling {
 
     public static int ceil(int numerator, int denominator) {
         int res = numerator/denominator;

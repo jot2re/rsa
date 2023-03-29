@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static dk.jot2re.rsa.RSATestUtils.share;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RSAUtilTest {
+public class RSAFiddlingTest {
     @ParameterizedTest
     @ValueSource(ints = {2, 3, 5})
     void testShare(int parties) {
