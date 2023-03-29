@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class GilboaMultTest {
     private static final int COMP_SEC = 128;
     private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 8192-COMP_SEC-STAT_SEC;
+    private static final int DEFAULT_BIT_LENGTH = 2048-COMP_SEC-STAT_SEC;
 
     public static Map<Integer, OtExtensionResourcePool> getOtParameters(int parties, int comp_sec, int statSec) {
         try {
@@ -45,11 +45,11 @@ public class GilboaMultTest {
         }
     }
 
-    public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec) {
+    public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec, boolean safeExpansion) {
         Map<Integer, IMult> mults = new HashMap<>(parties);
         Map<Integer, OtExtensionResourcePool> otResources = getOtParameters(parties, comp_sec, statSec);
         for (int i = 0; i < parties; i++) {
-            mults.put(i, new GilboaMult(otResources.get(i)));
+            mults.put(i, new GilboaMult(otResources.get(i), safeExpansion));
             mults.get(i).init(otResources.get(i).getNetwork());
         }
         return mults;
@@ -61,11 +61,11 @@ public class GilboaMultTest {
         BigInteger modulo = BigInteger.TWO.pow(DEFAULT_BIT_LENGTH).subtract(BigInteger.ONE);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
-        Map<Integer, IMult> mults = getMults(2, COMP_SEC, STAT_SEC);
+        Map<Integer, IMult> mults = getMults(2, COMP_SEC, STAT_SEC, true);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = BigInteger.valueOf(1) ;//new BigInteger(DEFAULT_BIT_LENGTH, rand);
-            B[i] = BigInteger.valueOf(1);//new BigInteger(DEFAULT_BIT_LENGTH, rand);
+            A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
+            B[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
