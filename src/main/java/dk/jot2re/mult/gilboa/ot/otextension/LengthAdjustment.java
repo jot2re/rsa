@@ -14,6 +14,7 @@ import java.util.Objects;
 final class LengthAdjustment {
 
   static final String DIGEST_ALGO = "SHA-256";
+  static final MessageDigest digest = getDigest(DIGEST_ALGO);
 
   private LengthAdjustment() {
     // Should not be instantiated
@@ -36,11 +37,11 @@ final class LengthAdjustment {
     if (candidate.length >= byteLength) {
       key = Arrays.copyOf(candidate, byteLength);
     } else {
+      digest.reset();
       key = new byte[byteLength];
       int offset = 0;
       int counter = 0;
       while (offset < byteLength) {
-        MessageDigest digest = getDigest(DIGEST_ALGO);
         digest.update(intToBytes(counter++));
         digest.update(candidate);
         int len = Math.min(digest.getDigestLength(), byteLength - offset);

@@ -11,12 +11,12 @@ public class DummyState {
     /**
      * Thread safe map, mapping from *recipient* to the deque of message pairs, of the sender and receiver
      */
-    private final Map<Integer, Map<Integer, Deque<Serializable>>> messages;
+    private final Map<Integer, Map<Integer, Queue<Serializable>>> messages;
 
     public DummyState(int parties) {
         messages = Collections.synchronizedMap(new HashMap<>(parties));
         for (int i = 0; i < parties; i++) {
-            Map<Integer, Deque<Serializable>> curMap = Collections.synchronizedMap(new HashMap<>(parties));
+            Map<Integer, Queue<Serializable>> curMap = Collections.synchronizedMap(new HashMap<>(parties));
             for (int j = 0; j < parties; j++) {
                 curMap.put(j, new LinkedList<>());
             }
@@ -32,7 +32,7 @@ public class DummyState {
     }
 
     public synchronized Serializable get(int senderId, int receiveId) {
-        return messages.get(receiveId).get(senderId).pollFirst();
+        return messages.get(receiveId).get(senderId).poll();
     }
 
     public int parties() {

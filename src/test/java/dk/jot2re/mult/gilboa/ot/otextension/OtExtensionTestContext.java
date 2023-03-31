@@ -63,7 +63,7 @@ public class OtExtensionTestContext {
    * @return A new resources pool
    */
   public OtExtensionResourcePool createResources(int instanceId) {
-    Drbg rand = createRand(instanceId);
+    Drbg rand = createRand(myId);
     CoinTossing ct = new CoinTossing(myId, otherId, rand);
     ct.initialize(network);
     return new OtExtensionResourcePoolImpl(myId, otherId, kbitLength,

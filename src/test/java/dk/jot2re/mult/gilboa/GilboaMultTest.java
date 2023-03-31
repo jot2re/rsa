@@ -10,10 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,37 +18,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class GilboaMultTest {
     private static final int COMP_SEC = 128;
     private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 2048-COMP_SEC-STAT_SEC;
+    private static final int DEFAULT_BIT_LENGTH = 32;// MUST be two-power
 
-    public static Map<Integer, OtExtensionResourcePool> getOtParameters(int parties, int comp_sec, int statSec) {
-        try {
-            // todo generalize to more than 2
-            DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
-            Map<Integer, INetwork> networks = netFactory.getNetworks();
+    public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec, boolean safeExpansion) throws ExecutionException, InterruptedException {
+        // todo generalize to more than 2
+        DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
+        Map<Integer, INetwork> networks = netFactory.getNetworks();
 
-            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-            Future<OtExtensionResourcePool> contextZero = executor.submit(() -> (new OtExtensionTestContext(0,1, comp_sec, statSec, networks.get(0))).createResources(0));
-            Future<OtExtensionResourcePool> contextOne = executor.submit(() -> (new OtExtensionTestContext(1,0, comp_sec, statSec, networks.get(1))).createResources(0));
-            executor.shutdown();
-            assertTrue(executor.awaitTermination(30000, TimeUnit.SECONDS));
-
-            Map<Integer, OtExtensionResourcePool> otResources = new HashMap<>(2);
-            otResources.put(0, contextZero.get());
-            otResources.put(1, contextOne.get());
-            return otResources;
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec, boolean safeExpansion) {
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        Future<IMult> multZero = executor.submit(() -> {
+            OtExtensionResourcePool pool = (new OtExtensionTestContext(0,1, comp_sec, statSec, networks.get(0))).createResources(0);
+            IMult mult = new GilboaMult(pool, 32*DEFAULT_BIT_LENGTH, safeExpansion);
+            mult.init(networks.get(0));
+            return mult;
+        });
+        Future<IMult> multOne = executor.submit(() -> {
+            OtExtensionResourcePool pool =(new OtExtensionTestContext(1,0, comp_sec, statSec, networks.get(1))).createResources(0);
+            IMult mult = new GilboaMult(pool, 32*DEFAULT_BIT_LENGTH, safeExpansion);
+            mult.init(networks.get(1));
+            return mult;
+        });
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(30000, TimeUnit.SECONDS));
         Map<Integer, IMult> mults = new HashMap<>(parties);
-        Map<Integer, OtExtensionResourcePool> otResources = getOtParameters(parties, comp_sec, statSec);
-        for (int i = 0; i < parties; i++) {
-            mults.put(i, new GilboaMult(otResources.get(i), safeExpansion));
-            mults.get(i).init(otResources.get(i).getNetwork());
-        }
+        mults.put(0, multZero.get());
+        mults.put(1, multOne.get());
         return mults;
     }
 
@@ -71,7 +62,13 @@ public class GilboaMultTest {
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI], modulo)));
+            C.add(executor.submit(() -> {
+                long start = System.currentTimeMillis();
+                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], modulo);
+                long stop = System.currentTimeMillis();
+                System.out.println("sender " + (stop-start));
+                return res;
+            }));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));

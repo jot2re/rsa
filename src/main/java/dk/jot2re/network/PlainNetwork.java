@@ -14,7 +14,7 @@ public class PlainNetwork<T extends Serializable> implements INetwork {
     private final List<Integer> peers;
     private final List<Map<Integer, T>> resultList;
     private int counter = 0;
-    private BigInteger defaultResponse = BigInteger.ZERO;
+    private T defaultResponse = (T) BigInteger.ZERO;
 
     public PlainNetwork(int myId, int parties, int pivotId, List<Map<Integer, T>> resultList) {
         this.myId = myId;
@@ -40,8 +40,12 @@ public class PlainNetwork<T extends Serializable> implements INetwork {
     }
 
     @Override
-    public <T extends Serializable> T receive(int senderId) {
-        return (T) BigInteger.ZERO;
+    public T receive(int senderId) {
+        if (resultList != null && resultList.get(counter) != null) {
+            return resultList.get(counter++).get(senderId);
+        } else {
+            return defaultResponse;
+        }
     }
 
     @Override
@@ -87,7 +91,7 @@ public class PlainNetwork<T extends Serializable> implements INetwork {
         }
     }
 
-    public void setDefaultResponse(BigInteger response) {
+    public void setDefaultResponse(T response) {
         this.defaultResponse = response;
     }
 }

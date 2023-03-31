@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class DummyNetwork implements INetwork {
     public static long TIME_OUT_MS  = 10000;
-    public static final long WAIT_MS  = 1;
+    public static final int WAIT_MS = 1;
     private final int myId;
     private final int parties;
     private final Map<Integer, DummyP2P> networks;
@@ -40,23 +40,25 @@ public class DummyNetwork implements INetwork {
 
     @Override
     public Serializable receive(int senderId) {
-        long startTime = System.currentTimeMillis();
-        Serializable res = null;
-        while (res == null && System.currentTimeMillis() < startTime + TIME_OUT_MS){
-            res = networks.get(senderId).receive();
-            try {
-                Thread.sleep(WAIT_MS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        Serializable res = networks.get(senderId).receive();
+        if (res == null) {
+            long startTime = System.currentTimeMillis();
+            while (res == null && System.currentTimeMillis() < startTime + TIME_OUT_MS) {
+                res = networks.get(senderId).receive();
+                try {
+                    Thread.sleep(WAIT_MS);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            long nowTime = System.currentTimeMillis();
+            networkTime += nowTime-startTime;
         }
-        long nowTime = System.currentTimeMillis();
-        networkTime += nowTime-startTime;
         return res;
     }
 
     @Override
-    public synchronized void sendToAll(Serializable data) throws NetworkException {
+    public void sendToAll(Serializable data) throws NetworkException {
         for (IP2P network: networks.values()) {
             network.send(data);
         }
