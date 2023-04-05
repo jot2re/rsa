@@ -6,6 +6,7 @@ import dk.jot2re.mult.gilboa.util.*;
 import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import static dk.jot2re.mult.gilboa.util.Fiddling.ceil;
 
@@ -75,25 +76,21 @@ public class GilboaMult implements IMult {
     }
 
     private BigInteger senderRole(BigInteger value, BigInteger modulo) {
-//        Pair<List<StrictBitVector>, List<StrictBitVector>> seedRes = sender.extend(amountBits);
-//        ArrayList<byte[]> correction = new ArrayList<>(amountBits);
+        List<BigInteger> shares = factory.send(value, modulo);
         BigInteger z = BigInteger.ZERO;
         for (int i = 0; i < amountBits; i++) {
-            BigInteger curZeroVal = factory.send(value, modulo);
-            z = z.add(curZeroVal.multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
+            z = z.add(shares.get(i).multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
         }
         z = z.negate().mod(modulo);
-//        network.send(resources.getOtherId(), correction);
         return z;
     }
 
     private BigInteger receiverRole(BigInteger value, BigInteger modulo) {
         StrictBitVector choice = choices(value, amountBits);
-//        ArrayList<byte[]> correction = network.receive(resources.getOtherId());
+        List<BigInteger> shares = factory.receive(choice, amountBytes);
         BigInteger z = BigInteger.ZERO;
         for (int i = 0; i < amountBits; i++) {
-            BigInteger curVal = factory.receive(choice.getBit(i, false), amountBytes);
-            z = z.add(curVal.multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
+            z = z.add(shares.get(i).multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
         }
         return z;
     }
