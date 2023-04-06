@@ -62,7 +62,7 @@ public class RSATestUtils {
 
     public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties) {
         try {
-            // M > 2^2*bits TODO is that correct?
+            // M > 2^(2*bits)
             BigInteger M = RSATestUtils.prime(2*bits+1, new Random(42));
             // P > mN, we assume at most 2048 parties
             BigInteger P = RSATestUtils.prime(2*bits+11, new Random(42));

@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractProtocolTest {
-    protected static final int DEFAULT_BIT_LENGTH = 128;
+    protected static final int DEFAULT_BIT_LENGTH = 1024;
     protected static final int DEFAULT_STAT_SEC = 80;
     protected static final int DEFAULT_PARTIES = 3;
     protected static final Random rand = new Random(42);

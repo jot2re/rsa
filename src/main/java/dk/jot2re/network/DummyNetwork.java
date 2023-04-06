@@ -12,7 +12,7 @@ public class DummyNetwork implements INetwork {
     private final int parties;
     private final Map<Integer, DummyP2P> networks;
 
-    private int networkTime = 0;
+    private long networkTime = 0;
 
     public DummyNetwork(DummyState state, int myId) {
         this.myId = myId;
@@ -42,7 +42,7 @@ public class DummyNetwork implements INetwork {
     public Serializable receive(int senderId) {
         Serializable res = networks.get(senderId).receive();
         if (res == null) {
-            long startTime = System.currentTimeMillis();
+            long startTime = System.nanoTime();
             while (res == null && System.currentTimeMillis() < startTime + TIME_OUT_MS) {
                 res = networks.get(senderId).receive();
                 try {
@@ -51,7 +51,7 @@ public class DummyNetwork implements INetwork {
                     throw new RuntimeException(e);
                 }
             }
-            long nowTime = System.currentTimeMillis();
+            long nowTime = System.nanoTime();
             networkTime += nowTime-startTime;
         }
         return res;
@@ -98,8 +98,9 @@ public class DummyNetwork implements INetwork {
         return rounds;
     }
 
-    public int getNetworkTime() {
-        return networkTime;
+    public long getNetworkTime() {
+        // convert to ms
+        return networkTime/1000000;
     }
 
 }

@@ -23,12 +23,12 @@ public class RSAUtil {
     public static BigInteger open(Parameters params, BigInteger share, BigInteger modulo) throws NetworkException {
         params.getNetwork().sendToAll(share);
         Map<Integer, BigInteger> otherShares = params.getNetwork().receiveFromAllPeers();
-        return otherShares.values().stream().reduce(share, (a, b) -> a.add(b).mod(modulo));
+        return otherShares.values().stream().reduce(share, (a, b) -> a.add(b)).mod(modulo);
     }
 
     public static BigInteger addConst(Parameters params, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
         if (params.getMyId() == 0) {
-            return share.add(constant).mod(modulo);
+            return share.add(constant);
         } else {
             return share;
         }
@@ -36,7 +36,7 @@ public class RSAUtil {
 
     public static BigInteger subConst(Parameters params, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
         if (params.getMyId() == 0) {
-            return share.subtract(constant).mod(modulo);
+            return share.subtract(constant);
         } else {
             return share;
         }

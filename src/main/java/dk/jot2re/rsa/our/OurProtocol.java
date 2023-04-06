@@ -137,5 +137,9 @@ public class OurProtocol {
         BigInteger y = RSAUtil.open(params, yShare, params.getQ());
         return y.equals(BigInteger.ZERO);
     }
+
+    public OurParameters getParams() {
+        return params;
+    }
 }
 

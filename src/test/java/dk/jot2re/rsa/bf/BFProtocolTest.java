@@ -1,6 +1,8 @@
 package dk.jot2re.rsa.bf;
 
 import dk.jot2re.AbstractProtocolTest;
+import dk.jot2re.mult.DummyMult;
+import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -44,6 +46,11 @@ public class BFProtocolTest extends AbstractProtocolTest {
 
         Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
         runProtocolTest(parameters, protocolRunner, checker);
+        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
+        System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());
+        System.out.println("Nettime " + ((DummyNetwork) parameters.get(0).getNetwork()).getNetworkTime());
+        System.out.println("Nettrans " + ((DummyNetwork) parameters.get(0).getNetwork()).getTransfers());
+        System.out.println("Net bytes " + ((DummyNetwork) parameters.get(0).getNetwork()).getBytesSent());
     }
 
     // First 3 tests are from https://www.mathworks.com/help/symbolic/jacobisymbol.html
