@@ -33,7 +33,11 @@ public class OurProtocolTest extends AbstractProtocolTest {
             if (!protocol.validateParameters(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N)) {
                 return false;
             }
-            return protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
+            long start = System.currentTimeMillis();
+            boolean res = protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
+            long stop = System.currentTimeMillis();
+            System.out.println("time: " + (stop-start));
+            return res;
         };
 
         AbstractProtocolTest.ResultCheck<Boolean> checker = (res) -> {

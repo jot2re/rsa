@@ -56,8 +56,8 @@ public class IPSOTSender {
         List<BigInteger> deltas = new ArrayList<>(amount);
         for (int i = 0; i < amount; i++) {
             byte[] randZeroBytes = IPSOTFactory.expand(randomMessages.getFirst().get(offset+i).toByteArray(), expansionSizeBytes);
-            BigInteger randZero = new BigInteger(1, randZeroBytes).mod(modulo);
-            BigInteger delta = randZero.subtract(value.multiply(uValues.getFirst().get(i))).mod(modulo);
+            BigInteger randZero = new BigInteger(1, randZeroBytes);
+            BigInteger delta = randZero.subtract(value.multiply(uValues.getFirst().get(i)));
             BigInteger oneMsg = value.multiply(uValues.getSecond().get(i)).add(delta).mod(modulo);
             byte[] oneAdjustment = moveToArray(oneMsg, expansionSizeBytes);
             byte[] randOneBytes = IPSOTFactory.expand(randomMessages.getSecond().get(offset+i).toByteArray(), expansionSizeBytes);

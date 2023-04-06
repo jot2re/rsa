@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class GilboaMultTest {
     private static final int COMP_SEC = 128;
     private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 1024;// MUST be two-power
+    private static final int DEFAULT_BIT_LENGTH = 2048;// MUST be two-power
 
     public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec, boolean safeExpansion) throws ExecutionException, InterruptedException {
         // todo generalize to more than 2

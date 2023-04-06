@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IPSMultTest {
     private static final int COMP_SEC = 128;
     private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 1024;// MUST be two-power
+    private static final int DEFAULT_BIT_LENGTH = 8192;// MUST be two-power
 
     public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec, boolean safeExpansion) throws ExecutionException, InterruptedException {
         // todo generalize to more than 2
@@ -51,7 +51,7 @@ public class IPSMultTest {
         BigInteger modulo = BigInteger.TWO.pow(DEFAULT_BIT_LENGTH).subtract(BigInteger.ONE);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
-        Map<Integer, IMult> mults = getMults(2, COMP_SEC, STAT_SEC, true);
+        Map<Integer, IMult> mults = getMults(2, COMP_SEC, STAT_SEC, false);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
