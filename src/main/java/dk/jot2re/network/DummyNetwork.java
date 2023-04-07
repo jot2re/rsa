@@ -43,17 +43,26 @@ public class DummyNetwork implements INetwork {
         Serializable res = networks.get(senderId).receive();
         if (res == null) {
             long startTime = System.nanoTime();
-            while (res == null && System.currentTimeMillis() < startTime + TIME_OUT_MS) {
+            while (res == null) {
                 res = networks.get(senderId).receive();
-                try {
-                    Thread.sleep(WAIT_MS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
             }
             long nowTime = System.nanoTime();
             networkTime += nowTime-startTime;
         }
+//        Serializable res = networks.get(senderId).receive();
+//        if (res == null) {
+//            long startTime = System.nanoTime();
+//            while (res == null && System.currentTimeMillis() < startTime + TIME_OUT_MS) {
+//                res = networks.get(senderId).receive();
+//                try {
+//                    Thread.sleep(WAIT_MS);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//            long nowTime = System.nanoTime();
+//            networkTime += nowTime-startTime;
+//        }
         return res;
     }
 
@@ -72,6 +81,13 @@ public class DummyNetwork implements INetwork {
     @Override
     public int myId() {
         return myId;
+    }
+
+    public void resetCount() {
+        networkTime = 0;
+        for (DummyP2P network: networks.values()) {
+            network.resetCount();
+        }
     }
 
     public long getBytesSent() {

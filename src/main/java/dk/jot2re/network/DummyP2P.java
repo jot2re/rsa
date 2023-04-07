@@ -74,6 +74,12 @@ public class DummyP2P implements IP2P {
         return peerId;
     }
 
+    public void resetCount() {
+        bytesSent = 0;
+        transfers = 0;
+        rounds = 0;
+    }
+
     public long getBytesSent() {
         return bytesSent;
     }

@@ -11,14 +11,15 @@ import dk.jot2re.network.INetwork;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MultResourcePool {
+public class OTMultResourcePool {
+    // todo refactor into a basic resource containing the variables we always need
     private final int myId;
     private final int parties;
     private final int compSec;
     private final int statSec;
     private final Map<Integer, OtExtensionResourcePool> otResources;
 
-    public MultResourcePool(Map<Integer, Ot> ots, int myId, int compSec, int statSec, INetwork network, Drbg drbg) {
+    public OTMultResourcePool(Map<Integer, Ot> ots, int myId, int compSec, int statSec, INetwork network, Drbg drbg) {
         this(myId, compSec, statSec, network, drbg, makeSeedOts(myId, compSec, drbg, ots));
     }
 
@@ -40,7 +41,7 @@ public class MultResourcePool {
         return res;
     }
 
-    public MultResourcePool(int myId, int compSec, int statSec, INetwork network, Drbg drbg, Map<Integer, RotList> seedOts) {
+    public OTMultResourcePool(int myId, int compSec, int statSec, INetwork network, Drbg drbg, Map<Integer, RotList> seedOts) {
         this.myId = myId;
         this.parties = seedOts.size()+1;
         this.compSec = compSec;

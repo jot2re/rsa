@@ -1,7 +1,7 @@
 package dk.jot2re.mult.ot.ips;
 
 import dk.jot2re.mult.IMult;
-import dk.jot2re.mult.ot.MultResourcePool;
+import dk.jot2re.mult.ot.OTMultResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
 import dk.jot2re.network.INetwork;
 
@@ -15,7 +15,7 @@ import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 public class IPSMult implements IMult {
     private static final int DEFAULT_BATCH_SIZE = 1048576;
-    private final MultResourcePool resources;
+    private final OTMultResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
     private INetwork network;
@@ -27,13 +27,13 @@ public class IPSMult implements IMult {
      * If safeExpansion is false, then it is required that the modulo is exponentially close to a two-power.
      * batchSize must be a 2-power
      */
-    public IPSMult(MultResourcePool resources, int batchSize, boolean safeExpansion) {
+    public IPSMult(OTMultResourcePool resources, int batchSize, boolean safeExpansion) {
         this.resources = resources;
         this.safeExpansion = safeExpansion;
         this.adjustedBatchSize = batchSize - resources.getCompSec()- resources.getStatSec();
     }
 
-    public IPSMult(MultResourcePool resources) {
+    public IPSMult(OTMultResourcePool resources) {
         this.resources = resources;
         this.safeExpansion = true;
         this.adjustedBatchSize = DEFAULT_BATCH_SIZE - resources.getCompSec()- resources.getStatSec();

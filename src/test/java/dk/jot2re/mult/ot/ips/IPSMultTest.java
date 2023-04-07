@@ -1,16 +1,18 @@
 package dk.jot2re.mult.ot.ips;
 
 import dk.jot2re.mult.IMult;
-import dk.jot2re.mult.ot.MultResourcePool;
+import dk.jot2re.mult.ot.OTMultResourcePool;
 import dk.jot2re.mult.ot.ot.base.DummyOt;
 import dk.jot2re.mult.ot.ot.base.Ot;
 import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.Drbg;
+import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.DummyNetworkFactory;
 import dk.jot2re.network.INetwork;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
@@ -25,7 +27,6 @@ public class IPSMultTest {
     private static final int DEFAULT_BIT_LENGTH = 2048;// MUST be two-power
 
     public static Map<Integer, IMult> getMults(int parties, int comp_sec, int statSec, boolean safeExpansion) throws ExecutionException, InterruptedException {
-        // todo generalize to more than 2
         DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
         Map<Integer, INetwork> networks = netFactory.getNetworks();
         Map<Integer, Future<IMult>> mults = new HashMap<>(parties);
@@ -43,7 +44,7 @@ public class IPSMultTest {
                 byte[] seed = new byte[32];
                 seed[0] = (byte) finalI;
                 Drbg rand = new AesCtrDrbg(seed);
-                MultResourcePool pool = new MultResourcePool(ots, finalI, comp_sec, statSec, networks.get(finalI), rand);
+                OTMultResourcePool pool = new OTMultResourcePool(ots, finalI, comp_sec, statSec, networks.get(finalI), rand);
                 // the constant mult be a 2-power larger than the amount of parties
                 IMult mult = new IPSMult(pool, 32 * DEFAULT_BIT_LENGTH, safeExpansion);
                 mult.init(networks.get(finalI));
@@ -72,11 +73,14 @@ public class IPSMultTest {
             A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
             B[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
         }
+        Field privateField = IPSMult.class.getDeclaredField("network");
+        privateField.setAccessible(true);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
+                ((DummyNetwork) privateField.get(mults.get(finalI))).resetCount();
                 long start = System.currentTimeMillis();
                 BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], modulo);
                 long stop = System.currentTimeMillis();
@@ -94,5 +98,12 @@ public class IPSMultTest {
             refC = refC.add(cur.get());
         }
         assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
+
+
+        DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
+        System.out.println("Rounds " + network.getRounds());
+        System.out.println("Nettime " + network.getNetworkTime());
+        System.out.println("Nettrans " + network.getTransfers());
+        System.out.println("Net bytes " + network.getBytesSent());
     }
 }
