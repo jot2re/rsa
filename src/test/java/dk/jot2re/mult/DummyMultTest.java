@@ -22,7 +22,7 @@ public class DummyMultTest {
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         DummyMultFactory factory = new DummyMultFactory(parties);
-        Map<Integer, IMult> mults = factory.getMults();
+        Map<Integer, IMult> mults = factory.getDummyMults();
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);

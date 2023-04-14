@@ -68,6 +68,7 @@ public class DummyNetwork implements INetwork {
 
     @Override
     public void sendToAll(Serializable data) throws NetworkException {
+        // TODO can be realized with a pivot party in semi honest case
         for (IP2P network: networks.values()) {
             network.send(data);
         }

@@ -34,7 +34,7 @@ public class ShamirEngineTest {
     void sunshineSharing() {
         Map<Integer, BigInteger> shares = DEFAULT_ENGINE.share(BigInteger.valueOf(42), DEFAULT_MODULO);
         Map<Integer, BigInteger> toCombine = new HashMap<>();
-        for (int i = 0; i < DEFAULT_RESOURCE.getThreshold()+1; i++) {
+        for (int i = 0; i < DEFAULT_RESOURCE.getParties(); i++) {
             toCombine.put(i, shares.get(i));
         }
         BigInteger res = DEFAULT_ENGINE.combine(DEFAULT_RESOURCE.getThreshold(), toCombine, DEFAULT_MODULO);

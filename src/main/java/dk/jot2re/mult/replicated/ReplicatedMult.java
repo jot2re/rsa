@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static dk.jot2re.mult.ot.util.Fiddling.ceil;
-
 public class ReplicatedMult implements IMult {
     private final ReplictedMultResourcePool resourcePool;
     private final int maxCorrupt;
@@ -20,7 +18,7 @@ public class ReplicatedMult implements IMult {
             throw new IllegalArgumentException("Currently only supports 3 parties");
         }
         this.resourcePool = resourcePool;
-        this.maxCorrupt = resourcePool.getParties()-ceil(resourcePool.getParties(), 2);
+        this.maxCorrupt = (resourcePool.getParties()-1)/2;
     }
 
     @Override

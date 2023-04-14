@@ -1,9 +1,17 @@
 package dk.jot2re.mult.shamir;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Assumes parties have IDs incrementally starting from 0 to n-1.
+ * Points on the Shamir polynomials map party ID -> party ID + 1, i.e. the IDs are 1...n
+ * The implementation is furthermore semi-honest and thus assumes all party shares exist when trying to do reconstruction.
+ * (or rather assumes the first (n-1)/2 are present).
+ */
 public class ShamirEngine {
     private final ShamirResourcePool resources;
     public ShamirEngine(ShamirResourcePool resources) {
@@ -34,7 +42,6 @@ public class ShamirEngine {
         coeff[0] = input;
         for (int i = 1; i < degree+1; i++) {
             coeff[i] = resources.getRng().nextBigInteger(modulo);
-//            System.out.println("a" + (i + 1) + ": " + coeff[i]);
         }
 
         final Map<Integer, BigInteger> shares = new HashMap<>(resources.getParties());
@@ -51,6 +58,14 @@ public class ShamirEngine {
     }
 
     public BigInteger combine(final int degree, final Map<Integer, BigInteger> shares, final BigInteger modulo) {
+        List<BigInteger> res = new ArrayList<>(shares.size());
+        for (int i = 0; i < shares.size(); i++) {
+            res.add(shares.get(i));
+        }
+        return combine(degree, res, modulo);
+    }
+
+    public BigInteger combine(final int degree, final List<BigInteger> shares, final BigInteger modulo) {
         if (shares.size() < degree+1) {
             throw new IllegalArgumentException("Not enough shares");
         }

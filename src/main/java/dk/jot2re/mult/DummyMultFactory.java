@@ -14,7 +14,8 @@ public class DummyMultFactory {
         this.networkFactory = new DummyNetworkFactory(parties);
     }
 
-    public Map<Integer, IMult> getMults() {
+    // todo make working with the different kinds of mults
+    public Map<Integer, IMult> getDummyMults() {
         Map<Integer, IMult> mults = new HashMap<>(parties);
         Map<Integer, INetwork> networks = networkFactory.getNetworks();
         for (int i = 0; i < parties; i++) {

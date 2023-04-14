@@ -38,6 +38,6 @@ public class ShamirResourcePool {
     }
 
     public int getThreshold() {
-        return getParties()/2;
+        return (getParties()-1)/2;
     }
 }
