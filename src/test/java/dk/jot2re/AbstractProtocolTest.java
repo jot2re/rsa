@@ -3,7 +3,6 @@ package dk.jot2re;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.Parameters;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,12 +12,8 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractProtocolTest {
-    protected static final int DEFAULT_BIT_LENGTH = 128;
-    protected static final int DEFAULT_STAT_SEC = 40;
     protected static final int DEFAULT_PARTIES = 3;
     protected static final Random rand = new Random(42);
-    protected static final BigInteger DEFAULT_MODULO = BigInteger.probablePrime(DEFAULT_BIT_LENGTH, rand);
-
 
     public <ReturnT, ParameterT extends Parameters> void runProtocolTest(Map<Integer, ParameterT> params, RunProtocol<ReturnT> protocolRunner, ResultCheck<ReturnT> resultChecker) throws Exception {
         // NOTE: ENABLE FOR DEBUGGING

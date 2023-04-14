@@ -1,5 +1,6 @@
 package dk.jot2re.mult;
 
+import dk.jot2re.network.NetworkFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -10,29 +11,29 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static dk.jot2re.DefaultSecParameters.MODULO;
+import static dk.jot2re.DefaultSecParameters.MODULO_BITLENGTH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DummyMultTest {
-    private static final int DEFAULT_BIT_LENGTH = 1024;
     @ParameterizedTest
     @ValueSource(ints = { 2, 3, 5})
     public void sunshine(int parties) throws Exception {
-        BigInteger modulo = BigInteger.TWO.pow(DEFAULT_BIT_LENGTH);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
-        DummyMultFactory factory = new DummyMultFactory(parties);
-        Map<Integer, IMult> mults = factory.getDummyMults();
+        MultFactory factory = new MultFactory(parties);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
-            B[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
+            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI], modulo)));
+            C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI], MODULO)));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(3, TimeUnit.SECONDS));
@@ -43,7 +44,7 @@ public class DummyMultTest {
         for (Future<BigInteger> cur : C) {
             refC = refC.add(cur.get());
         }
-        assertEquals(refC.mod(modulo), refA.multiply(refB).mod(modulo));
+        assertEquals(refC.mod(MODULO), refA.multiply(refB).mod(MODULO));
         for (int i = 0; i < parties; i++) {
             assertEquals(1, ((DummyMult) mults.get(i)).getMultCalls());
         }

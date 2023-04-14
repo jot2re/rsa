@@ -5,7 +5,7 @@ import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.Drng;
 import dk.jot2re.mult.ot.util.DrngImpl;
 import dk.jot2re.network.DummyNetwork;
-import dk.jot2re.network.DummyNetworkFactory;
+import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.network.INetwork;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -15,18 +15,16 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static dk.jot2re.DefaultSecParameters.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ShamirMultTest {
     // todo refactor and consolidate with Gilboa
-    private static final int COMP_SEC = 128;
-    private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 32;
 
     public static Map<Integer, IMult> getMults(int parties, int compSec, int statSec) throws ExecutionException, InterruptedException {
-        DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
-        Map<Integer, INetwork> networks = netFactory.getNetworks();
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         Map<Integer, Future<IMult>> mults = new HashMap<>(parties);
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
@@ -60,13 +58,13 @@ public class ShamirMultTest {
     @ValueSource(ints = {3,5})
     void sunshine(int parties) throws Exception {
         Random rand = new Random(42);
-        BigInteger modulo = BigInteger.probablePrime(DEFAULT_BIT_LENGTH, rand);
+        BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         Map<Integer, IMult> mults = getMults(parties, COMP_SEC, STAT_SEC);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
-            B[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
+            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
@@ -74,7 +72,10 @@ public class ShamirMultTest {
             int finalI = i;
             C.add(executor.submit(() -> {
                 long start = System.currentTimeMillis();
-                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], modulo);
+                BigInteger res = null;
+                for (int j = 0; j < 100; j++) {
+                    res = mults.get(finalI).mult(A[finalI], B[finalI], modulo);
+                }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
                 return res;

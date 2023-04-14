@@ -4,7 +4,7 @@ import dk.jot2re.mult.ot.ot.otextension.*;
 import dk.jot2re.mult.ot.util.AesCtrDrbgFactory;
 import dk.jot2re.mult.ot.util.Pair;
 import dk.jot2re.mult.ot.util.StrictBitVector;
-import dk.jot2re.network.DummyNetworkFactory;
+import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.PlainNetwork;
 import org.junit.jupiter.api.Test;
@@ -39,8 +39,8 @@ public class RotTest {
     public static Map<Integer, OtExtensionResourcePool> getOtParameters(int parties, int comp_sec, int statSec) {
         try {
             // todo generalize to more than 2
-            DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
-            Map<Integer, INetwork> networks = netFactory.getNetworks();
+            NetworkFactory netFactory = new NetworkFactory(parties);
+            Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
 
             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
             Future<OtExtensionResourcePool> contextZero = executor.submit(() -> (new OtExtensionTestContext(0,1, comp_sec, statSec, networks.get(0))).createResources(0));

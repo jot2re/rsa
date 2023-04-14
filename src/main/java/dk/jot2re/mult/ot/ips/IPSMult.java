@@ -10,11 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
 public class IPSMult implements IMult {
-    private static final int DEFAULT_BATCH_SIZE = 1048576;
     private final OTMultResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;

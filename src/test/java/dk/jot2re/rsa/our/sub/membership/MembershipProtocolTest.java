@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import static dk.jot2re.DefaultSecParameters.*;
 import static dk.jot2re.rsa.RSATestUtils.share;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,7 +48,7 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
             assertEquals(BigInteger.ZERO, finalValue);
         };
 
-        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties);
         runProtocolTest(parameters, protocolRunner, checker);
     }
 
@@ -73,7 +74,7 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
             assertEquals(BigInteger.ZERO, finalValue);
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, DEFAULT_PARTIES);
         runProtocolTest(parameters, protocolRunner, checker);
     }
 
@@ -99,7 +100,7 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
             assertEquals(BigInteger.ZERO, finalValue);
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, DEFAULT_PARTIES);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, DEFAULT_PARTIES);
         runProtocolTest(parameters, protocolRunner, checker);
     }
 
@@ -108,7 +109,7 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
     public void negative(int parties, String type) throws Exception {
         BigInteger input = BigInteger.valueOf(42);
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(12), BigInteger.valueOf(2544), BigInteger.valueOf(4), BigInteger.valueOf(1000));
-        Map<Integer, BigInteger> shares = share(input, parties, DEFAULT_MODULO, rand);
+        Map<Integer, BigInteger> shares = share(input, parties, MODULO, rand);
 
         AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
             IMembership protocol = switch (type) {
@@ -117,20 +118,20 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
                 case "const" -> new MembershipConst((BFParameters) param);
                 default -> throw new RuntimeException("unknown type");
             };
-            return protocol.execute(shares.get(param.getMyId()), set, DEFAULT_MODULO);
+            return protocol.execute(shares.get(param.getMyId()), set, MODULO);
         };
 
         AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
             BigInteger finalValue = BigInteger.ZERO;
             for (Future<BigInteger> cur : res) {
-                finalValue = finalValue.add(cur.get()).mod(DEFAULT_MODULO);
+                finalValue = finalValue.add(cur.get()).mod(MODULO);
                 assertNotEquals(BigInteger.ONE, cur.get());
             }
             // Ensure the result is NOT 0
             assertNotEquals(BigInteger.ZERO, finalValue);
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
         runProtocolTest(parameters, protocolRunner, checker);
     }
 

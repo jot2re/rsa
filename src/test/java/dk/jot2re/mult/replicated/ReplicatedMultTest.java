@@ -5,7 +5,7 @@ import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.Drng;
 import dk.jot2re.mult.ot.util.DrngImpl;
 import dk.jot2re.network.DummyNetwork;
-import dk.jot2re.network.DummyNetworkFactory;
+import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.network.INetwork;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -16,18 +16,16 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static dk.jot2re.DefaultSecParameters.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReplicatedMultTest {
     // todo refactor and consolidate with Gilboa
-    private static final int COMP_SEC = 128;
-    private static final int STAT_SEC = 40;
-    private static final int DEFAULT_BIT_LENGTH = 2048;
 
     public static Map<Integer, IMult> getMults(int parties, int compSec, int statSec) throws ExecutionException, InterruptedException {
-        DummyNetworkFactory netFactory = new DummyNetworkFactory(parties);
-        Map<Integer, INetwork> networks = netFactory.getNetworks();
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         Map<Integer, Future<IMult>> mults = new HashMap<>(parties);
 
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
@@ -60,14 +58,13 @@ public class ReplicatedMultTest {
     @ParameterizedTest
     @ValueSource(ints = {3})
     void sunshine(int parties) throws Exception {
-        BigInteger modulo = BigInteger.TWO.pow(DEFAULT_BIT_LENGTH).subtract(BigInteger.ONE);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         Map<Integer, IMult> mults = getMults(parties, COMP_SEC, STAT_SEC);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
-            B[i] = new BigInteger(DEFAULT_BIT_LENGTH, rand);
+            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
@@ -75,7 +72,7 @@ public class ReplicatedMultTest {
             int finalI = i;
             C.add(executor.submit(() -> {
                 long start = System.currentTimeMillis();
-                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], modulo);
+                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], MODULO);
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
                 return res;
@@ -90,7 +87,7 @@ public class ReplicatedMultTest {
         for (Future<BigInteger> cur : C) {
             refC = refC.add(cur.get());
         }
-        assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
+        assertEquals(refA.multiply(refB).mod(MODULO), refC.mod(MODULO));
 
         Field privateField = ReplicatedMult.class.getDeclaredField("network");
         privateField.setAccessible(true);
@@ -131,17 +128,16 @@ public class ReplicatedMultTest {
     @Test
     void testShareInput() throws Exception {
         int parties = 3;
-        BigInteger modulo = BigInteger.TWO.pow(DEFAULT_BIT_LENGTH).subtract(BigInteger.ONE);
         BigInteger[] A = new BigInteger[parties];
         Map<Integer, IMult> mults = getMults(parties, COMP_SEC, STAT_SEC);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(DEFAULT_BIT_LENGTH, new Random(42));
+            A[i] = new BigInteger(MODULO_BITLENGTH, new Random(42));
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<List<BigInteger>>> sharedInput = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).sharedInput(A[finalI], modulo)));
+            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).sharedInput(A[finalI], MODULO)));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
@@ -149,7 +145,7 @@ public class ReplicatedMultTest {
         // Get the shared value from party 0 and 1. I.e. the shares of party 0 and last share of party 1
         BigInteger computedSum = sharedInput.get(0).get().get(0).add(sharedInput.get(0).get().get(1)).add(sharedInput.get(1).get().get(1));
         assertEquals(
-                Arrays.stream(A).reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(modulo)),
-                computedSum.mod(modulo));
+                Arrays.stream(A).reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(MODULO)),
+                computedSum.mod(MODULO));
     }
 }

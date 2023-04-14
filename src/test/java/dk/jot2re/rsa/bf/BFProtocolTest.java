@@ -12,6 +12,8 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import static dk.jot2re.DefaultSecParameters.PRIME_BITLENGTH;
+import static dk.jot2re.DefaultSecParameters.STAT_SEC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,8 +22,8 @@ public class BFProtocolTest extends AbstractProtocolTest {
     @ParameterizedTest
     @ValueSource(ints = {2, 3, 5})
     public void sunshine(int parties) throws Exception {
-        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, DEFAULT_BIT_LENGTH, rand);
-        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, DEFAULT_BIT_LENGTH, rand);
+        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
+        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
         BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
         BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
         BigInteger N = p.multiply(q);
@@ -44,7 +46,7 @@ public class BFProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(DEFAULT_BIT_LENGTH, DEFAULT_STAT_SEC, parties);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties);
         runProtocolTest(parameters, protocolRunner, checker);
         System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
         System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());

@@ -9,11 +9,11 @@ import dk.jot2re.network.INetwork;
 import java.math.BigInteger;
 import java.util.List;
 
+import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
 public class GilboaMult implements IMult {
-    private static final int DEFAULT_BATCH_SIZE = 1048576;
     private final OtExtensionResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;

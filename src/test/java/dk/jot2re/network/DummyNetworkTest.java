@@ -17,8 +17,8 @@ public class DummyNetworkTest {
     public void sunshine(int parties) throws Exception {
         BigInteger message = new BigInteger("4687860186094695676870");
 
-        DummyNetworkFactory factory = new DummyNetworkFactory(parties);
-        Map<Integer, DummyNetwork> networks = factory.getNetworks();
+        NetworkFactory factory = new NetworkFactory(parties);
+        Map<Integer, DummyNetwork> networks = factory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         for (int i = 0; i < parties; i++) {
             for (int j : networks.get(i).peers()) {
                 networks.get(i).send(j, message.add(BigInteger.valueOf(i)));
@@ -40,8 +40,8 @@ public class DummyNetworkTest {
     public void sendToAll(int parties) throws Exception {
         BigInteger message = new BigInteger("4687860186094695676870");
 
-        DummyNetworkFactory factory = new DummyNetworkFactory(parties);
-        Map<Integer, DummyNetwork> networks = factory.getNetworks();
+        NetworkFactory factory = new NetworkFactory(parties);
+        Map<Integer, DummyNetwork> networks = factory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         for (int i = 0; i < parties; i++) {
             networks.get(i).sendToAll(message.add(BigInteger.valueOf(i)));
             networks.get(i).sendToAll(BigInteger.valueOf(42));
@@ -73,8 +73,8 @@ public class DummyNetworkTest {
     @Test
     public void dataCount() throws Exception {
         int parties = 3;
-        DummyNetworkFactory factory = new DummyNetworkFactory(parties);
-        Map<Integer, DummyNetwork> networks = factory.getNetworks();
+        NetworkFactory factory = new NetworkFactory(parties);
+        Map<Integer, DummyNetwork> networks = factory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         for (int i = 1; i < parties; i++) {
             networks.get(i).send(0, BigInteger.valueOf(1337));
             networks.get(i).send(0, BigInteger.valueOf(42));
@@ -89,8 +89,8 @@ public class DummyNetworkTest {
     @Test
     public void roundCount() throws Exception {
         int parties = 3;
-        DummyNetworkFactory factory = new DummyNetworkFactory(parties);
-        Map<Integer, DummyNetwork> networks = factory.getNetworks();
+        NetworkFactory factory = new NetworkFactory(parties);
+        Map<Integer, DummyNetwork> networks = factory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         for (int i = 1; i < parties; i++) {
             networks.get(i).send(0, BigInteger.valueOf(1337));
             networks.get(i).send(0, BigInteger.valueOf(42));
@@ -112,8 +112,8 @@ public class DummyNetworkTest {
     @Test
     public void roundCount2() throws Exception {
         int parties = 2;
-        DummyNetworkFactory factory = new DummyNetworkFactory(parties);
-        Map<Integer, DummyNetwork> networks = factory.getNetworks();
+        NetworkFactory factory = new NetworkFactory(parties);
+        Map<Integer, DummyNetwork> networks = factory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         networks.get(0).send(1, BigInteger.valueOf(1337));
         networks.get(1).send(0, BigInteger.valueOf(42));
         BigInteger val1 = (BigInteger) networks.get(0).receive(1);
