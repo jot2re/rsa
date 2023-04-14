@@ -7,10 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,11 +33,23 @@ public class ShamirEngineTest {
     @Test
     void sunshineSharing() {
         Map<Integer, BigInteger> shares = DEFAULT_ENGINE.share(BigInteger.valueOf(42), DEFAULT_MODULO);
-        List<BigInteger> toCombine = new ArrayList<>();
-        for (int i = 1; i < DEFAULT_RESOURCE.getParties(); i++) {
-            toCombine.add(shares.get(i));
+        Map<Integer, BigInteger> toCombine = new HashMap<>();
+        for (int i = 0; i < DEFAULT_RESOURCE.getThreshold()+1; i++) {
+            toCombine.put(i, shares.get(i));
         }
-        BigInteger res = DEFAULT_ENGINE.combine(toCombine, DEFAULT_MODULO);
+        BigInteger res = DEFAULT_ENGINE.combine(DEFAULT_RESOURCE.getThreshold(), toCombine, DEFAULT_MODULO);
+        assertEquals(BigInteger.valueOf(42), res);
+    }
+
+    @Test
+    void sunshineRandomizing() {
+        Map<Integer, BigInteger> shares = DEFAULT_ENGINE.share(BigInteger.valueOf(42), DEFAULT_MODULO);
+        Map<Integer, BigInteger> randomZero = DEFAULT_ENGINE.randomPoly(DEFAULT_RESOURCE.getThreshold()*2, BigInteger.ZERO, DEFAULT_MODULO);
+        Map<Integer, BigInteger> toCombine = new HashMap<>();
+        for (int i = 0; i < DEFAULT_RESOURCE.getParties(); i++) {
+            toCombine.put(i, shares.get(i).add(randomZero.get(i)));
+        }
+        BigInteger res = DEFAULT_ENGINE.combine(2*(DEFAULT_RESOURCE.getThreshold()), toCombine, DEFAULT_MODULO);
         assertEquals(BigInteger.valueOf(42), res);
     }
 }
