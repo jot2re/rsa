@@ -1,7 +1,6 @@
 package dk.jot2re.mult.ot.ot.otextension;
 
 import dk.jot2re.mult.ot.cointossing.CoinTossing;
-import dk.jot2re.mult.ot.helper.HelperForTests;
 import dk.jot2re.mult.ot.ot.base.DummyOt;
 import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.AesCtrDrbgFactory;
@@ -10,13 +9,14 @@ import dk.jot2re.network.INetwork;
 
 import java.nio.ByteBuffer;
 
-public class OtExtensionTestContext {
+public class OtExtensionDummyContext {
   private final INetwork network;
   private final int myId;
   private final int otherId;
   private final int kbitLength;
   private final int lambdaSecurityParam;
   private final RotList seedOts;
+  private final byte[] seed;
 
   /**
    * Initialize the test context using specific parameters.
@@ -30,11 +30,12 @@ public class OtExtensionTestContext {
    * @param lambdaSecurityParam
    *          The statistical security parameter
    */
-  public OtExtensionTestContext(int myId, int otherId, int kbitLength,
-      int lambdaSecurityParam, INetwork network) {
+  public OtExtensionDummyContext(int myId, int otherId, int kbitLength,
+                                 int lambdaSecurityParam, byte[] seed, INetwork network) {
     this.network = network;
+    this.seed = seed;
     DummyOt dummyOt = new DummyOt(otherId, network);
-    Drbg rand = new AesCtrDrbg(HelperForTests.seedOne);
+    Drbg rand = new AesCtrDrbg(seed);
     this.seedOts = new RotList(rand, kbitLength);
     if (myId < otherId) {
       this.seedOts.send(dummyOt);
@@ -78,8 +79,8 @@ public class OtExtensionTestContext {
    * @return A new randomness generator unique for {@code instanceId}
    */
   public Drbg createRand(int instanceId) {
-    ByteBuffer idBuffer = ByteBuffer.allocate(HelperForTests.seedOne.length + Integer.BYTES);
-    byte[] seedBytes = idBuffer.putInt(instanceId).put(HelperForTests.seedOne).array();
+    ByteBuffer idBuffer = ByteBuffer.allocate(seed.length + Integer.BYTES);
+    byte[] seedBytes = idBuffer.putInt(instanceId).put(seed).array();
     return AesCtrDrbgFactory.fromDerivedSeed(seedBytes);
   }
 }

@@ -1,5 +1,6 @@
 package dk.jot2re.mult.ot.ot;
 
+import dk.jot2re.mult.ot.helper.HelperForTests;
 import dk.jot2re.mult.ot.ot.otextension.*;
 import dk.jot2re.mult.ot.util.AesCtrDrbgFactory;
 import dk.jot2re.mult.ot.util.Pair;
@@ -43,8 +44,8 @@ public class RotTest {
             Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
 
             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-            Future<OtExtensionResourcePool> contextZero = executor.submit(() -> (new OtExtensionTestContext(0,1, comp_sec, statSec, networks.get(0))).createResources(0));
-            Future<OtExtensionResourcePool> contextOne = executor.submit(() -> (new OtExtensionTestContext(1,0, comp_sec, statSec, networks.get(1))).createResources(0));
+            Future<OtExtensionResourcePool> contextZero = executor.submit(() -> (new OtExtensionDummyContext(0,1, comp_sec, statSec, HelperForTests.seedOne, networks.get(0))).createResources(0));
+            Future<OtExtensionResourcePool> contextOne = executor.submit(() -> (new OtExtensionDummyContext(1,0, comp_sec, statSec, HelperForTests.seedOne, networks.get(1))).createResources(0));
             executor.shutdown();
             assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
 

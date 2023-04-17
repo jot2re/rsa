@@ -1,6 +1,7 @@
 package dk.jot2re.mult.replicated;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.MultFactory;
 import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.Drng;
 import dk.jot2re.mult.ot.util.DrngImpl;
@@ -60,7 +61,8 @@ public class ReplicatedMultTest {
     void sunshine(int parties) throws Exception {
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
-        Map<Integer, IMult> mults = getMults(parties, COMP_SEC, STAT_SEC);
+        MultFactory factory = new MultFactory(parties);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.DUMMY);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(MODULO_BITLENGTH, rand);
