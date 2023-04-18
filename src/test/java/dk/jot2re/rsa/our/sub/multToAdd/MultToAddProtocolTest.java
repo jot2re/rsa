@@ -63,6 +63,38 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
 
     @ParameterizedTest
     @ValueSource(ints = { 2, 3, 5})
+    public void sunshineWCorrelatedRandomness(int parties) throws Exception {
+        Map<Integer, BigInteger> multShares = new HashMap<>(parties);
+        BigInteger refValue = BigInteger.ONE;
+        for (int i = 0; i < parties; i++) {
+            BigInteger multShare = new BigInteger(MODULO_BITLENGTH, rand);
+            multShares.put(i, multShare);
+            refValue = refValue.multiply(multShare).mod(MODULO);
+        }
+
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+            MultToAdd protocol = new MultToAdd((BFParameters) param);
+            return protocol.executeWithCorrelatedRandomness(multShares.get(param.getMyId()), MODULO);
+        };
+
+        BigInteger finalRefValue = refValue;
+        AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
+            BigInteger finalValue = BigInteger.ZERO;
+            for (Future<BigInteger> cur : res) {
+                finalValue = finalValue.add(cur.get()).mod(MODULO);
+                assertNotEquals(BigInteger.ONE, cur.get());
+                assertNotEquals(BigInteger.ZERO, cur.get());
+            }
+            assertEquals(finalRefValue, finalValue);
+        };
+
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        runProtocolTest(parameters, protocolRunner, checker);
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(ints = { 2, 3, 5})
     public void correlatedRandomness(int parties) throws Exception {
         Map<Integer, BigInteger> multShares = new HashMap<>(parties);
         BigInteger refValue = BigInteger.ONE;

@@ -11,8 +11,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class RSAUtil {
-    public static List<BigInteger> sample(Parameters params, BigInteger modulo, int amount) {
-        return IntStream.range(0, amount).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
+    public static List<BigInteger> share(Parameters params, BigInteger value, BigInteger modulo) {
+        List<BigInteger> randomVals = IntStream.range(0, params.getAmountOfPeers()).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
+        randomVals.add(value.subtract(randomVals.stream().reduce(BigInteger.ZERO, BigInteger::add)).mod(modulo));
+        return randomVals;
+    }
+
+    public static List<BigInteger> randomSharing(Parameters params, BigInteger modulo) {
+        return IntStream.range(0, params.getAmountOfPeers()+1).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
     }
 
     public static BigInteger sample(Parameters params, BigInteger modulo) {
