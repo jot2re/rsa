@@ -1,5 +1,7 @@
 package dk.jot2re.mult.shamir;
 
+import dk.jot2re.mult.ot.util.Drng;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,9 +15,13 @@ import java.util.Map;
  * (or rather assumes the first (n-1)/2 are present).
  */
 public class ShamirEngine {
-    private final ShamirResourcePool resources;
-    public ShamirEngine(ShamirResourcePool resources) {
-        this.resources = resources;
+    private final int parties;
+    private final int threshold;
+    private final Drng rng;
+    public ShamirEngine(int parties, Drng rng) {
+        this.parties = parties;
+        this.threshold = (parties-1)/2;
+        this.rng = rng;
     }
 
     // code inspired by karbi79 https://stackoverflow.com/questions/19327651/java-implementation-of-shamirs-secret-sharing
@@ -27,7 +33,7 @@ public class ShamirEngine {
      * @return
      */
     public Map<Integer, BigInteger> share(BigInteger input, BigInteger modulo) {
-        return randomPoly(resources.getThreshold(), input, modulo);
+        return randomPoly(threshold, input, modulo);
     }
 
     /**
@@ -41,11 +47,11 @@ public class ShamirEngine {
         BigInteger[] coeff = new BigInteger[degree+1];
         coeff[0] = input;
         for (int i = 1; i < degree+1; i++) {
-            coeff[i] = resources.getRng().nextBigInteger(modulo);
+            coeff[i] = rng.nextBigInteger(modulo);
         }
 
-        final Map<Integer, BigInteger> shares = new HashMap<>(resources.getParties());
-        for (int i = 0; i < resources.getParties(); i++) {
+        final Map<Integer, BigInteger> shares = new HashMap<>(parties);
+        for (int i = 0; i < parties; i++) {
             BigInteger currentSum = coeff[0];
             for (int j = 1; j < degree+1; j++) {
                 final BigInteger xPower = BigInteger.valueOf(i+1).modPow(BigInteger.valueOf(j), modulo);

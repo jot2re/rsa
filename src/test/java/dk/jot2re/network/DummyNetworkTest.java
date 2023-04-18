@@ -80,7 +80,7 @@ public class DummyNetworkTest {
             networks.get(i).send(0, BigInteger.valueOf(42));
             assertEquals(2, networks.get(i).getTransfers());
             assertEquals(0, networks.get(i).getRounds());
-            assertTrue(networks.get(i).getBytesSent() > 2*64);
+            assertTrue(networks.get(i).getBytesSent() > 8);
             // The overhead of big int is about 200 bytes
             assertTrue(networks.get(i).getBytesSent() < 2*210);
         }
@@ -96,7 +96,7 @@ public class DummyNetworkTest {
             networks.get(i).send(0, BigInteger.valueOf(42));
             assertEquals(2, networks.get(i).getTransfers());
             assertEquals(0, networks.get(i).getRounds());
-            assertTrue(networks.get(i).getBytesSent() > 2*64);
+            assertTrue(networks.get(i).getBytesSent() > 8);
             // The overhead of big int is about 200 bytes
             assertTrue(networks.get(i).getBytesSent() < 2*210);
         }

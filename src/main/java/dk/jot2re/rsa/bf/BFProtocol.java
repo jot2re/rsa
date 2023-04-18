@@ -50,7 +50,8 @@ public class BFProtocol {
 
     protected boolean executePivot(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
-        params.getNetwork().sendToAll(dto);
+        params.getNetwork().sendToAll(dto.getGammas());
+        params.getNetwork().sendToAll(dto.getNuShares());
         Map<Integer, ArrayList<BigInteger>> receivedDto = params.getNetwork().receiveFromAllPeers();
         if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
             return false;
@@ -62,7 +63,9 @@ public class BFProtocol {
     }
 
     protected boolean executeOther(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        Phase1Pivot receivedDto = params.getNetwork().receive(0);
+        ArrayList<BigInteger> gamma = params.getNetwork().receive(0);
+        ArrayList<BigInteger> nu = params.getNetwork().receive(0);
+        Phase1Pivot receivedDto = new Phase1Pivot(gamma, nu);
         ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
         params.getNetwork().sendToAll(myNuShare);
         Map<Integer, ArrayList<BigInteger>> nuShares = params.getNetwork().receiveFromNonPivotPeers();

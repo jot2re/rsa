@@ -2,9 +2,11 @@ package dk.jot2re.mult.ot.gilboa;
 
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.MultFactory;
+import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.NetworkFactory;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -39,10 +41,13 @@ public class GilboaMultTest {
             B[i] = new BigInteger(bitLength, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        Field privateField = GilboaMult.class.getDeclaredField("network");
+        privateField.setAccessible(true);
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
+                ((DummyNetwork) privateField.get(mults.get(finalI))).resetCount();
                 long start = System.currentTimeMillis();
                 BigInteger res = mults.get(finalI).mult(A[finalI], B[finalI], modulo, bitLength);
                 long stop = System.currentTimeMillis();
@@ -60,5 +65,11 @@ public class GilboaMultTest {
             refC = refC.add(cur.get());
         }
         assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
+
+        DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
+        System.out.println("Rounds " + network.getRounds());
+        System.out.println("Nettime " + network.getNetworkTime());
+        System.out.println("Nettrans " + network.getTransfers());
+        System.out.println("Net bytes " + network.getBytesSent());
     }
 }

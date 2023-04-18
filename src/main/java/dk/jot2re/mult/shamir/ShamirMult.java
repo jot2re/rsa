@@ -20,7 +20,7 @@ public class ShamirMult implements IMult {
 
     public ShamirMult(ShamirResourcePool resourcePool) {
         this.resourcePool = resourcePool;
-        this.engine = new ShamirEngine(resourcePool);
+        this.engine = new ShamirEngine(resourcePool.getParties(), resourcePool.getRng());
         this.maxCorrupt = resourcePool.getParties()-ceil(resourcePool.getParties(), 2);
     }
 

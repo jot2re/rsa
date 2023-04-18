@@ -19,7 +19,7 @@ public class ShamirEngineTest {
     @BeforeAll
     public static void setup() {
         DEFAULT_RESOURCE = getResourcePool(0, 3, COMP_SEC, STAT_SEC);
-        DEFAULT_ENGINE = new ShamirEngine(DEFAULT_RESOURCE);
+        DEFAULT_ENGINE = new ShamirEngine(DEFAULT_RESOURCE.getParties(), DEFAULT_RESOURCE.getRng());
     }
 
     public static ShamirResourcePool getResourcePool(int myId, int parties, int compSec, int statSec) {
