@@ -31,7 +31,7 @@ public class PlainMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
+    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }

@@ -41,13 +41,17 @@ public class GilboaOTSender {
     }
 
     public List<BigInteger> send(BigInteger value, BigInteger modulo) {
+        return send(value, modulo, modulo.bitLength());
+    }
+
+    public List<BigInteger> send(BigInteger value, BigInteger modulo, int upperBound) {
         // Check if there is still an unused random OT stored, if not, execute a
         // random OT extension
-        if (offset < 0 || offset + modulo.bitLength() >= batchSize) {
+        if (offset < 0 || offset + upperBound >= batchSize) {
             makeBatch();
         }
         StrictBitVector switchBits = network.receive(resources.getOtherId());
-        if (switchBits.getSize() != modulo.bitLength()) {
+        if (switchBits.getSize() != upperBound) {
             throw new MaliciousException("Unexpected size of switchbit vector");
         }
         List<BigInteger> shares = new ArrayList<>(switchBits.getSize());

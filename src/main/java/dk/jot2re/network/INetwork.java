@@ -10,6 +10,7 @@ public interface INetwork {
     void send(int recipientId, Serializable data);
     <T extends Serializable> T receive(int senderId);
     void sendToAll(Serializable data) throws NetworkException;
+    int getNoOfParties();
 
     /**
      * @return Peers, excluding the current party.

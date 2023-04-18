@@ -75,6 +75,11 @@ public class DummyNetwork implements INetwork {
     }
 
     @Override
+    public int getNoOfParties() {
+        return parties;
+    }
+
+    @Override
     public List<Integer> peers() {
         return networks.keySet().stream().toList();
     }

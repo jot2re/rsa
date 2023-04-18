@@ -1,8 +1,8 @@
 package dk.jot2re.rsa;
 
-import dk.jot2re.mult.MultFactory;
 import dk.jot2re.mult.IMult;
-import dk.jot2re.network.DummyNetwork;
+import dk.jot2re.mult.MultFactory;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.OurParameters;
@@ -43,7 +43,7 @@ public class RSATestUtils {
         try {
             NetworkFactory netFactory = new NetworkFactory(parties);
             MultFactory multFactory = new MultFactory(parties);
-            Map<Integer, DummyNetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+            Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
             Map<Integer, BFParameters> params = new HashMap<>(parties);
             Map<Integer, IMult> mults = multFactory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
             for (int i = 0; i < networks.size(); i++) {
@@ -62,15 +62,16 @@ public class RSATestUtils {
 
     public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties) {
         try {
+            // TODO the 8 increments are needed for OT mult protocols but not others
             // M > 2^(2*bits)
-            BigInteger M = RSATestUtils.prime(2*bits+1, new Random(42));
+            BigInteger M = RSATestUtils.prime(2*bits+8, new Random(42));
             // P > mN, we assume at most 2048 parties
-            BigInteger P = RSATestUtils.prime(2*bits+11, new Random(42));
+            BigInteger P = RSATestUtils.prime(2*bits+16, new Random(42));
             // Q > P
-            BigInteger Q = RSATestUtils.prime(2*bits+12, new Random(42));
+            BigInteger Q = RSATestUtils.prime(2*bits+24, new Random(42));
             NetworkFactory netFactory = new NetworkFactory(parties);
             MultFactory multFactory = new MultFactory(parties);
-            Map<Integer, DummyNetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+            Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
             Map<Integer, OurParameters> params = new HashMap<>(parties);
             Map<Integer, IMult> mults = multFactory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
             for (int i = 0; i < networks.size(); i++) {

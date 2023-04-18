@@ -46,8 +46,8 @@ public class GilboaOTFactory {
         }
     }
 
-    public List<BigInteger> send(BigInteger value, BigInteger modulo) {
-        return this.sender.send(value, modulo);
+    public List<BigInteger> send(BigInteger value, BigInteger modulo, int upperBound) {
+        return this.sender.send(value, modulo, upperBound);
     }
 
     public List<BigInteger> receive(StrictBitVector actualChoices, int amountBytes) {

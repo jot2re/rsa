@@ -20,7 +20,7 @@ public class DummyMult implements IMult {
     }
 
     @Override
-    public synchronized BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
+    public synchronized BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }

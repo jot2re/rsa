@@ -12,14 +12,22 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static dk.jot2re.DefaultSecParameters.MODULO;
-import static dk.jot2re.DefaultSecParameters.MODULO_BITLENGTH;
+import static dk.jot2re.DefaultSecParameters.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GilboaMultTest {
     @Test
-    void sunshine() throws Exception {
+    void sunshineBounded() throws Exception {
+        sunshine(PRIME_BITLENGTH, MODULO);
+    }
+
+    @Test
+    void sunshineFulldomain() throws Exception {
+        sunshine(MODULO_BITLENGTH, MODULO);
+    }
+
+    void sunshine(int bitLength, BigInteger modulo) throws Exception {
         int parties = 2;
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
@@ -27,8 +35,8 @@ public class GilboaMultTest {
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.GILBOA, NetworkFactory.NetworkType.DUMMY);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
-            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            A[i] = new BigInteger(bitLength, rand);
+            B[i] = new BigInteger(bitLength, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
@@ -36,7 +44,7 @@ public class GilboaMultTest {
             int finalI = i;
             C.add(executor.submit(() -> {
                 long start = System.currentTimeMillis();
-                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], MODULO);
+                BigInteger res = mults.get(finalI).mult(A[finalI], B[finalI], modulo, bitLength);
                 long stop = System.currentTimeMillis();
                 System.out.println("sender " + (stop-start));
                 return res;
@@ -51,6 +59,6 @@ public class GilboaMultTest {
         for (Future<BigInteger> cur : C) {
             refC = refC.add(cur.get());
         }
-        assertEquals(refA.multiply(refB).mod(MODULO), refC.mod(MODULO));
+        assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
     }
 }

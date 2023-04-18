@@ -63,7 +63,7 @@ public class IPSMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
+    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
         this.amountBits = resources.getCompSec()+resources.getStatSec();
         if (safeExpansion) {
             this.expansionSizeBytes = (modulo.bitLength()/8) + ceil(resources.getStatSec(), 8);

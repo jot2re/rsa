@@ -54,6 +54,11 @@ public class PlainNetwork<T extends Serializable> implements INetwork {
     }
 
     @Override
+    public int getNoOfParties() {
+        return parties;
+    }
+
+    @Override
     public List<Integer> peers() {
         return peers;
     }

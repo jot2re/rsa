@@ -1,8 +1,6 @@
 package dk.jot2re.rsa.our;
 
 import dk.jot2re.AbstractProtocolTest;
-import dk.jot2re.mult.DummyMult;
-import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -52,11 +50,11 @@ public class OurProtocolTest extends AbstractProtocolTest {
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
         runProtocolTest(parameters, protocolRunner, checker);
-        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
-        System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());
-        System.out.println("Nettime " + ((DummyNetwork) parameters.get(0).getNetwork()).getNetworkTime());
-        System.out.println("Nettrans " + ((DummyNetwork) parameters.get(0).getNetwork()).getTransfers());
-        System.out.println("Net bytes " + ((DummyNetwork) parameters.get(0).getNetwork()).getBytesSent());
+//        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
+//        System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());
+//        System.out.println("Nettime " + ((DummyNetwork) parameters.get(0).getNetwork()).getNetworkTime());
+//        System.out.println("Nettrans " + ((DummyNetwork) parameters.get(0).getNetwork()).getTransfers());
+//        System.out.println("Net bytes " + ((DummyNetwork) parameters.get(0).getNetwork()).getBytesSent());
     }
 
 }

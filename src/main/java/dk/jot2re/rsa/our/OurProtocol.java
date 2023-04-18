@@ -97,7 +97,7 @@ public class OurProtocol {
     }
 
     protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, params.getM());
+        BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, params.getM(), params.getPrimeBits());
         BigInteger NPrime = RSAUtil.open(params, NPrimeShare, params.getM());
         if (!NPrime.equals(N)) {
             return false;

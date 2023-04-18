@@ -57,8 +57,16 @@ public class GilboaMult implements IMult {
 
     @Override
     public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
-        this.amountBits = modulo.bitLength();
-        this.amountBytes = amountBits/8;
+        return mult(shareA, shareB, modulo, modulo.bitLength());
+    }
+
+    @Override
+    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
+        if (upperBound > modulo.bitLength()) {
+            throw new RuntimeException("Upper bound larger than modulo");
+        }
+        this.amountBits = upperBound;
+        this.amountBytes = modulo.bitLength()/8;
         if (safeExpansion) {
             this.expansionSizeBytes = amountBytes + ceil(resources.getLambdaSecurityParam(), 8);
         } else {
@@ -66,18 +74,18 @@ public class GilboaMult implements IMult {
         }
         BigInteger senderShare, receiverShare;
         if (resources.getMyId() == 0) {
-            senderShare = senderRole(shareA, modulo);
+            senderShare = senderRole(shareA, modulo, upperBound);
             receiverShare = receiverRole(shareB, modulo);
         } else {
             receiverShare = receiverRole(shareB, modulo);
-            senderShare = senderRole(shareA, modulo);
+            senderShare = senderRole(shareA, modulo, upperBound);
         }
         BigInteger res = receiverShare.add(senderShare).add(shareA.multiply(shareB)).mod(modulo);
         return res;
     }
 
-    private BigInteger senderRole(BigInteger value, BigInteger modulo) {
-        List<BigInteger> shares = factory.send(value, modulo);
+    private BigInteger senderRole(BigInteger value, BigInteger modulo, int uppperBound) {
+        List<BigInteger> shares = factory.send(value, modulo, uppperBound);
         BigInteger z = BigInteger.ZERO;
         for (int i = 0; i < amountBits; i++) {
             z = z.add(shares.get(i).multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
