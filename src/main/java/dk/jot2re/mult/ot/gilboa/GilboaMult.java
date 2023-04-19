@@ -1,6 +1,7 @@
 package dk.jot2re.mult.ot.gilboa;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.IntegerShare;
 import dk.jot2re.mult.ot.ot.otextension.OtExtensionResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
 import dk.jot2re.mult.ot.util.StrictBitVector;
@@ -13,7 +14,7 @@ import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
-public class GilboaMult implements IMult {
+public class GilboaMult implements IMult<IntegerShare> {
     private final OtExtensionResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
@@ -82,6 +83,31 @@ public class GilboaMult implements IMult {
         }
         BigInteger res = receiverShare.add(senderShare).add(shareA.multiply(shareB)).mod(modulo);
         return res;
+    }
+
+    @Override
+    public IntegerShare share(BigInteger value, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare share(int partyId, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public BigInteger open(IntegerShare share, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare multShares(IntegerShare left, IntegerShare right, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare multConst(IntegerShare share, BigInteger known, BigInteger modulo) {
+        return null;
     }
 
     private BigInteger senderRole(BigInteger value, BigInteger modulo, int uppperBound) {

@@ -1,6 +1,7 @@
 package dk.jot2re.mult.replicated;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.ReplicatedShare;
 import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ReplicatedMult implements IMult {
+public class ReplicatedMult implements IMult<ReplicatedShare> {
     private final ReplictedMultResourcePool resourcePool;
     private final int maxCorrupt;
     private INetwork network;
@@ -40,6 +41,16 @@ public class ReplicatedMult implements IMult {
         }
     }
 
+    @Override
+    public ReplicatedShare share(BigInteger value, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public ReplicatedShare share(int partyId, BigInteger modulo) {
+        return null;
+    }
+
     protected BigInteger multiplyShared(List<BigInteger> A, List<BigInteger> B, BigInteger modulo) {
         BigInteger product = BigInteger.ZERO;
         for (int i = 0; i < A.size(); i++) {
@@ -66,7 +77,7 @@ public class ReplicatedMult implements IMult {
     }
 
     protected ArrayList<BigInteger> input(BigInteger value, BigInteger modulo) {
-        ArrayList<BigInteger> sharesOfValue = share(value, modulo);
+        ArrayList<BigInteger> sharesOfValue = internalShare(value, modulo);
         for (int i = 0; i < resourcePool.getParties(); i++) {
             if (i != resourcePool.getMyId()) {
                 ArrayList<BigInteger> toSend = getPartyShares(i, sharesOfValue);
@@ -86,7 +97,7 @@ public class ReplicatedMult implements IMult {
         return toSend;
     }
 
-    protected ArrayList<BigInteger> share(BigInteger share, BigInteger modulo) {
+    protected ArrayList<BigInteger> internalShare(BigInteger share, BigInteger modulo) {
         ArrayList<BigInteger> shares = new ArrayList<>(resourcePool.getParties());
         BigInteger partialSum = BigInteger.ZERO;
         for (int i = 0; i < resourcePool.getParties()-1; i++) {
@@ -96,5 +107,20 @@ public class ReplicatedMult implements IMult {
         }
         shares.add(share.subtract(partialSum).mod(modulo));
         return shares;
+    }
+
+    @Override
+    public BigInteger open(ReplicatedShare share, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public ReplicatedShare multShares(ReplicatedShare left, ReplicatedShare right, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public ReplicatedShare multConst(ReplicatedShare share, BigInteger known, BigInteger modulo) {
+        return null;
     }
 }

@@ -1,5 +1,7 @@
  package dk.jot2re.rsa;
 
+import dk.jot2re.mult.IShare;
+import dk.jot2re.mult.IntegerShare;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static dk.jot2re.rsa.RSATestUtils.share;
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +54,11 @@ public class RSAFiddlingTest {
         List<Future<BigInteger>> shares = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            shares.add(executor.submit(() -> RSAUtil.multList(params.get(finalI), toMult.get(finalI), modulo)));
+            shares.add(executor.submit(() -> {
+                IShare[] curToMult = (IShare[]) Arrays.stream(toMult.get(finalI)).map(a -> new IntegerShare(a)).collect(Collectors.toList()).toArray();
+                IShare res = RSAUtil.multList(params.get(finalI),curToMult, modulo);
+                return params.get(finalI).getMult().open(res, modulo);
+            }));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));

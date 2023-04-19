@@ -1,6 +1,7 @@
 package dk.jot2re.mult.shamir;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.ShamirShare;
 import dk.jot2re.mult.ot.util.MaliciousException;
 import dk.jot2re.mult.ot.util.Pair;
 import dk.jot2re.network.INetwork;
@@ -12,7 +13,7 @@ import java.util.Map;
 
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
-public class ShamirMult implements IMult {
+public class ShamirMult implements IMult<ShamirShare> {
     private final ShamirResourcePool resourcePool;
     private final ShamirEngine engine;
     private final int maxCorrupt;
@@ -41,6 +42,31 @@ public class ShamirMult implements IMult {
         } catch (Exception e) {
             throw new RuntimeException("Failed to multiply", e);
         }
+    }
+
+    @Override
+    public ShamirShare share(BigInteger value, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public ShamirShare share(int partyId, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public BigInteger open(ShamirShare share, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public ShamirShare multShares(ShamirShare left, ShamirShare right, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public ShamirShare multConst(ShamirShare share, BigInteger known, BigInteger modulo) {
+        return null;
     }
 
     public BigInteger combine(int degree, List<BigInteger> shares, BigInteger modulo) {

@@ -113,7 +113,7 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
             BigInteger additiveRef = BigInteger.ZERO;
             BigInteger multiplicativeRef = BigInteger.ONE;
             for (Future<MultToAdd.RandomShare> cur : res) {
-                additiveRef = additiveRef.add(cur.get().getAdditive()).mod(MODULO);
+                additiveRef = additiveRef.add((BigInteger) cur.get().getAdditive().getRawShare()).mod(MODULO);
                 multiplicativeRef = multiplicativeRef.multiply(cur.get().getMultiplicative()).mod(MODULO);
                 assertNotEquals(BigInteger.ZERO, cur.get().getAdditive());
                 assertNotEquals(BigInteger.ONE, cur.get().getAdditive());

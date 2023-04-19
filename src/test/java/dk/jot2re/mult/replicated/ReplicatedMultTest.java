@@ -104,7 +104,7 @@ public class ReplicatedMultTest {
     void testShare() {
         ReplictedMultResourcePool pool = getResourcePool(0, 3, COMP_SEC, STAT_SEC);
         ReplicatedMult mult = new ReplicatedMult(pool);
-        List<BigInteger> shares = mult.share(BigInteger.valueOf(42), BigInteger.valueOf(123456789));
+        List<BigInteger> shares = mult.internalShare(BigInteger.valueOf(42), BigInteger.valueOf(123456789));
         assertEquals(BigInteger.valueOf(42),
                 shares.stream().reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(BigInteger.valueOf(123456789))));
     }

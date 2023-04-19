@@ -143,6 +143,7 @@ public class BFProtocol {
     protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, N);
         BigInteger NPrime = RSAUtil.open(params, NPrimeShare, N);
+//        BigInteger NPrime = params.getMult().open( NPrimeShare, N);
         if (!NPrime.equals(BigInteger.ZERO)) {
             return false;
         }

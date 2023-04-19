@@ -1,5 +1,6 @@
 package dk.jot2re.rsa.our;
 
+import dk.jot2re.mult.IShare;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.Parameters;
 import dk.jot2re.rsa.bf.BFParameters;
@@ -48,13 +49,13 @@ public class RSAUtil {
         }
     }
 
-    public static BigInteger multList(BFParameters params, BigInteger[] shares, BigInteger modulo) {
+    public static IShare multList(BFParameters params, IShare[] shares, BigInteger modulo) {
         if (shares.length < 2) {
             throw new IllegalArgumentException("Empty or singleton list");
         }
-        BigInteger temp = params.getMult().mult(shares[0], shares[1], modulo);
+        IShare temp = params.getMult().multShares(shares[0], shares[1], modulo);
         for (int i = 2; i < shares.length; i++) {
-            temp = params.getMult().mult(temp, shares[i], modulo);
+            temp = params.getMult().multShares(temp, shares[i], modulo);
         }
         return temp;
     }

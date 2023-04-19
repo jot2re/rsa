@@ -1,6 +1,7 @@
 package dk.jot2re.mult.ot.ips;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.IntegerShare;
 import dk.jot2re.mult.ot.OTMultResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
 import dk.jot2re.network.INetwork;
@@ -14,7 +15,7 @@ import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
-public class IPSMult implements IMult {
+public class IPSMult implements IMult<IntegerShare> {
     private final OTMultResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
@@ -85,6 +86,31 @@ public class IPSMult implements IMult {
             }
         }
         return partialRes.mod(modulo);
+    }
+
+    @Override
+    public IntegerShare share(BigInteger value, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare share(int partyId, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public BigInteger open(IntegerShare share, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare multShares(IntegerShare left, IntegerShare right, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare multConst(IntegerShare share, BigInteger known, BigInteger modulo) {
+        return null;
     }
 
     private BigInteger senderRole(IPSOTSender sender, BigInteger value, BigInteger modulo) {

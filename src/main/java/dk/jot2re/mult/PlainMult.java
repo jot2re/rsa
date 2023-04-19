@@ -9,7 +9,7 @@ import java.util.Random;
  * Multiplication class for debugging and protocol benchmark.
  * There is no communication as the pivot server holds everything in plain and all other servers just hold 0 values.
  */
-public class PlainMult implements IMult {
+public class PlainMult implements IMult<IntegerShare> {
     private final int pivotId;
     private Random rand;
     private INetwork network;
@@ -41,6 +41,31 @@ public class PlainMult implements IMult {
         } else {
             return defaultResponse;
         }
+    }
+
+    @Override
+    public IntegerShare share(BigInteger value, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare share(int partyId, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public BigInteger open(IntegerShare share, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare multShares(IntegerShare left, IntegerShare right, BigInteger modulo) {
+        return null;
+    }
+
+    @Override
+    public IntegerShare multConst(IntegerShare share, BigInteger known, BigInteger modulo) {
+        return null;
     }
 
     public int getMultCalls() {

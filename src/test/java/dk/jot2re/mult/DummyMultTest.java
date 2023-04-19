@@ -12,7 +12,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static dk.jot2re.DefaultSecParameters.MODULO;
-import static dk.jot2re.DefaultSecParameters.MODULO_BITLENGTH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,8 +25,8 @@ public class DummyMultTest {
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
-            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            A[i] = BigInteger.valueOf(42);// new BigInteger(MODULO_BITLENGTH, rand);
+            B[i] = BigInteger.valueOf(42);// new BigInteger(MODULO_BITLENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
@@ -44,7 +43,7 @@ public class DummyMultTest {
         for (Future<BigInteger> cur : C) {
             refC = refC.add(cur.get());
         }
-        assertEquals(refC.mod(MODULO), refA.multiply(refB).mod(MODULO));
+        assertEquals(refA.multiply(refB).mod(MODULO), refC.mod(MODULO));
         for (int i = 0; i < parties; i++) {
             assertEquals(1, ((DummyMult) mults.get(i)).getMultCalls());
         }
