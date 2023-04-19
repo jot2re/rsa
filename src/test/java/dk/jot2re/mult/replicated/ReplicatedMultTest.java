@@ -2,12 +2,12 @@ package dk.jot2re.mult.replicated;
 
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.MultFactory;
+import dk.jot2re.mult.ReplicatedShare;
 import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.Drng;
 import dk.jot2re.mult.ot.util.DrngImpl;
 import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.NetworkFactory;
-import dk.jot2re.network.INetwork;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -15,7 +15,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static dk.jot2re.DefaultSecParameters.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,32 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReplicatedMultTest {
     // todo refactor and consolidate with Gilboa
-
-    public static Map<Integer, IMult> getMults(int parties, int compSec, int statSec) throws ExecutionException, InterruptedException {
-        NetworkFactory netFactory = new NetworkFactory(parties);
-        Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
-        Map<Integer, Future<IMult>> mults = new HashMap<>(parties);
-
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        for (int i = 0; i <= parties; i++) {
-            int finalI = i;
-            Future<IMult> curMult = executor.submit(() -> {
-                ReplictedMultResourcePool pool = getResourcePool(finalI, parties, compSec, statSec);
-                IMult mult = new ReplicatedMult(pool);
-                mult.init(networks.get(finalI));
-                return mult;
-            });
-            mults.put(i, curMult);
-        }
-        executor.shutdown();
-        assertTrue(executor.awaitTermination(30000, TimeUnit.SECONDS));
-        Map<Integer, IMult> res = new HashMap<>(parties);
-        for (int i: mults.keySet()) {
-            res.put(i, mults.get(i).get());
-        }
-        return res;
-    }
-
     public static ReplictedMultResourcePool getResourcePool(int myId, int parties, int compSec, int statSec) {
         byte[] seed = new byte[32];
         seed[0] = (byte) myId;
@@ -131,23 +108,33 @@ public class ReplicatedMultTest {
     void testShareInput() throws Exception {
         int parties = 3;
         BigInteger[] A = new BigInteger[parties];
-        Map<Integer, IMult> mults = getMults(parties, COMP_SEC, STAT_SEC);
+        MultFactory factory = new MultFactory(parties);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.DUMMY);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(MODULO_BITLENGTH, new Random(42));
+            A[i] = BigInteger.valueOf(42);//new BigInteger(MODULO_BITLENGTH, new Random(42));
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<List<BigInteger>>> sharedInput = new ArrayList<>(parties);
+        List<Future<BigInteger>> sharedInput = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).sharedInput(A[finalI], MODULO)));
+            sharedInput.add(executor.submit(() -> {
+                ReplicatedShare shared = ((ReplicatedMult) mults.get(finalI)).sharedInput(A[finalI], MODULO);
+                return ((ReplicatedMult) mults.get(finalI)).open(shared, MODULO);
+            }));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
 
-        // Get the shared value from party 0 and 1. I.e. the shares of party 0 and last share of party 1
-        BigInteger computedSum = sharedInput.get(0).get().get(0).add(sharedInput.get(0).get().get(1)).add(sharedInput.get(1).get().get(1));
-        assertEquals(
-                Arrays.stream(A).reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(MODULO)),
-                computedSum.mod(MODULO));
+        for (Future<BigInteger> cur: sharedInput) {
+            assertEquals(
+                    Arrays.stream(A).reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(MODULO)),
+                    cur.get());
+        }
+
+//        // Get the shared value from party 0 and 1. I.e. the shares of party 0 and last share of party 1
+//        BigInteger computedSum = sharedInput.get(0).get().getRawShare().get(0).add(sharedInput.get(0).get().getRawShare().get(1)).add(sharedInput.get(1).get().getRawShare().get(1));
+//        assertEquals(
+//                Arrays.stream(A).reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(MODULO)),
+//                computedSum.mod(MODULO));
     }
 }

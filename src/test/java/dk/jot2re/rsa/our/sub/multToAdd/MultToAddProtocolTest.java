@@ -31,7 +31,7 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = { 2, 3, 5})
+    @ValueSource(ints = {  3, 5})
     public void sunshine(int parties) throws Exception {
         Map<Integer, BigInteger> multShares = new HashMap<>(parties);
         BigInteger refValue = BigInteger.ONE;

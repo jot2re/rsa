@@ -8,23 +8,27 @@ import dk.jot2re.rsa.bf.BFParameters;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class RSAUtil {
     public static List<BigInteger> share(Parameters params, BigInteger value, BigInteger modulo) {
-        List<BigInteger> randomVals = IntStream.range(0, params.getAmountOfPeers()).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
+        List<BigInteger> randomVals = IntStream.range(0, params.getAmountOfPeers()).mapToObj(i -> sample(params.getRandom(), modulo)).collect(Collectors.toList());
         randomVals.add(value.subtract(randomVals.stream().reduce(BigInteger.ZERO, BigInteger::add)).mod(modulo));
         return randomVals;
     }
 
     public static List<BigInteger> randomSharing(Parameters params, BigInteger modulo) {
-        return IntStream.range(0, params.getAmountOfPeers()+1).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
+        return IntStream.range(0, params.getAmountOfPeers()+1).mapToObj(i -> sample(params.getRandom(), modulo)).collect(Collectors.toList());
     }
 
-    public static BigInteger sample(Parameters params, BigInteger modulo) {
-        BigInteger r = new BigInteger(modulo.bitLength()+params.getStatBits(), params.getRandom());
-        return r.mod(modulo);
+    public static BigInteger sample(Random random, BigInteger modulo) {
+        BigInteger share = new BigInteger(modulo.bitLength(), random);
+        while (share.compareTo(modulo) >= 0) {
+            share = new BigInteger(modulo.bitLength(), random);
+        }
+        return share;
     }
 
     public static BigInteger open(Parameters params, BigInteger share, BigInteger modulo) throws NetworkException {

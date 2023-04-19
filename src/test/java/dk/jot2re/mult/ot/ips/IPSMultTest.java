@@ -1,5 +1,6 @@
 package dk.jot2re.mult.ot.ips;
 
+import dk.jot2re.mult.AbstractAdditiveMult;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.MultFactory;
 import dk.jot2re.network.DummyNetwork;
@@ -35,7 +36,7 @@ public class IPSMultTest {
             A[i] = new BigInteger(MODULO_BITLENGTH, rand);
             B[i] = new BigInteger(MODULO_BITLENGTH, rand);
         }
-        Field privateField = IPSMult.class.getDeclaredField("network");
+        Field privateField = AbstractAdditiveMult.class.getDeclaredField("network");
         privateField.setAccessible(true);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);

@@ -32,9 +32,9 @@ public interface IMult<T extends IShare> {
 
     BigInteger open(T share, BigInteger modulo);
 
-//    IShare add(IShare left, IShare right);
-//
-//    IShare add(IShare share, BigInteger known);
+    IShare add(IShare left, IShare right, BigInteger modulo);
+
+    IShare add(IShare share, BigInteger known, BigInteger modulo);
 
     T multShares(T left, T right, BigInteger modulo);
 

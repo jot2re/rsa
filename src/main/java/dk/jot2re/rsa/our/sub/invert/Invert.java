@@ -14,7 +14,7 @@ public class Invert {
     }
 
     public BigInteger execute(BigInteger xShare, BigInteger modulo) throws NetworkException {
-        BigInteger rShare = RSAUtil.sample(params, modulo);
+        BigInteger rShare = RSAUtil.sample(params.getRandom(), modulo);
         BigInteger rxShare = params.getMult().mult(rShare, xShare, modulo);
         BigInteger rx = RSAUtil.open(params, rxShare, modulo);
         BigInteger y = rx.modInverse(modulo);

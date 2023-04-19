@@ -1,6 +1,7 @@
 package dk.jot2re.mult;
 
 import dk.jot2re.network.INetwork;
+import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -50,20 +51,19 @@ public abstract class AbstractAdditiveMult implements IMult<IntegerShare> {
 
     @Override
     public IntegerShare share(BigInteger value, BigInteger modulo) {
-        BigInteger receivedSum = BigInteger.ZERO;
+        BigInteger randomSum = BigInteger.ZERO;
         for (int i : network.peers()) {
-            receivedSum = receivedSum.add(network.receive(i));
+            BigInteger share = RSAUtil.sample(rand, modulo);
+            randomSum = randomSum.add(share);
+            network.send(i, share);
         }
         // Compute the share of the pivot party
-        return new IntegerShare(value.subtract(receivedSum), modulo);
+        return new IntegerShare(value.subtract(randomSum), modulo);
     }
 
     @Override
     public IntegerShare share(int partyId, BigInteger modulo) {
-        // All except the pivot party picks their own shares
-        BigInteger share = new BigInteger(modulo.bitLength(), rand);
-        network.send(partyId, share.mod(modulo));
-        return new IntegerShare(share, modulo);
+        return new IntegerShare(network.receive(partyId), modulo);
     }
 
     @Override

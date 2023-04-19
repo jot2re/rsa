@@ -1,5 +1,6 @@
 package dk.jot2re.rsa.our;
 
+import dk.jot2re.mult.IShare;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.our.sub.invert.Invert;
 import dk.jot2re.rsa.our.sub.membership.IMembership;
@@ -108,18 +109,18 @@ public class OurProtocol {
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
         BigInteger multGammaShare;
         if (params.getMyId() == 0) {
-            BigInteger v = RSAUtil.sample(params, N);
+            BigInteger v = RSAUtil.sample(params.getRandom(), N);
             params.getNetwork().sendToAll(v);
             multGammaShare = v.modPow(share.subtract(BigInteger.valueOf(1)).shiftRight(1), N);
         } else {
             BigInteger v = params.getNetwork().receive(0);
             multGammaShare = v.modPow(share.shiftRight(1), N);
         }
-        BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
+        IShare addGammaShare = multToAdd.execute(multGammaShare, N);
         BigInteger inverseShareP = inverter.execute(share, params.getP());
         BigInteger inverseShareQ = inverter.execute(share, params.getQ());
-        BigInteger gammaAdd = RSAUtil.addConst(params, addGammaShare, BigInteger.ONE, N);
-        BigInteger gammaSub = RSAUtil.subConst(params, addGammaShare, BigInteger.ONE, N);
+        IShare gammaAdd = params.getMult().add(addGammaShare, BigInteger.ONE, N);
+        IShare gammaSub = params.getMult().add(addGammaShare, N.subtract(BigInteger.ONE), N);
         if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &
                 !validateGamma(gammaAdd, inverseShareP, inverseShareQ, N)) {
             return false;

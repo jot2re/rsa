@@ -32,7 +32,7 @@ public class MembershipLog implements IMembership {
             }
             toMult = nextToMult;
         }
-        BigInteger rShare = RSAUtil.sample(params, modulo);
+        BigInteger rShare = RSAUtil.sample(params.getRandom(), modulo);
         return params.getMult().mult(toMult.get(0), rShare, modulo);
     }
 }

@@ -9,7 +9,7 @@ public class DefaultSecParameters {
     public static final int MODULO_BITLENGTH =2*PRIME_BITLENGTH;
     public static final BigInteger MODULO = findMaxPrime(PRIME_BITLENGTH);
 
-    private static BigInteger findMaxPrime(int bitLength) {
+    public static BigInteger findMaxPrime(int bitLength) {
         BigInteger candidate = BigInteger.TWO.pow(MODULO_BITLENGTH).subtract(BigInteger.ONE);
         while (!candidate.isProbablePrime(STAT_SEC)) {
             candidate = candidate.subtract(BigInteger.TWO);

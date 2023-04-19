@@ -33,22 +33,12 @@ public class ReplicatedMult implements IMult<ReplicatedShare> {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }
         try {
-            List<BigInteger> A = sharedInput(shareA, modulo);
-            List<BigInteger> B = sharedInput(shareB, modulo);
-            return multiplyShared(A, B, modulo);
+            ReplicatedShare A = sharedInput(shareA, modulo);
+            ReplicatedShare B = sharedInput(shareB, modulo);
+            return multiplyShared(A.getRawShare(), B.getRawShare(), modulo);
         } catch (Exception e) {
             throw new RuntimeException("Failed to multiply", e);
         }
-    }
-
-    @Override
-    public ReplicatedShare share(BigInteger value, BigInteger modulo) {
-        return null;
-    }
-
-    @Override
-    public ReplicatedShare share(int partyId, BigInteger modulo) {
-        return null;
     }
 
     protected BigInteger multiplyShared(List<BigInteger> A, List<BigInteger> B, BigInteger modulo) {
@@ -63,20 +53,20 @@ public class ReplicatedMult implements IMult<ReplicatedShare> {
         return product;
     }
 
-    protected List<BigInteger> sharedInput(BigInteger share, BigInteger modulo) {
-        ArrayList<BigInteger> myShare = input(share, modulo);
+    protected ReplicatedShare sharedInput(BigInteger share, BigInteger modulo) {
+        ArrayList<BigInteger> myShare = share(share, modulo).getRawShare();
         Map<Integer, ArrayList<BigInteger>> peerShares = network.receiveFromAllPeers();
         for (int i : peerShares.keySet()) {
             if (i != resourcePool.getMyId()) {
                 for (int j = 0; j < resourcePool.getParties()-maxCorrupt; j++) {
-                    myShare.set(j, myShare.get(j).add(peerShares.get(i).get(j)).mod(modulo)); // todo optimize, no need to do it after each share
+                    myShare.set(j, myShare.get(j).add(peerShares.get(i).get(j)).mod(modulo)); // TODO optimize, no need to do it after each share
                 }
             }
         }
-        return myShare;
+        return new ReplicatedShare(myShare);
     }
 
-    protected ArrayList<BigInteger> input(BigInteger value, BigInteger modulo) {
+    public ReplicatedShare share(BigInteger value, BigInteger modulo) {
         ArrayList<BigInteger> sharesOfValue = internalShare(value, modulo);
         for (int i = 0; i < resourcePool.getParties(); i++) {
             if (i != resourcePool.getMyId()) {
@@ -84,8 +74,14 @@ public class ReplicatedMult implements IMult<ReplicatedShare> {
                 network.send(i, toSend);
             }
         }
-        return getPartyShares(resourcePool.getMyId(), sharesOfValue);
+        return new ReplicatedShare(getPartyShares(resourcePool.getMyId(), sharesOfValue));
     }
+
+    @Override
+    public ReplicatedShare share(int partyId, BigInteger modulo) {
+        return new ReplicatedShare(network.receive(partyId));
+    }
+
 
     protected ArrayList<BigInteger> getPartyShares(int receiverId, List<BigInteger> shares) {
         // TODO is this the general formula
@@ -111,16 +107,28 @@ public class ReplicatedMult implements IMult<ReplicatedShare> {
 
     @Override
     public BigInteger open(ReplicatedShare share, BigInteger modulo) {
-        return null;
+        // TODO optimize as we are sending more shares than needed
+        try {
+            network.sendToAll(share.getRawShare().get(0));
+            Map<Integer, BigInteger> shares = network.receiveFromAllPeers();
+            return shares.values().stream().reduce(share.getRawShare().get(0), BigInteger::add).mod(modulo);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public ReplicatedShare multShares(ReplicatedShare left, ReplicatedShare right, BigInteger modulo) {
-        return null;
+        BigInteger additiveShare = multiplyShared(left.getRawShare(), right.getRawShare(), modulo);
+        return sharedInput(additiveShare, modulo);
     }
 
     @Override
     public ReplicatedShare multConst(ReplicatedShare share, BigInteger known, BigInteger modulo) {
-        return null;
+        ArrayList<BigInteger> res = new ArrayList<>(share.getRawShare().size());
+        for (int i = 0; i < res.size(); i++) {
+            res.set(i, share.getRawShare().get(i).multiply(known).mod(modulo));
+        }
+        return new ReplicatedShare(res);
     }
 }

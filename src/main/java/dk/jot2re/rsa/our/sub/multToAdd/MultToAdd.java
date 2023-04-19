@@ -19,13 +19,13 @@ public class MultToAdd {
     /**
      * Executes without making correlated randomness first.
      */
-    public BigInteger execute(BigInteger x, BigInteger modulo) throws NetworkException {
+    public IShare execute(BigInteger x, BigInteger modulo) throws NetworkException {
         Map<Integer, IShare> map = new HashMap<>(params.getAmountOfPeers()+1);
+        map.put(params.getMyId(), params.getMult().share(x, modulo));
         for (int party : params.getNetwork().peers()) {
             map.put(party, params.getMult().share(party, modulo));
         }
-        map.put(params.getMyId(), params.getMult().share(x, modulo));
-        return (BigInteger) RSAUtil.multList(params, map.values().toArray(new IShare[0]), modulo).getRawShare();
+        return RSAUtil.multList(params, map.values().toArray(new IShare[0]), modulo);
 //        List<BigInteger> myAdditiveShares = RSAUtil.share(params, x, modulo);
 //        return computeAdditiveShareOfProduct(myAdditiveShares, modulo);
     }
@@ -44,7 +44,7 @@ public class MultToAdd {
         for (int party : params.getNetwork().peers()) {
             map.put(party, params.getMult().share(party, modulo));
         }
-        BigInteger multiplicativeShare = RSAUtil.sample(params, modulo);
+        BigInteger multiplicativeShare = RSAUtil.sample(params.getRandom(), modulo);
         map.put(params.getMyId(), params.getMult().share(multiplicativeShare, modulo));
         IShare additiveShare = RSAUtil.multList(params, map.values().toArray(new IShare[0]), modulo);
         return new RandomShare(additiveShare, multiplicativeShare);
@@ -69,7 +69,7 @@ public class MultToAdd {
         Map<Integer, BigInteger> shares = new HashMap<>(params.getAmountOfPeers()+1);
         BigInteger sum = BigInteger.ZERO;
         for (int i : params.getNetwork().peers()) {
-            BigInteger sampled = RSAUtil.sample(params, modulo);
+            BigInteger sampled = RSAUtil.sample(params.getRandom(), modulo);
             shares.put(i, sampled);
             sum = sum.add(sampled).mod(modulo);
         }

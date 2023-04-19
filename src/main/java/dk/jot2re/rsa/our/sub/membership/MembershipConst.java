@@ -23,12 +23,12 @@ public class MembershipConst implements IMembership {
             throw new RuntimeException("empty set");
         }
         if (m == 1) {
-            BigInteger rho = RSAUtil.sample(params, modulo);
+            BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
             BigInteger temp = RSAUtil.subConst(params, xShare, set.get(0), modulo);
             return params.getMult().mult(rho, temp, modulo);
         }
         if (m == 2) {
-            BigInteger rho = RSAUtil.sample(params, modulo);
+            BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
             BigInteger left = RSAUtil.subConst(params, xShare, set.get(0), modulo);
             BigInteger right = RSAUtil.subConst(params, xShare, set.get(1), modulo);
             BigInteger temp = params.getMult().mult(left, right, modulo);
@@ -37,13 +37,13 @@ public class MembershipConst implements IMembership {
         // Step 1; sample
         long start, stop;
         start = System.currentTimeMillis();
-        BigInteger rho = RSAUtil.sample(params, modulo);
+        BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
         Map<Integer, BigInteger> rShares = new HashMap<>(m);
-        rShares.put(1, RSAUtil.sample(params, modulo));
+        rShares.put(1, RSAUtil.sample(params.getRandom(), modulo));
         Map<Integer, BigInteger> alphaShares = new HashMap<>(m-1);
         for (int i = 2; i <= m; i++) {
-            rShares.put(i, RSAUtil.sample(params, modulo));
-            alphaShares.put(i, RSAUtil.sample(params, modulo));
+            rShares.put(i, RSAUtil.sample(params.getRandom(), modulo));
+            alphaShares.put(i, RSAUtil.sample(params.getRandom(), modulo));
         }
         stop = System.currentTimeMillis();
         System.out.println("step 1: " + (stop-start));

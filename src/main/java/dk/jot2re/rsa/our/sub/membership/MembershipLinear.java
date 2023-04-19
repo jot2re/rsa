@@ -19,7 +19,7 @@ public class MembershipLinear implements IMembership {
         for (int i = 1; i < set.size(); i++) {
             temp = params.getMult().mult(temp, RSAUtil.subConst(params, xShare, set.get(i), modulo), modulo);
         }
-        BigInteger rShare = RSAUtil.sample(params, modulo);
+        BigInteger rShare = RSAUtil.sample(params.getRandom(), modulo);
         temp = params.getMult().mult(temp, rShare, modulo);
         return temp;
     }

@@ -13,8 +13,7 @@ public class PlainMult implements IMult<IntegerShare> {
     private final int pivotId;
     private Random rand;
     private INetwork network;
-    private int multCalls = 0;
-    private BigInteger defaultResponse = BigInteger.ZERO;
+    private IntegerShare defaultResponse = new IntegerShare(BigInteger.ZERO);
 
     /**
      * Initializes a new multiplication functionality with the designated party as pivot
@@ -35,44 +34,43 @@ public class PlainMult implements IMult<IntegerShare> {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }
-        multCalls++;
         if (network.myId() == pivotId) {
             return shareA.multiply(shareB).mod(modulo);
+        } else {
+            return open(defaultResponse, modulo);
+        }
+    }
+
+    @Override
+    public IntegerShare share(BigInteger value, BigInteger modulo) {
+        if (network.myId() == pivotId) {
+            return new IntegerShare(value, modulo);
         } else {
             return defaultResponse;
         }
     }
 
     @Override
-    public IntegerShare share(BigInteger value, BigInteger modulo) {
-        return null;
-    }
-
-    @Override
     public IntegerShare share(int partyId, BigInteger modulo) {
-        return null;
+        return defaultResponse;
     }
 
     @Override
     public BigInteger open(IntegerShare share, BigInteger modulo) {
-        return null;
+        return share.getRawShare();
     }
 
     @Override
     public IntegerShare multShares(IntegerShare left, IntegerShare right, BigInteger modulo) {
-        return null;
+        return new IntegerShare(left.getRawShare().multiply(right.getRawShare()).mod(modulo));
     }
 
     @Override
     public IntegerShare multConst(IntegerShare share, BigInteger known, BigInteger modulo) {
-        return null;
+        return new IntegerShare(share.getRawShare().multiply(known), modulo);
     }
 
-    public int getMultCalls() {
-        return multCalls;
-    }
-
-    public void setDefaultResponse(BigInteger response) {
+    public void setDefaultResponse(IntegerShare response) {
         this.defaultResponse = response;
     }
 }
