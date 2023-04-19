@@ -24,6 +24,13 @@ public class ShamirEngine {
         this.rng = rng;
     }
 
+    public int getParties() {
+        return parties;
+    }
+    public int getThreshold() {
+        return threshold;
+    }
+
     // code inspired by karbi79 https://stackoverflow.com/questions/19327651/java-implementation-of-shamirs-secret-sharing
 
     /**
@@ -89,9 +96,26 @@ public class ShamirEngine {
         return currentSum;
     }
 
+    protected BigInteger degreeRedConst(int myId, int otherId, BigInteger modulo) {
+        final int[] threeVals = new int[] {3, -3, 1};
+        final int[][] fiveValsNum = new int[][] {
+                new int[] {-17, 94, -114, 62, -13},
+                new int[] {-94, 308, -348, 184, -38},
+                new int[] {-171, 522, -582, 306, -63},
+                new int[] {-248, 736, -816, 428, -88},
+                new int[] {-325, 950, -1050, 550, -113},
+        };
+        BigInteger fiveValsDen = BigInteger.valueOf(12).modInverse(modulo);
+        if (parties == 3) {
+            return BigInteger.valueOf(threeVals[otherId]);
+        }
+        if (parties == 5) {
+            return BigInteger.valueOf(fiveValsNum[myId][otherId]).multiply(fiveValsDen).mod(modulo);
+        }
+        throw new RuntimeException("not found yet");
+    }
 
-
-    protected BigInteger[] lagrangeCoef(int degree, BigInteger modulo) {
+    protected static BigInteger[] lagrangeCoef(int degree, BigInteger modulo) {
         BigInteger[] coefs = new BigInteger[degree+1];
         for (int i = 1; i < degree+2; i++) {
             coefs[i-1] = lagrangeConst(i, degree, modulo);
@@ -104,7 +128,7 @@ public class ShamirEngine {
      * @param xCoord
      * @return
      */
-    protected BigInteger lagrangeConst(int xCoord, int degree, BigInteger modulo) {
+    protected static BigInteger lagrangeConst(int xCoord, int degree, BigInteger modulo) {
         BigInteger numerator = BigInteger.ONE;
         BigInteger denominator = BigInteger.ONE;
         for (int i = 1; i < degree+2; i++) {

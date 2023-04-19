@@ -10,18 +10,14 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 
-import static dk.jot2re.mult.ot.util.Fiddling.ceil;
-
 public class ShamirMult implements IMult<BigInteger> {
     private final ShamirResourcePool resourcePool;
     private final ShamirEngine engine;
-    private final int maxCorrupt;
     private INetwork network;
 
     public ShamirMult(ShamirResourcePool resourcePool) {
         this.resourcePool = resourcePool;
         this.engine = new ShamirEngine(resourcePool.getParties(), resourcePool.getRng());
-        this.maxCorrupt = resourcePool.getParties()-ceil(resourcePool.getParties(), 2);
     }
 
     @Override
@@ -75,6 +71,18 @@ public class ShamirMult implements IMult<BigInteger> {
             }
         }
         return sharesOfValue.get(resourcePool.getMyId());
+    }
+
+    // TODO does not work, but I have no idea why
+    protected BigInteger bgwDegreeReduction(BigInteger value, BigInteger modulo) {
+        BigInteger myShare = shareMyValue(resourcePool.getThreshold()*2,value, modulo);
+        Map<Integer, BigInteger> othersShares = network.receiveFromAllPeers();
+        othersShares.put(resourcePool.getMyId(), myShare);
+        BigInteger res = BigInteger.ZERO;
+        for (int i = 0; i < othersShares.size(); i++) {
+            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(resourcePool.getMyId(), i, modulo))).mod(modulo);
+        }
+        return res.mod(modulo);
     }
 
     protected BigInteger degreeReduction(BigInteger value, BigInteger modulo) throws NetworkException {

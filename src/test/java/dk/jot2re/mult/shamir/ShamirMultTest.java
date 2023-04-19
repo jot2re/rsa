@@ -34,8 +34,8 @@ public class ShamirMultTest {
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
         for (int i = 0; i < parties; i++) {
-            A[i] = BigInteger.valueOf(42);// new BigInteger(MODULO_BITLENGTH, rand);
-            B[i] = BigInteger.valueOf(42);//new BigInteger(MODULO_BITLENGTH, rand);
+            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
@@ -106,7 +106,7 @@ public class ShamirMultTest {
         for (Future<BigInteger> cur : C) {
             resShares.add(cur.get());
         }
-        BigInteger refC = engine.combine(parties-1, resShares, modulo);
+        BigInteger refC = engine.combine(engine.getThreshold(), resShares, modulo);
         assertEquals(aValue.multiply(bValue).mod(modulo), refC.mod(modulo));
 
         Field privateField = ShamirMult.class.getDeclaredField("network");
