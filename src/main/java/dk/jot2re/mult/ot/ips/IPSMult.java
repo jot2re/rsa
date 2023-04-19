@@ -1,12 +1,14 @@
 package dk.jot2re.mult.ot.ips;
 
-import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.AbstractAdditiveMult;
 import dk.jot2re.mult.IntegerShare;
 import dk.jot2re.mult.ot.OTMultResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
+import dk.jot2re.mult.ot.util.ExceptionConverter;
 import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,13 +17,12 @@ import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
-public class IPSMult implements IMult<IntegerShare> {
+public class IPSMult extends AbstractAdditiveMult {
     private final OTMultResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
-    private INetwork network;
     private Map<Integer, IPSOTFactory> factory;
-    private int amountBits;
+    private final int amountBits;
     private int expansionSizeBytes;
 
     /**
@@ -32,12 +33,14 @@ public class IPSMult implements IMult<IntegerShare> {
         this.resources = resources;
         this.safeExpansion = safeExpansion;
         this.adjustedBatchSize = batchSize - resources.getCompSec()- resources.getStatSec();
+        this.amountBits = resources.getCompSec()+resources.getStatSec();
     }
 
     public IPSMult(OTMultResourcePool resources) {
         this.resources = resources;
         this.safeExpansion = true;
         this.adjustedBatchSize = DEFAULT_BATCH_SIZE - resources.getCompSec()- resources.getStatSec();
+        this.amountBits = resources.getCompSec()+resources.getStatSec();
     }
 
     @Override
@@ -60,17 +63,28 @@ public class IPSMult implements IMult<IntegerShare> {
                 }
             }
         }
-        this.network = network;
+        byte[] newSeed = new byte[ceil(resources.getCompSec(), 8)];
+        resources.getOtResources((resources.getMyId()+1) % resources.getParties()).getRandomGenerator().nextBytes(newSeed);
+        SecureRandom rnd = ExceptionConverter.safe(()-> SecureRandom.getInstance("SHA1PRNG"), "Randomness algorithm does not exist");
+        rnd.setSeed(newSeed);
+        super.rand = rnd;
+        super.network = network;
     }
 
     @Override
     public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
-        this.amountBits = resources.getCompSec()+resources.getStatSec();
+        return multShares(new IntegerShare(shareA), new IntegerShare(shareB), modulo).getRawShare();
+    }
+
+    @Override
+    public IntegerShare multShares(IntegerShare left, IntegerShare right, BigInteger modulo) {
         if (safeExpansion) {
             this.expansionSizeBytes = (modulo.bitLength()/8) + ceil(resources.getStatSec(), 8);
         } else {
             this.expansionSizeBytes = modulo.bitLength()/8;
         }
+        BigInteger shareA = left.getRawShare();
+        BigInteger shareB = right.getRawShare();
         BigInteger partialRes = shareA.multiply(shareB).mod(modulo);
         for (int i = 0; i < resources.getParties(); i++) {
             if (resources.getMyId() != i) {
@@ -85,33 +99,9 @@ public class IPSMult implements IMult<IntegerShare> {
                 partialRes = senderShare.add(receiverShare).add(partialRes);
             }
         }
-        return partialRes.mod(modulo);
+        return new IntegerShare(partialRes, modulo);
     }
 
-    @Override
-    public IntegerShare share(BigInteger value, BigInteger modulo) {
-        return null;
-    }
-
-    @Override
-    public IntegerShare share(int partyId, BigInteger modulo) {
-        return null;
-    }
-
-    @Override
-    public BigInteger open(IntegerShare share, BigInteger modulo) {
-        return null;
-    }
-
-    @Override
-    public IntegerShare multShares(IntegerShare left, IntegerShare right, BigInteger modulo) {
-        return null;
-    }
-
-    @Override
-    public IntegerShare multConst(IntegerShare share, BigInteger known, BigInteger modulo) {
-        return null;
-    }
 
     private BigInteger senderRole(IPSOTSender sender, BigInteger value, BigInteger modulo) {
         List<BigInteger> shares = sender.send(value, modulo, expansionSizeBytes);

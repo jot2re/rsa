@@ -36,7 +36,7 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
         Map<Integer, BigInteger> multShares = new HashMap<>(parties);
         BigInteger refValue = BigInteger.ONE;
         for (int i = 0; i < parties; i++) {
-            BigInteger multShare = new BigInteger(MODULO_BITLENGTH, rand);
+            BigInteger multShare = new BigInteger(MODULO_BITLENGTH, rand).mod(MODULO);
             multShares.put(i, multShare);
             refValue = refValue.multiply(multShare).mod(MODULO);
         }
@@ -67,7 +67,7 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
         Map<Integer, BigInteger> multShares = new HashMap<>(parties);
         BigInteger refValue = BigInteger.ONE;
         for (int i = 0; i < parties; i++) {
-            BigInteger multShare = new BigInteger(MODULO_BITLENGTH, rand);
+            BigInteger multShare = new BigInteger(MODULO_BITLENGTH, rand).mod(MODULO);
             multShares.put(i, multShare);
             refValue = refValue.multiply(multShare).mod(MODULO);
         }
