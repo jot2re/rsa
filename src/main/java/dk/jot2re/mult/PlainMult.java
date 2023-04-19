@@ -9,7 +9,7 @@ import java.util.Random;
  * Multiplication class for debugging and protocol benchmark.
  * There is no communication as the pivot server holds everything in plain and all other servers just hold 0 values.
  */
-public class PlainMult implements IMult {
+public class PlainMult extends AbstractAdditiveMult{
     private final int pivotId;
     private Random rand;
     private INetwork network;
@@ -31,13 +31,10 @@ public class PlainMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
-        if (shareA == null || shareB == null || modulo == null) {
-            throw new NullPointerException("Input for multiplication as to be non-null");
-        }
+    public BigInteger multShares(BigInteger left, BigInteger right, BigInteger modulo) {
         multCalls++;
         if (network.myId() == pivotId) {
-            return shareA.multiply(shareB).mod(modulo);
+            return left.multiply(right).mod(modulo);
         } else {
             return defaultResponse;
         }

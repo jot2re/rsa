@@ -1,6 +1,6 @@
 package dk.jot2re.mult.ot.ips;
 
-import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.AbstractAdditiveMult;
 import dk.jot2re.mult.ot.OTMultResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
 import dk.jot2re.network.INetwork;
@@ -14,7 +14,7 @@ import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
-public class IPSMult implements IMult {
+public class IPSMult extends AbstractAdditiveMult {
     private final OTMultResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
@@ -63,7 +63,7 @@ public class IPSMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
+    public BigInteger multShares(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
         this.amountBits = resources.getCompSec()+resources.getStatSec();
         if (safeExpansion) {
             this.expansionSizeBytes = (modulo.bitLength()/8) + ceil(resources.getStatSec(), 8);

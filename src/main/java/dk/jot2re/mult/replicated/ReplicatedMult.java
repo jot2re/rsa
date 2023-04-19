@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ReplicatedMult implements IMult {
+public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
     private final ReplictedMultResourcePool resourcePool;
     private final int maxCorrupt;
     private INetwork network;
@@ -27,17 +27,9 @@ public class ReplicatedMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
-        if (shareA == null || shareB == null || modulo == null) {
-            throw new NullPointerException("Input for multiplication as to be non-null");
-        }
-        try {
-            List<BigInteger> A = sharedInput(shareA, modulo);
-            List<BigInteger> B = sharedInput(shareB, modulo);
-            return multiplyShared(A, B, modulo);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to multiply", e);
-        }
+    public ArrayList<BigInteger> multShares(ArrayList<BigInteger> left, ArrayList<BigInteger> right, BigInteger modulo) {
+        BigInteger additiveShare = multiplyShared(left, right, modulo);
+        return share(additiveShare, modulo);
     }
 
     protected BigInteger multiplyShared(List<BigInteger> A, List<BigInteger> B, BigInteger modulo) {
@@ -52,7 +44,8 @@ public class ReplicatedMult implements IMult {
         return product;
     }
 
-    protected List<BigInteger> sharedInput(BigInteger share, BigInteger modulo) {
+    @Override
+    public ArrayList<BigInteger> share(BigInteger share, BigInteger modulo) {
         ArrayList<BigInteger> myShare = input(share, modulo);
         Map<Integer, ArrayList<BigInteger>> peerShares = network.receiveFromAllPeers();
         for (int i : peerShares.keySet()) {
@@ -65,8 +58,13 @@ public class ReplicatedMult implements IMult {
         return myShare;
     }
 
+    @Override
+    public BigInteger combine(ArrayList<BigInteger> share, BigInteger modulo) {
+        return share.get(0);
+    }
+
     protected ArrayList<BigInteger> input(BigInteger value, BigInteger modulo) {
-        ArrayList<BigInteger> sharesOfValue = share(value, modulo);
+        ArrayList<BigInteger> sharesOfValue = singlePartyShare(value, modulo);
         for (int i = 0; i < resourcePool.getParties(); i++) {
             if (i != resourcePool.getMyId()) {
                 ArrayList<BigInteger> toSend = getPartyShares(i, sharesOfValue);
@@ -86,7 +84,7 @@ public class ReplicatedMult implements IMult {
         return toSend;
     }
 
-    protected ArrayList<BigInteger> share(BigInteger share, BigInteger modulo) {
+    protected ArrayList<BigInteger> singlePartyShare(BigInteger share, BigInteger modulo) {
         ArrayList<BigInteger> shares = new ArrayList<>(resourcePool.getParties());
         BigInteger partialSum = BigInteger.ZERO;
         for (int i = 0; i < resourcePool.getParties()-1; i++) {

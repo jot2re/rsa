@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
-public class ShamirMult implements IMult {
+public class ShamirMult implements IMult<BigInteger> {
     private final ShamirResourcePool resourcePool;
     private final ShamirEngine engine;
     private final int maxCorrupt;
@@ -30,14 +30,12 @@ public class ShamirMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
+    public BigInteger multShares(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }
         try {
-            BigInteger A = sharedInput(shareA, modulo);
-            BigInteger B = sharedInput(shareB, modulo);
-            return degreeReduction(A.multiply(B).mod(modulo), modulo);
+            return degreeReduction(shareA.multiply(shareB).mod(modulo), modulo);
         } catch (Exception e) {
             throw new RuntimeException("Failed to multiply", e);
         }
@@ -47,7 +45,8 @@ public class ShamirMult implements IMult {
         return engine.combine(degree, shares, modulo);
     }
 
-    protected BigInteger sharedInput(BigInteger share, BigInteger modulo) {
+    @Override
+    public BigInteger share(BigInteger share, BigInteger modulo) {
         BigInteger myShare = shareMyValue(resourcePool.getThreshold(), share, modulo);
         Map<Integer, BigInteger> peerShares = network.receiveFromAllPeers();
         for (int i : peerShares.keySet()) {
@@ -56,6 +55,15 @@ public class ShamirMult implements IMult {
             }
         }
         return myShare.mod(modulo);
+    }
+
+    @Override
+    public BigInteger combine(BigInteger share, BigInteger modulo) {
+        if (resourcePool.getMyId() < resourcePool.getThreshold()+1) {
+            return share.multiply(engine.lagrangeConst(resourcePool.getMyId()+1, resourcePool.getThreshold(), modulo)).mod(modulo);
+        } else {
+            return BigInteger.ZERO;
+        }
     }
 
     protected BigInteger shareMyValue(int degree, BigInteger value, BigInteger modulo) {

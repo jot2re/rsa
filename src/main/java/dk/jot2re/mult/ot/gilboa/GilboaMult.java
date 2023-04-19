@@ -1,6 +1,6 @@
 package dk.jot2re.mult.ot.gilboa;
 
-import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.AbstractAdditiveMult;
 import dk.jot2re.mult.ot.ot.otextension.OtExtensionResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
 import dk.jot2re.mult.ot.util.StrictBitVector;
@@ -13,13 +13,13 @@ import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
 
 
-public class GilboaMult implements IMult {
+public class GilboaMult extends AbstractAdditiveMult {
     private final OtExtensionResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
     private INetwork network;
     private GilboaOTFactory factory;
-    private int amountBits;
+    private int upperBound;
     private int amountBytes;
     private int expansionSizeBytes;
 
@@ -56,17 +56,21 @@ public class GilboaMult implements IMult {
     }
 
     @Override
-    public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
-        return mult(shareA, shareB, modulo, modulo.bitLength());
-    }
-
-    @Override
     public BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
         if (upperBound > modulo.bitLength()) {
             throw new RuntimeException("Upper bound larger than modulo");
         }
-        this.amountBits = upperBound;
-        this.amountBytes = modulo.bitLength()/8;
+        this.upperBound = upperBound;
+        return internalMult(shareA, shareB, modulo);
+    }
+
+    public BigInteger multShares(BigInteger left, BigInteger right, BigInteger modulo) {
+        this.upperBound = modulo.bitLength();
+        return internalMult(left, right, modulo);
+    }
+
+    private BigInteger internalMult(BigInteger left, BigInteger right, BigInteger modulo) {
+        this.amountBytes = modulo.bitLength() / 8;
         if (safeExpansion) {
             this.expansionSizeBytes = amountBytes + ceil(resources.getLambdaSecurityParam(), 8);
         } else {
@@ -74,20 +78,20 @@ public class GilboaMult implements IMult {
         }
         BigInteger senderShare, receiverShare;
         if (resources.getMyId() == 0) {
-            senderShare = senderRole(shareA, modulo, upperBound);
-            receiverShare = receiverRole(shareB, modulo);
+            senderShare = senderRole(left, modulo, upperBound);
+            receiverShare = receiverRole(right, modulo);
         } else {
-            receiverShare = receiverRole(shareB, modulo);
-            senderShare = senderRole(shareA, modulo, upperBound);
+            receiverShare = receiverRole(right, modulo);
+            senderShare = senderRole(left, modulo, upperBound);
         }
-        BigInteger res = receiverShare.add(senderShare).add(shareA.multiply(shareB)).mod(modulo);
+        BigInteger res = receiverShare.add(senderShare).add(left.multiply(right)).mod(modulo);
         return res;
     }
 
     private BigInteger senderRole(BigInteger value, BigInteger modulo, int uppperBound) {
         List<BigInteger> shares = factory.send(value, modulo, uppperBound);
         BigInteger z = BigInteger.ZERO;
-        for (int i = 0; i < amountBits; i++) {
+        for (int i = 0; i < upperBound; i++) {
             z = z.add(shares.get(i).multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
         }
         z = z.negate().mod(modulo);
@@ -95,10 +99,10 @@ public class GilboaMult implements IMult {
     }
 
     private BigInteger receiverRole(BigInteger value, BigInteger modulo) {
-        StrictBitVector choice = choices(value, amountBits);
+        StrictBitVector choice = choices(value, upperBound);
         List<BigInteger> shares = factory.receive(choice, amountBytes);
         BigInteger z = BigInteger.ZERO;
-        for (int i = 0; i < amountBits; i++) {
+        for (int i = 0; i < upperBound; i++) {
             z = z.add(shares.get(i).multiply(BigInteger.ONE.shiftLeft(i))).mod(modulo);
         }
         return z;

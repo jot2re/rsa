@@ -104,7 +104,7 @@ public class ReplicatedMultTest {
     void testShare() {
         ReplictedMultResourcePool pool = getResourcePool(0, 3, COMP_SEC, STAT_SEC);
         ReplicatedMult mult = new ReplicatedMult(pool);
-        List<BigInteger> shares = mult.share(BigInteger.valueOf(42), BigInteger.valueOf(123456789));
+        List<BigInteger> shares = mult.singlePartyShare(BigInteger.valueOf(42), BigInteger.valueOf(123456789));
         assertEquals(BigInteger.valueOf(42),
                 shares.stream().reduce(BigInteger.ZERO, (a,b)->a.add(b).mod(BigInteger.valueOf(123456789))));
     }
@@ -139,7 +139,7 @@ public class ReplicatedMultTest {
         List<Future<List<BigInteger>>> sharedInput = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).sharedInput(A[finalI], MODULO)));
+            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).share(A[finalI], MODULO)));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));

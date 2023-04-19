@@ -5,7 +5,7 @@ import dk.jot2re.network.INetwork;
 import java.math.BigInteger;
 import java.util.Random;
 
-public class DummyMult implements IMult {
+public class DummyMult extends AbstractAdditiveMult {
     private Random rand;
     private INetwork network;
     private int multCalls = 0;
@@ -20,7 +20,7 @@ public class DummyMult implements IMult {
     }
 
     @Override
-    public synchronized BigInteger mult(BigInteger shareA, BigInteger shareB, BigInteger modulo, int upperBound) {
+    public BigInteger multShares(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }

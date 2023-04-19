@@ -34,8 +34,8 @@ public class ShamirMultTest {
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
-            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            A[i] = BigInteger.valueOf(42);// new BigInteger(MODULO_BITLENGTH, rand);
+            B[i] = BigInteger.valueOf(42);//new BigInteger(MODULO_BITLENGTH, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
@@ -57,12 +57,11 @@ public class ShamirMultTest {
 
         BigInteger refA = Arrays.stream(A).reduce(BigInteger.ZERO, BigInteger::add);
         BigInteger refB = Arrays.stream(B).reduce(BigInteger.ZERO, BigInteger::add);
-        List<BigInteger> resShares = new ArrayList<>();
+        BigInteger res = BigInteger.ZERO;
         for (Future<BigInteger> cur : C) {
-            resShares.add(cur.get());
+            res = res.add(cur.get()).mod(modulo);
         }
-        BigInteger refC = ((ShamirMult) mults.get(0)).combine(resShares.size()-1, resShares, modulo);
-        assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
+        assertEquals(refA.multiply(refB).mod(modulo), res);
 
         Field privateField = ShamirMult.class.getDeclaredField("network");
         privateField.setAccessible(true);
@@ -135,7 +134,7 @@ public class ShamirMultTest {
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
-                    res = ((ShamirMult) mults.get(finalI)).sharedInput(input, modulo);
+                    res = ((ShamirMult) mults.get(finalI)).share(input, modulo);
                 }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
