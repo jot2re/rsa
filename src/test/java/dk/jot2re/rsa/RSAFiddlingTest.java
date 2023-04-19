@@ -1,23 +1,23 @@
  package dk.jot2re.rsa;
 
-import dk.jot2re.mult.IShare;
-import dk.jot2re.mult.IntegerShare;
-import dk.jot2re.rsa.bf.BFParameters;
-import dk.jot2re.rsa.our.RSAUtil;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
+ import dk.jot2re.mult.IShare;
+ import dk.jot2re.mult.IntegerShare;
+ import dk.jot2re.rsa.bf.BFParameters;
+ import dk.jot2re.rsa.our.RSAUtil;
+ import org.junit.jupiter.params.ParameterizedTest;
+ import org.junit.jupiter.params.provider.CsvSource;
+ import org.junit.jupiter.params.provider.ValueSource;
 
-import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+ import java.math.BigInteger;
+ import java.util.*;
+ import java.util.concurrent.Executors;
+ import java.util.concurrent.Future;
+ import java.util.concurrent.ThreadPoolExecutor;
+ import java.util.concurrent.TimeUnit;
 
-import static dk.jot2re.rsa.RSATestUtils.share;
-import static org.junit.jupiter.api.Assertions.*;
+ import static dk.jot2re.rsa.RSATestUtils.share;
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RSAFiddlingTest {
     @ParameterizedTest
@@ -40,12 +40,13 @@ public class RSAFiddlingTest {
         for (int j = 0; j < amount; j++) {
             ref[j] = BigInteger.ZERO;
         }
-        Map<Integer, BigInteger[]> toMult = new HashMap<>(parties);
+        Map<Integer, IShare[]> toMult = new HashMap<>(parties);
         for (int i = 0; i < parties; i++) {
-            BigInteger[] cur = new BigInteger[amount];
+            IShare[] cur = new IShare[amount];
             for (int j = 0; j < amount; j++) {
-                cur[j] = new BigInteger(bits, params.get(i).getRandom());
-                ref[j] = ref[j].add(cur[j]).mod(modulo);
+                BigInteger curRand = new BigInteger(bits, params.get(i).getRandom());
+                cur[j] = new IntegerShare(curRand, modulo);
+                ref[j] = ref[j].add(curRand).mod(modulo);
             }
             toMult.put(i, cur);
         }
@@ -55,8 +56,7 @@ public class RSAFiddlingTest {
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             shares.add(executor.submit(() -> {
-                IShare[] curToMult = (IShare[]) Arrays.stream(toMult.get(finalI)).map(a -> new IntegerShare(a)).collect(Collectors.toList()).toArray();
-                IShare res = RSAUtil.multList(params.get(finalI),curToMult, modulo);
+                IShare res = RSAUtil.multList(params.get(finalI),toMult.get(finalI), modulo);
                 return params.get(finalI).getMult().open(res, modulo);
             }));
         }
@@ -64,14 +64,8 @@ public class RSAFiddlingTest {
         assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));
 
         BigInteger expected = Arrays.stream(ref).reduce(BigInteger.ONE, (a, b)-> a.multiply(b).mod(modulo));
-        BigInteger computed = BigInteger.ZERO;
         for (int i = 0; i < shares.size(); i++) {
-            computed = computed.add(shares.get(i).get()).mod(modulo);
-        }
-        assertEquals(expected, computed);
-        for (int i = 0; i < shares.size(); i++) {
-            assertNotEquals(BigInteger.ZERO, shares.get(i).get());
-            assertNotEquals(BigInteger.ONE, shares.get(i).get());
+            assertEquals(expected, shares.get(i).get());
         }
     }
 }
