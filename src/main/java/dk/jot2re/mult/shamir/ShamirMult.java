@@ -75,12 +75,26 @@ public class ShamirMult implements IMult<BigInteger> {
 
     // TODO does not work, but I have no idea why
     protected BigInteger bgwDegreeReduction(BigInteger value, BigInteger modulo) {
-        BigInteger myShare = shareMyValue(resourcePool.getThreshold()*2,value, modulo);
+//        // TODO so the protocol calls for degree 2*t, but this does not work
+//        BigInteger myShare = shareMyValue(resourcePool.getThreshold()*2, value, modulo);
+//        Map<Integer, BigInteger> othersShares = network.receiveFromAllPeers();
+//        othersShares.put(resourcePool.getMyId(), myShare);
+//        BigInteger res = BigInteger.ZERO;
+//        for (int i = 0; i < othersShares.size(); i++) {
+//            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(resourcePool.getMyId(), i, modulo)));
+//        }
+//        return res.mod(modulo);
+        // TODO can be optimized with sharing a seed for generating shares s.t. only last party needs to receive a point on the poly
+        BigInteger myShare = shareMyValue(resourcePool.getThreshold()*2, BigInteger.ZERO, modulo);
         Map<Integer, BigInteger> othersShares = network.receiveFromAllPeers();
         othersShares.put(resourcePool.getMyId(), myShare);
+        BigInteger contri = othersShares.values().stream().reduce(value, BigInteger::add);
+        BigInteger finalShare = shareMyValue(resourcePool.getThreshold(), contri, modulo);
+        Map<Integer, BigInteger> peerShares = network.receiveFromAllPeers();
+        peerShares.put(resourcePool.getMyId(), finalShare);
         BigInteger res = BigInteger.ZERO;
-        for (int i = 0; i < othersShares.size(); i++) {
-            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(resourcePool.getMyId(), i, modulo))).mod(modulo);
+        for (int i : peerShares.keySet()) {
+                res = res.add(peerShares.get(i).multiply(engine.degreeRedConst(resourcePool.getMyId(), i, modulo)));
         }
         return res.mod(modulo);
     }

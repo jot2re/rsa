@@ -84,14 +84,9 @@ public class ShamirEngine {
         }
         BigInteger[] coef = lagrangeCoef(degree, modulo);
         BigInteger currentSum = BigInteger.ZERO;
-        int ctr = 0;
         for (int i = 0; i < degree+1; i++) {
             // TODO can just be preprocessed for the specific amount of servers
-            if (ctr > degree+1) {
-                break;
-            }
             currentSum = currentSum.add(shares.get(i).multiply(coef[i])).mod(modulo);
-            ctr++;
         }
         return currentSum;
     }
@@ -117,8 +112,8 @@ public class ShamirEngine {
 
     protected static BigInteger[] lagrangeCoef(int degree, BigInteger modulo) {
         BigInteger[] coefs = new BigInteger[degree+1];
-        for (int i = 1; i < degree+2; i++) {
-            coefs[i-1] = lagrangeConst(i, degree, modulo);
+        for (int i = 0; i < degree+1; i++) {
+            coefs[i] = lagrangeConst(i+1, degree, modulo);
         }
         return coefs;
     }
