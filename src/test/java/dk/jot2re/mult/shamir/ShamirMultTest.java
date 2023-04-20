@@ -1,6 +1,7 @@
 package dk.jot2re.mult.shamir;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.MultCounter;
 import dk.jot2re.mult.MultFactory;
 import dk.jot2re.mult.ot.helper.HelperForTests;
 import dk.jot2re.mult.ot.util.AesCtrDrbg;
@@ -32,7 +33,7 @@ public class ShamirMultTest {
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         MultFactory factory = new MultFactory(parties);
-        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY, true);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(MODULO_BITLENGTH, rand);
             B[i] = new BigInteger(MODULO_BITLENGTH, rand);
@@ -54,6 +55,7 @@ public class ShamirMultTest {
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
+        System.out.println(((MultCounter) mults.get(0)).toString());
 
         BigInteger refA = Arrays.stream(A).reduce(BigInteger.ZERO, BigInteger::add);
         BigInteger refB = Arrays.stream(B).reduce(BigInteger.ZERO, BigInteger::add);
@@ -63,7 +65,7 @@ public class ShamirMultTest {
         }
         assertEquals(refA.multiply(refB).mod(modulo), res);
 
-        Field privateField = ShamirMult.class.getDeclaredField("network");
+        Field privateField = MultCounter.class.getDeclaredField("network");
         privateField.setAccessible(true);
         DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
         System.out.println("Rounds " + network.getRounds());

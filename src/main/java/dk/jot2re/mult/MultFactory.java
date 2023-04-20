@@ -56,44 +56,49 @@ public class MultFactory {
         this.masterSeed = masterSeed;
     }
 
-    // todo make working with the different kinds of mults
     public Map<Integer, IMult> getMults(MultType multType, NetworkFactory.NetworkType networkType) {
+        return getMults(multType, networkType, false);
+    }
+
+    public Map<Integer, IMult> getMults(MultType multType, NetworkFactory.NetworkType networkType, boolean decorated) {
         Map<Integer, IMult> mults = new HashMap<>(parties);
         Map<Integer, INetwork> networks = networkFactory.getNetworks(networkType);
         for (int i = 0; i < parties; i++) {
+            IMult cur;
             if (multType == MultType.DUMMY) {
-                mults.put(i, new DummyMult());
+                cur = decorated ? new MultCounter(new DummyMult()) : new DummyMult();
             } else if (multType == MultType.REPLICATED) {
                 ReplictedMultResourcePool resourcePool = new ReplictedMultResourcePool(i, parties, comSec, statSec, getDrng(i));
-                mults.put(i, new ReplicatedMult(resourcePool));
+                cur = decorated ? new MultCounter(new ReplicatedMult(resourcePool)) : new ReplicatedMult(resourcePool);
             } else if (multType == MultType.SHAMIR) {
                 ShamirResourcePool resourcePool = new ShamirResourcePool(i, parties, comSec, statSec, getDrng(i));
-                mults.put(i, new ShamirMult(resourcePool));
+                cur = decorated ? new MultCounter(new ShamirMult(resourcePool)) : new ShamirMult(resourcePool);
             } else if (multType == MultType.GILBOA) {
                 if (parties > 2) {
                     throw new IllegalArgumentException("Gilboa for more than 2 parties not implemented");
                 }
                 try {
-                    return getOTMult(networks, MultType.GILBOA, masterSeed, OT_SAFE_EXPANSION);
+                    return getOTMult(networks, MultType.GILBOA, masterSeed, OT_SAFE_EXPANSION, decorated);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             } else if (multType == MultType.IPS) {
                 try {
-                    return getOTMult(networks, MultType.IPS, masterSeed, OT_SAFE_EXPANSION);
+                    return getOTMult(networks, MultType.IPS, masterSeed, OT_SAFE_EXPANSION, decorated);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             } else {
                 throw new IllegalArgumentException("Unsupported multiplication type");
             }
+            mults.put(i, cur);
             mults.get(i).init(networks.get(i));
         }
         return mults;
     }
 
     // TODO refactor into a single, simple iterative method with the other types of mults
-    private Map<Integer, IMult> getOTMult(Map<Integer, INetwork> networks, MultType type, byte[] masterSeed, boolean safeExpansion) throws InterruptedException, ExecutionException {
+    private Map<Integer, IMult> getOTMult(Map<Integer, INetwork> networks, MultType type, byte[] masterSeed, boolean safeExpansion, boolean decorated) throws InterruptedException, ExecutionException {
         Map<Integer, Future<IMult>> mults = new HashMap<>(parties);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         for (int i = 0; i < parties; i++) {
@@ -111,10 +116,10 @@ public class MultFactory {
                 IMult mult = null;
                 if (type.equals(MultType.IPS)) {
                     OTMultResourcePool pool = new OTMultResourcePool(ots, finalI, comSec, statSec, networks.get(finalI), rand);
-                    mult = new IPSMult(pool, 32 * MODULO_BITLENGTH, safeExpansion);
+                    mult = decorated ? new MultCounter(new IPSMult(pool, 32 * MODULO_BITLENGTH, safeExpansion)) : new IPSMult(pool, 32 * MODULO_BITLENGTH, safeExpansion);
                 } else if (type.equals(MultType.GILBOA)) {
                     OtExtensionResourcePool pool = (new OtExtensionDummyContext(finalI,1-finalI, comSec, statSec, seed, networks.get(finalI))).createResources(0);
-                    mult = new GilboaMult(pool, 32*MODULO_BITLENGTH, safeExpansion);
+                    mult = decorated ? new MultCounter(new GilboaMult(pool, 32 * MODULO_BITLENGTH, safeExpansion)) : new GilboaMult(pool, 32 * MODULO_BITLENGTH, safeExpansion);
                 }
                 // the constant mult be a 2-power larger than the amount of parties
                 mult.init(networks.get(finalI));

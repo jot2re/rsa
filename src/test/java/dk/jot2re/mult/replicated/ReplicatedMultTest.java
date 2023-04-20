@@ -1,6 +1,7 @@
 package dk.jot2re.mult.replicated;
 
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.MultCounter;
 import dk.jot2re.mult.MultFactory;
 import dk.jot2re.mult.ot.util.AesCtrDrbg;
 import dk.jot2re.mult.ot.util.Drng;
@@ -62,7 +63,7 @@ public class ReplicatedMultTest {
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         MultFactory factory = new MultFactory(parties);
-        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.DUMMY, true);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(MODULO_BITLENGTH, rand);
@@ -82,6 +83,7 @@ public class ReplicatedMultTest {
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
+        System.out.println(((MultCounter) mults.get(0)).toString());
 
         BigInteger refA = Arrays.stream(A).reduce(BigInteger.ZERO, BigInteger::add);
         BigInteger refB = Arrays.stream(B).reduce(BigInteger.ZERO, BigInteger::add);
@@ -91,7 +93,7 @@ public class ReplicatedMultTest {
         }
         assertEquals(refA.multiply(refB).mod(MODULO), refC.mod(MODULO));
 
-        Field privateField = ReplicatedMult.class.getDeclaredField("network");
+        Field privateField = MultCounter.class.getDeclaredField("network");
         privateField.setAccessible(true);
         DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
         System.out.println("Rounds " + network.getRounds());

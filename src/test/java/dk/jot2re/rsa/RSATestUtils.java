@@ -48,7 +48,7 @@ public class RSATestUtils {
             MultFactory multFactory = new MultFactory(parties);
             Map<Integer, INetwork> networks = netFactory.getNetworks(NETWORK_TYPE);
             Map<Integer, BFParameters> params = new HashMap<>(parties);
-            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE);
+            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE, true);
             for (int i = 0; i < networks.size(); i++) {
                 // Unique but deterministic seed for each set of parameters
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
@@ -76,7 +76,7 @@ public class RSATestUtils {
             MultFactory multFactory = new MultFactory(parties);
             Map<Integer, INetwork> networks = netFactory.getNetworks(NETWORK_TYPE);
             Map<Integer, OurParameters> params = new HashMap<>(parties);
-            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE);
+            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE, true);
             for (int i = 0; i < networks.size(); i++) {
                 // Unique but deterministic seed for each set of parameters
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
