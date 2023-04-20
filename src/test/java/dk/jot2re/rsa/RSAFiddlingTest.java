@@ -51,7 +51,7 @@ public class RSAFiddlingTest {
         List<Future<BigInteger>> shares = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            shares.add(executor.submit(() -> RSAUtil.multList(params.get(finalI), toMult.get(finalI), modulo)));
+            shares.add(executor.submit(() -> params.get(finalI).getMult().combineToAdditive(RSAUtil.multList(params.get(finalI), toMult.get(finalI), modulo), modulo)));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS));

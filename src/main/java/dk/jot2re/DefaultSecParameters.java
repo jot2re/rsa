@@ -3,6 +3,7 @@ package dk.jot2re;
 import java.math.BigInteger;
 
 public class DefaultSecParameters {
+    public static final boolean REJECTION_SAMPLING = true;
     public static final int COMP_SEC = 256;
     public static final int STAT_SEC = 40;
     public static final int PRIME_BITLENGTH = 1024;

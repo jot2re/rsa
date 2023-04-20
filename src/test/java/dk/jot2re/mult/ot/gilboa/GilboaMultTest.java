@@ -1,5 +1,6 @@
 package dk.jot2re.mult.ot.gilboa;
 
+import dk.jot2re.mult.AbstractAdditiveMult;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.MultFactory;
 import dk.jot2re.network.DummyNetwork;
@@ -41,7 +42,7 @@ public class GilboaMultTest {
             B[i] = new BigInteger(bitLength, rand);
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        Field privateField = GilboaMult.class.getDeclaredField("network");
+        Field privateField = AbstractAdditiveMult.class.getDeclaredField("network");
         privateField.setAccessible(true);
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {

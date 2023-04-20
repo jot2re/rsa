@@ -26,10 +26,11 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
         this.network = network;
     }
 
+
     @Override
     public ArrayList<BigInteger> multShares(ArrayList<BigInteger> left, ArrayList<BigInteger> right, BigInteger modulo) {
         BigInteger additiveShare = multiplyShared(left, right, modulo);
-        return share(additiveShare, modulo);
+        return shareFromAdditive(additiveShare, modulo);
     }
 
     protected BigInteger multiplyShared(List<BigInteger> A, List<BigInteger> B, BigInteger modulo) {
@@ -45,8 +46,8 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
     }
 
     @Override
-    public ArrayList<BigInteger> share(BigInteger share, BigInteger modulo) {
-        ArrayList<BigInteger> myShare = input(share, modulo);
+    public ArrayList<BigInteger> shareFromAdditive(BigInteger share, BigInteger modulo) {
+        ArrayList<BigInteger> myShare = share(share, modulo);
         Map<Integer, ArrayList<BigInteger>> peerShares = network.receiveFromAllPeers();
         for (int i : peerShares.keySet()) {
             if (i != resourcePool.getMyId()) {
@@ -59,11 +60,12 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
     }
 
     @Override
-    public BigInteger combine(ArrayList<BigInteger> share, BigInteger modulo) {
+    public BigInteger combineToAdditive(ArrayList<BigInteger> share, BigInteger modulo) {
         return share.get(0);
     }
 
-    protected ArrayList<BigInteger> input(BigInteger value, BigInteger modulo) {
+    @Override
+    public ArrayList<BigInteger> share(BigInteger value, BigInteger modulo) {
         ArrayList<BigInteger> sharesOfValue = singlePartyShare(value, modulo);
         for (int i = 0; i < resourcePool.getParties(); i++) {
             if (i != resourcePool.getMyId()) {
@@ -72,6 +74,11 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
             }
         }
         return getPartyShares(resourcePool.getMyId(), sharesOfValue);
+    }
+
+    @Override
+    public ArrayList<BigInteger> share(int partyId, BigInteger modulo) {
+        return network.receive(partyId);
     }
 
     protected ArrayList<BigInteger> getPartyShares(int receiverId, List<BigInteger> shares) {

@@ -28,21 +28,38 @@ public interface IMult<T extends Serializable> {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }
-        return combine(multShares(share(shareA, modulo), share(shareB, modulo), modulo), modulo);
+        return combineToAdditive(multShares(shareFromAdditive(shareA, modulo), shareFromAdditive(shareB, modulo), modulo), modulo);
     }
 
     /**
-     * Shares a value that is already additive shared
+     * Shares a private value from a party
      * @param value
+     * @param modulo
      * @return
      */
     T share(BigInteger value, BigInteger modulo);
+
+    /**
+     * Receive a private value from a party
+     * @param partyId
+     * @param modulo
+     * @return
+     */
+    T share(int partyId, BigInteger modulo);
+
+    /**
+     * Shares a value that is already additive shared.
+     * Method assumes that each party calls this on their additive share
+     * @param value
+     * @return
+     */
+    T shareFromAdditive(BigInteger value, BigInteger modulo);
 
     /**
      * Combine shares into an additive sharing
      * @param share
      * @return
      */
-    BigInteger combine(T share, BigInteger modulo);
+    BigInteger combineToAdditive(T share, BigInteger modulo);
     T multShares(T left, T right, BigInteger modulo);
 }

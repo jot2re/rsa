@@ -139,7 +139,7 @@ public class ReplicatedMultTest {
         List<Future<List<BigInteger>>> sharedInput = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).share(A[finalI], MODULO)));
+            sharedInput.add(executor.submit(() -> ((ReplicatedMult) mults.get(finalI)).shareFromAdditive(A[finalI], MODULO)));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));

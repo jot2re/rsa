@@ -4,26 +4,40 @@ import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.Parameters;
 import dk.jot2re.rsa.bf.BFParameters;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static dk.jot2re.DefaultSecParameters.REJECTION_SAMPLING;
+import static dk.jot2re.DefaultSecParameters.STAT_SEC;
+
 public class RSAUtil {
+    // TODO move to mult func
     public static List<BigInteger> share(Parameters params, BigInteger value, BigInteger modulo) {
-        List<BigInteger> randomVals = IntStream.range(0, params.getAmountOfPeers()).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
+        List<BigInteger> randomVals = IntStream.range(0, params.getAmountOfPeers()).mapToObj(i -> sample(params.getRandom(), modulo)).collect(Collectors.toList());
         randomVals.add(value.subtract(randomVals.stream().reduce(BigInteger.ZERO, BigInteger::add)).mod(modulo));
         return randomVals;
     }
 
     public static List<BigInteger> randomSharing(Parameters params, BigInteger modulo) {
-        return IntStream.range(0, params.getAmountOfPeers()+1).mapToObj(i -> sample(params, modulo)).collect(Collectors.toList());
+        return IntStream.range(0, params.getAmountOfPeers()+1).mapToObj(i -> sample(params.getRandom(), modulo)).collect(Collectors.toList());
     }
 
-    public static BigInteger sample(Parameters params, BigInteger modulo) {
-        BigInteger r = new BigInteger(modulo.bitLength()+params.getStatBits(), params.getRandom());
-        return r.mod(modulo);
+    public static BigInteger sample(Random random, BigInteger modulo) {
+        if (REJECTION_SAMPLING) {
+            BigInteger share = new BigInteger(modulo.bitLength(), random);
+            while (share.compareTo(modulo) >= 0) {
+                share = new BigInteger(modulo.bitLength(), random);
+            }
+            return share;
+        } else {
+            BigInteger r = new BigInteger(modulo.bitLength()+STAT_SEC, random);
+            return r.mod(modulo);
+        }
     }
 
     public static BigInteger open(Parameters params, BigInteger share, BigInteger modulo) throws NetworkException {
@@ -48,13 +62,13 @@ public class RSAUtil {
         }
     }
 
-    public static BigInteger multList(BFParameters params, BigInteger[] shares, BigInteger modulo) {
+    public static Serializable multList(BFParameters params, Serializable[] shares, BigInteger modulo) {
         if (shares.length < 2) {
             throw new IllegalArgumentException("Empty or singleton list");
         }
-        BigInteger temp = params.getMult().mult(shares[0], shares[1], modulo);
+        Serializable temp = params.getMult().multShares(shares[0], shares[1], modulo);
         for (int i = 2; i < shares.length; i++) {
-            temp = params.getMult().mult(temp, shares[i], modulo);
+            temp = params.getMult().multShares(temp, shares[i], modulo);
         }
         return temp;
     }

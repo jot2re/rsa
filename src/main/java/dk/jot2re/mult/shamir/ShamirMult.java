@@ -26,6 +26,16 @@ public class ShamirMult implements IMult<BigInteger> {
     }
 
     @Override
+    public BigInteger share(BigInteger value, BigInteger modulo) {
+        return shareMyValue(resourcePool.getThreshold(), value, modulo);
+    }
+
+    @Override
+    public BigInteger share(int partyId, BigInteger modulo) {
+        return network.receive(partyId);
+    }
+
+    @Override
     public BigInteger multShares(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
         if (shareA == null || shareB == null || modulo == null) {
             throw new NullPointerException("Input for multiplication as to be non-null");
@@ -42,7 +52,7 @@ public class ShamirMult implements IMult<BigInteger> {
     }
 
     @Override
-    public BigInteger share(BigInteger share, BigInteger modulo) {
+    public BigInteger shareFromAdditive(BigInteger share, BigInteger modulo) {
         BigInteger myShare = shareMyValue(resourcePool.getThreshold(), share, modulo);
         Map<Integer, BigInteger> peerShares = network.receiveFromAllPeers();
         for (int i : peerShares.keySet()) {
@@ -54,7 +64,7 @@ public class ShamirMult implements IMult<BigInteger> {
     }
 
     @Override
-    public BigInteger combine(BigInteger share, BigInteger modulo) {
+    public BigInteger combineToAdditive(BigInteger share, BigInteger modulo) {
         if (resourcePool.getMyId() < resourcePool.getThreshold()+1) {
             return share.multiply(engine.lagrangeConst(resourcePool.getMyId()+1, resourcePool.getThreshold(), modulo)).mod(modulo);
         } else {

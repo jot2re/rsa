@@ -6,17 +6,14 @@ import java.math.BigInteger;
 import java.util.Random;
 
 public class DummyMult extends AbstractAdditiveMult {
-    private Random rand;
-    private INetwork network;
     private int multCalls = 0;
-
     public DummyMult() {
     }
 
     @Override
     public void init(INetwork network) {
-        this.network = network;
-        this.rand = new Random(DummyMult.class.hashCode() + network.myId());
+        super.network = network;
+        super.rand = new Random(DummyMult.class.hashCode() + network.myId());
     }
 
     @Override

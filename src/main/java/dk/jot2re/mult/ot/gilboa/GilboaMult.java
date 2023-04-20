@@ -3,11 +3,14 @@ package dk.jot2re.mult.ot.gilboa;
 import dk.jot2re.mult.AbstractAdditiveMult;
 import dk.jot2re.mult.ot.ot.otextension.OtExtensionResourcePool;
 import dk.jot2re.mult.ot.ot.otextension.RotFactory;
+import dk.jot2re.mult.ot.util.ExceptionConverter;
 import dk.jot2re.mult.ot.util.StrictBitVector;
 import dk.jot2re.network.INetwork;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.List;
+import java.util.Random;
 
 import static dk.jot2re.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 import static dk.jot2re.mult.ot.util.Fiddling.ceil;
@@ -17,7 +20,6 @@ public class GilboaMult extends AbstractAdditiveMult {
     private final OtExtensionResourcePool resources;
     private final boolean safeExpansion;
     private final int adjustedBatchSize;
-    private INetwork network;
     private GilboaOTFactory factory;
     private int upperBound;
     private int amountBytes;
@@ -31,12 +33,22 @@ public class GilboaMult extends AbstractAdditiveMult {
         this.resources = resources;
         this.safeExpansion = safeExpansion;
         this.adjustedBatchSize = batchSize - resources.getComputationalSecurityParameter()- resources.getLambdaSecurityParam();
+        super.network = resources.getNetwork();
+        super.rand = getRandom(resources);
     }
 
     public GilboaMult(OtExtensionResourcePool resources) {
         this.resources = resources;
         this.safeExpansion = true;
         this.adjustedBatchSize = DEFAULT_BATCH_SIZE - resources.getComputationalSecurityParameter()- resources.getLambdaSecurityParam();
+    }
+
+    private Random getRandom(OtExtensionResourcePool resources) {
+        byte[] newSeed = new byte[ceil(resources.getLambdaSecurityParam(), 8)];
+        resources.getRandomGenerator().nextBytes(newSeed);
+        SecureRandom rnd = ExceptionConverter.safe(()-> SecureRandom.getInstance("SHA1PRNG"), "Randomness algorithm does not exist");
+        rnd.setSeed(newSeed);
+        return rnd;
     }
 
     @Override
@@ -52,7 +64,8 @@ public class GilboaMult extends AbstractAdditiveMult {
                 this.factory.initSender();
             }
         }
-        this.network = network;
+        super.network = resources.getNetwork();
+        super.rand = getRandom(resources);
     }
 
     @Override

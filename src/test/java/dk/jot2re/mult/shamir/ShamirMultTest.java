@@ -134,7 +134,7 @@ public class ShamirMultTest {
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
-                    res = ((ShamirMult) mults.get(finalI)).share(input, modulo);
+                    res = ((ShamirMult) mults.get(finalI)).shareFromAdditive(input, modulo);
                 }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));

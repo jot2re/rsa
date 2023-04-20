@@ -108,7 +108,7 @@ public class OurProtocol {
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
         BigInteger multGammaShare;
         if (params.getMyId() == 0) {
-            BigInteger v = RSAUtil.sample(params, N);
+            BigInteger v = RSAUtil.sample(params.getRandom(), N);
             params.getNetwork().sendToAll(v);
             multGammaShare = v.modPow(share.subtract(BigInteger.valueOf(1)).shiftRight(1), N);
         } else {
