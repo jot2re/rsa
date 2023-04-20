@@ -10,6 +10,7 @@ import dk.jot2re.rsa.our.sub.multToAdd.MultToAdd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,8 +117,10 @@ public class OurProtocol {
             multGammaShare = v.modPow(share.shiftRight(1), N);
         }
         BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
-        BigInteger inverseShareP = inverter.execute(share, params.getP());
-        BigInteger inverseShareQ = inverter.execute(share, params.getQ());
+        Serializable inverseShareP = inverter.execute(
+                params.getMult().shareFromAdditive(share, params.getP()), params.getP());
+        Serializable inverseShareQ = inverter.execute(
+                params.getMult().shareFromAdditive(share, params.getQ()), params.getQ());
         BigInteger gammaAdd = RSAUtil.addConst(params, addGammaShare, BigInteger.ONE, N);
         BigInteger gammaSub = RSAUtil.subConst(params, addGammaShare, BigInteger.ONE, N);
         if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &
@@ -127,14 +130,16 @@ public class OurProtocol {
         return true;
     }
 
-    protected boolean validateGamma(BigInteger delta, BigInteger inverseShareP, BigInteger inverseShareQ, BigInteger N) throws NetworkException {
-        BigInteger aShare = params.getMult().mult(delta, inverseShareP, params.getP());
-        BigInteger bShare = params.getMult().mult(delta, inverseShareQ, params.getQ());
-        BigInteger zShare = aShare.subtract(bShare).mod(params.getQ());
-        BigInteger temp = zShare.multiply(params.getPInverseModQ()).mod(params.getQ());
-//        BigInteger zAdjusted = RSAUtil.addConst(params, temp, BigInteger.ONE, params.getQ());
-        BigInteger yShare = membership.execute(temp, partySet, params.getQ());
-        BigInteger y = RSAUtil.open(params, yShare, params.getQ());
+    protected boolean validateGamma(BigInteger delta, Serializable inverseShareP, Serializable inverseShareQ, BigInteger N) throws NetworkException {
+        Serializable deltaP = params.getMult().shareFromAdditive(delta, params.getP());
+        Serializable aShare = params.getMult().multShares(deltaP, inverseShareP, params.getP());
+        Serializable deltaQ = params.getMult().shareFromAdditive(delta, params.getQ());
+        Serializable bShare = params.getMult().multShares(deltaQ, inverseShareQ, params.getQ());
+        Serializable zShare = params.getMult().sub(aShare, bShare, params.getQ());
+        Serializable temp = params.getMult().multConst(zShare, params.getPInverseModQ(), params.getQ());
+//        Serializable zAdjusted = params.getMult().addConst(temp, BigInteger.ONE, params.getQ());
+        Serializable yShare = membership.execute(temp, partySet, params.getQ());
+        BigInteger y = params.getMult().open(yShare, params.getQ());
         return y.equals(BigInteger.ZERO);
     }
 

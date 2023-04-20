@@ -62,4 +62,14 @@ public interface IMult<T extends Serializable> {
      */
     BigInteger combineToAdditive(T share, BigInteger modulo);
     T multShares(T left, T right, BigInteger modulo);
+
+    T multConst(T share, BigInteger known, BigInteger modulo);
+
+    T add(T left, T right, BigInteger modulo);
+
+    T sub(T left, T right, BigInteger modulo);
+
+    T addConst(T share, BigInteger known, BigInteger modulo);
+
+    BigInteger open(T share, BigInteger modulo);
 }

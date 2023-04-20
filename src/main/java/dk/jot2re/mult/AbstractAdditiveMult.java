@@ -1,10 +1,12 @@
 package dk.jot2re.mult;
 
 import dk.jot2re.network.INetwork;
+import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Map;
 import java.util.Random;
 
 public abstract class AbstractAdditiveMult implements IMult<BigInteger> {
@@ -36,14 +38,49 @@ public abstract class AbstractAdditiveMult implements IMult<BigInteger> {
 
     @Override
     public BigInteger shareFromAdditive(BigInteger value, BigInteger modulo) {
-        return value.mod(modulo);
+        return value;
     }
 
     @Override
     public BigInteger combineToAdditive(BigInteger share, BigInteger modulo) {
-        return share.mod(modulo);
+        return share;
     }
 
     @Override
     public abstract BigInteger multShares(BigInteger left, BigInteger right, BigInteger modulo);
+
+    @Override
+    public BigInteger multConst(BigInteger share, BigInteger known, BigInteger modulo) {
+        return share.multiply(known).mod(modulo);
+    }
+
+    @Override
+    public BigInteger sub(BigInteger left, BigInteger right, BigInteger modulo) {
+        return left.subtract(right);
+    }
+
+    @Override
+    public BigInteger add(BigInteger left, BigInteger right, BigInteger modulo) {
+        return left.add(right);
+    }
+
+    @Override
+    public BigInteger addConst(BigInteger share, BigInteger known, BigInteger modulo) {
+        if (network.myId() == 0) {
+            return share.add(known);
+        } else {
+            return share;
+        }
+    }
+
+    @Override
+    public BigInteger open(BigInteger share, BigInteger modulo) {
+        try {
+            network.sendToAll(share);
+            Map<Integer, BigInteger> otherShares = network.receiveFromAllPeers();
+            return otherShares.values().stream().reduce(share, (a, b) -> a.add(b)).mod(modulo);
+        } catch (NetworkException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

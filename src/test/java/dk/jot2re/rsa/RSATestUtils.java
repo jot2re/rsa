@@ -15,6 +15,9 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RSATestUtils {
+    public static final MultFactory.MultType MULT_TYPE = MultFactory.MultType.DUMMY;
+    public static final NetworkFactory.NetworkType NETWORK_TYPE = NetworkFactory.NetworkType.DUMMY;
+
     public static Map<Integer, BigInteger> randomPrime(int parties, int bitLength, Random rand) {
         BigInteger prime = RSATestUtils.prime(bitLength, rand);
         Map<Integer, BigInteger> shares = new HashMap<>(parties);
@@ -43,9 +46,9 @@ public class RSATestUtils {
         try {
             NetworkFactory netFactory = new NetworkFactory(parties);
             MultFactory multFactory = new MultFactory(parties);
-            Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+            Map<Integer, INetwork> networks = netFactory.getNetworks(NETWORK_TYPE);
             Map<Integer, BFParameters> params = new HashMap<>(parties);
-            Map<Integer, IMult> mults = multFactory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
+            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE);
             for (int i = 0; i < networks.size(); i++) {
                 // Unique but deterministic seed for each set of parameters
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
@@ -71,9 +74,9 @@ public class RSATestUtils {
             BigInteger Q = RSATestUtils.prime(2*bits+24, new Random(42));
             NetworkFactory netFactory = new NetworkFactory(parties);
             MultFactory multFactory = new MultFactory(parties);
-            Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+            Map<Integer, INetwork> networks = netFactory.getNetworks(NETWORK_TYPE);
             Map<Integer, OurParameters> params = new HashMap<>(parties);
-            Map<Integer, IMult> mults = multFactory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
+            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE);
             for (int i = 0; i < networks.size(); i++) {
                 // Unique but deterministic seed for each set of parameters
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");

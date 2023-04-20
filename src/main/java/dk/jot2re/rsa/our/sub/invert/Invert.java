@@ -4,6 +4,7 @@ import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 
 public class Invert {
@@ -13,12 +14,13 @@ public class Invert {
         this.params = params;
     }
 
-    public BigInteger execute(BigInteger xShare, BigInteger modulo) throws NetworkException {
-        BigInteger rShare = RSAUtil.sample(params.getRandom(), modulo);
-        BigInteger rxShare = params.getMult().mult(rShare, xShare, modulo);
-        BigInteger rx = RSAUtil.open(params, rxShare, modulo);
+    public Serializable execute(Serializable xShare, BigInteger modulo) throws NetworkException {
+        BigInteger rPart = RSAUtil.sample(params.getRandom(), modulo);
+        Serializable rShare = params.getMult().shareFromAdditive(rPart, modulo);
+        Serializable rxShare = params.getMult().multShares(rShare, xShare, modulo);
+        BigInteger rx = params.getMult().open(rxShare, modulo);
         BigInteger y = rx.modInverse(modulo);
-        return y.multiply(rShare).mod(modulo);
+        return params.getMult().multConst(rShare, y, modulo);
     }
 }
 

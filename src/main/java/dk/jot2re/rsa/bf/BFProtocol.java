@@ -6,6 +6,7 @@ import dk.jot2re.rsa.our.RSAUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,10 +57,7 @@ public class BFProtocol {
         if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
             return false;
         }
-        BigInteger myS = executePhase3Pivot(pShare, qShare, N);
-        params.getNetwork().sendToAll(myS);
-        Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
-        return executePhase4(myS, sShares, N);
+        return executePhase3Pivot(pShare, qShare, N);
     }
 
     protected boolean executeOther(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
@@ -73,10 +71,7 @@ public class BFProtocol {
         if (!executePhase2(nuShares, myNuShare,  N)) {
             return false;
         }
-        BigInteger myS = executePhase3Other(pShare, qShare, N);
-        params.getNetwork().sendToAll(myS);
-        Map<Integer, BigInteger> sShares = params.getNetwork().receiveFromAllPeers();
-        return executePhase4(myS, sShares, N);
+        return executePhase3Other(pShare, qShare, N);
     }
 
     protected Phase1Pivot executePhase1Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
@@ -117,18 +112,21 @@ public class BFProtocol {
         return true;
     }
 
-    protected BigInteger executePhase3Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
-        BigInteger r = new BigInteger(2*params.getPrimeBits()+params.getStatBits(), params.getRandom());
-        return params.getMult().mult(r.mod(N), pShare.add(qShare).subtract(BigInteger.ONE), N);
+    protected boolean executePhase3Pivot(BigInteger p, BigInteger q, BigInteger N) {
+        BigInteger r = RSAUtil.sample(params.getRandom(), N);
+        Serializable rShare = params.getMult().shareFromAdditive(r, N);
+        Serializable toMult = params.getMult().shareFromAdditive(p.add(q).subtract(BigInteger.ONE), N);
+        Serializable res = params.getMult().multShares(rShare, toMult, N);
+        BigInteger s = params.getMult().open(res, N);
+        return s.gcd(N).equals(BigInteger.ONE);
     }
 
-    protected BigInteger executePhase3Other(BigInteger pShare, BigInteger qShare, BigInteger N) {
-        BigInteger r = new BigInteger(2*params.getPrimeBits()+params.getStatBits(), params.getRandom());
-        return params.getMult().mult(r.mod(N), pShare.add(qShare), N);
-    }
-
-    protected boolean executePhase4(BigInteger myS, Map<Integer, BigInteger> sShares, BigInteger N) {
-        BigInteger s = sShares.values().stream().reduce(myS, BigInteger::add);
+    protected boolean executePhase3Other(BigInteger p, BigInteger q, BigInteger N) {
+        BigInteger r = RSAUtil.sample(params.getRandom(), N);
+        Serializable rShare = params.getMult().shareFromAdditive(r, N);
+        Serializable toMult = params.getMult().shareFromAdditive(p.add(q), N);
+        Serializable res = params.getMult().multShares(rShare, toMult, N);
+        BigInteger s = params.getMult().open(res, N);
         return s.gcd(N).equals(BigInteger.ONE);
     }
 

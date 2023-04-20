@@ -7,7 +7,6 @@ import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 
 public class ShamirMult implements IMult<BigInteger> {
@@ -47,8 +46,35 @@ public class ShamirMult implements IMult<BigInteger> {
         }
     }
 
-    public BigInteger combine(int degree, List<BigInteger> shares, BigInteger modulo) {
-        return engine.combine(degree, shares, modulo);
+    @Override
+    public BigInteger multConst(BigInteger share, BigInteger known, BigInteger modulo) {
+        return share.multiply(known).mod(modulo);
+    }
+
+    @Override
+    public BigInteger sub(BigInteger left, BigInteger right, BigInteger modulo) {
+        return left.subtract(right).mod(modulo);
+    }
+    @Override
+    public BigInteger add(BigInteger left, BigInteger right, BigInteger modulo) {
+        return left.add(right).mod(modulo);
+    }
+
+    @Override
+    public BigInteger addConst(BigInteger share, BigInteger known, BigInteger modulo) {
+        return share.add(known).mod(modulo);
+    }
+
+    @Override
+    public BigInteger open(BigInteger share, BigInteger modulo) {
+        try {
+            network.sendToAll(share);
+            Map<Integer, BigInteger> otherShares = network.receiveFromAllPeers();
+            otherShares.put(resourcePool.getMyId(), share);
+            return engine.combine(resourcePool.getThreshold(), otherShares, modulo);
+        } catch (NetworkException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

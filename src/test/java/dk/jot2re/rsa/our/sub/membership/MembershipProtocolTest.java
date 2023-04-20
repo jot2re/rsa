@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -23,10 +24,9 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
     @ParameterizedTest
     @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log","2,const", "3,const", "5,const"})
     public void sunshine(int parties, String type) throws Exception {
-        BigInteger mod = BigInteger.valueOf(132432449);
         BigInteger input = BigInteger.valueOf(42);
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(34535), BigInteger.valueOf(5534315), BigInteger.valueOf(42), BigInteger.valueOf(890637));
-        Map<Integer, BigInteger> shares = share(input, parties, mod, rand);
+        Map<Integer, BigInteger> shares = share(input, parties, MODULO, rand);
 
         AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
             IMembership protocol = switch (type) {
@@ -35,13 +35,15 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
                 case "const" -> new MembershipConst((BFParameters) param);
                 default -> throw new RuntimeException("unknown type");
             };
-            return protocol.execute(shares.get(param.getMyId()), set, mod);
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), MODULO);
+            Serializable res = protocol.execute(myShare, set, MODULO);
+            return ((BFParameters) param).getMult().combineToAdditive(res, MODULO);
         };
 
         AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
             BigInteger finalValue = BigInteger.ZERO;
             for (Future<BigInteger> cur : res) {
-                finalValue = finalValue.add(cur.get()).mod(mod);
+                finalValue = finalValue.add(cur.get()).mod(MODULO);
                 assertNotEquals(BigInteger.ONE, cur.get());
             }
             // Ensure the result is 0
@@ -61,7 +63,9 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
 
         AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
             IMembership protocol = new MembershipConst((BFParameters) param);
-            return protocol.execute(shares.get(param.getMyId()), set, mod);
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), mod);
+            Serializable res = protocol.execute(myShare, set, mod);
+            return ((BFParameters) param).getMult().combineToAdditive(res, mod);
         };
 
         AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
@@ -87,7 +91,9 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
 
         AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
             IMembership protocol = new MembershipConst((BFParameters) param);
-            return protocol.execute(shares.get(param.getMyId()), set, mod);
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), mod);
+            Serializable res = protocol.execute(myShare, set, mod);
+            return ((BFParameters) param).getMult().combineToAdditive(res, mod);
         };
 
         AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {
@@ -118,7 +124,9 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
                 case "const" -> new MembershipConst((BFParameters) param);
                 default -> throw new RuntimeException("unknown type");
             };
-            return protocol.execute(shares.get(param.getMyId()), set, MODULO);
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), MODULO);
+            Serializable res = protocol.execute(myShare, set, MODULO);
+            return ((BFParameters) param).getMult().combineToAdditive(res, MODULO);
         };
 
         AbstractProtocolTest.ResultCheck<BigInteger> checker = (res) -> {

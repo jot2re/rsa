@@ -2,6 +2,7 @@ package dk.jot2re.mult.replicated;
 
 import dk.jot2re.mult.IMult;
 import dk.jot2re.network.INetwork;
+import dk.jot2re.network.NetworkException;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -26,6 +27,64 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
         this.network = network;
     }
 
+    @Override
+    public ArrayList<BigInteger> sub(ArrayList<BigInteger> left, ArrayList<BigInteger> right, BigInteger modulo) {
+        ArrayList<BigInteger> res = new ArrayList<>(left.size());
+        for (int i = 0; i < left.size(); i++) {
+            res.add(left.get(i).subtract(right.get(i)));
+        }
+        return res;
+    }
+
+    @Override
+    public ArrayList<BigInteger> add(ArrayList<BigInteger> left, ArrayList<BigInteger> right, BigInteger modulo) {
+        ArrayList<BigInteger> res = new ArrayList<>(left.size());
+        for (int i = 0; i < left.size(); i++) {
+            res.add(left.get(i).add(right.get(i)));
+        }
+        return res;
+    }
+
+    @Override
+    public ArrayList<BigInteger> addConst(ArrayList<BigInteger> share, BigInteger known, BigInteger modulo) {
+        if (network.myId() == 0) {
+            ArrayList<BigInteger> res = new ArrayList<>(share.size());
+            res.add(share.get(0).add(known));
+            for (int i = 1; i < share.size(); i++) {
+                res.add(share.get(i));
+            }
+            return res;
+        } else if (network.myId() == network.getNoOfParties()-1) {
+            ArrayList<BigInteger> res = new ArrayList<>(share.size());
+            for (int i = 0; i < share.size()-1; i++) {
+                res.add(share.get(i));
+            }
+            res.add(share.get(share.size()-1).add(known));
+            return res;
+        } else {
+            return share;
+        }
+    }
+
+    @Override
+    public BigInteger open(ArrayList<BigInteger> share, BigInteger modulo) {
+        try {
+            network.sendToAll(share.get(0));
+            Map<Integer, BigInteger> otherShares = network.receiveFromAllPeers();
+            return otherShares.values().stream().reduce(share.get(0), (a, b) -> a.add(b)).mod(modulo);
+        } catch (NetworkException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public ArrayList<BigInteger> multConst(ArrayList<BigInteger> share, BigInteger known, BigInteger modulo) {
+        ArrayList<BigInteger> res = new ArrayList<>(share.size());
+        for (int i = 0; i < share.size(); i++) {
+            res.add(share.get(i).multiply(known).mod(modulo));
+        }
+        return res;
+    }
 
     @Override
     public ArrayList<BigInteger> multShares(ArrayList<BigInteger> left, ArrayList<BigInteger> right, BigInteger modulo) {

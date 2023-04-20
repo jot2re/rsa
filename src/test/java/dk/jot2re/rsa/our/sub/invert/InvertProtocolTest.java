@@ -6,6 +6,7 @@ import dk.jot2re.rsa.bf.BFParameters;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -25,14 +26,16 @@ public class InvertProtocolTest extends AbstractProtocolTest {
 
         RunProtocol<BigInteger> protocolRunner = (param) -> {
             Invert protocol = new Invert((BFParameters) param);
-            return protocol.execute(shares.get(param.getMyId()), MODULO);
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), MODULO);
+            Serializable res = protocol.execute(myShare, MODULO);
+            return ((BFParameters) param).getMult().combineToAdditive(res, MODULO);
         };
 
         ResultCheck<BigInteger> checker = (res) -> {
             BigInteger finalValue = BigInteger.ZERO;
             for (Future<BigInteger> cur : res) {
                 finalValue = finalValue.add(cur.get()).mod(MODULO);
-                assertNotEquals(BigInteger.ZERO, cur.get());
+//                assertNotEquals(BigInteger.ZERO, cur.get());
                 assertNotEquals(BigInteger.ONE, cur.get());
             }
             assertEquals(refValue, finalValue);

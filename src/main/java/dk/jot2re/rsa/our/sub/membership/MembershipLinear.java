@@ -4,6 +4,7 @@ import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -14,13 +15,13 @@ public class MembershipLinear implements IMembership {
         this.params = params;
     }
 
-    public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
-        BigInteger temp = RSAUtil.subConst(params, xShare, set.get(0), modulo);
+    public Serializable execute(Serializable xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
+        Serializable temp = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
         for (int i = 1; i < set.size(); i++) {
-            temp = params.getMult().mult(temp, RSAUtil.subConst(params, xShare, set.get(i), modulo), modulo);
+            temp = params.getMult().multShares(temp, params.getMult().addConst(xShare, set.get(i).negate(), modulo), modulo);
         }
-        BigInteger rShare = RSAUtil.sample(params.getRandom(), modulo);
-        temp = params.getMult().mult(temp, rShare, modulo);
-        return temp;
+        BigInteger rPart = RSAUtil.sample(params.getRandom(), modulo);
+        Serializable rShare = params.getMult().shareFromAdditive(rPart, modulo);
+        return params.getMult().multShares(temp, rShare, modulo);
     }
 }

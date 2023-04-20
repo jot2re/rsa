@@ -4,6 +4,7 @@ import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,24 +16,24 @@ public class MembershipLog implements IMembership {
         this.params = params;
     }
 
-    public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
-        BigInteger temp = BigInteger.ONE;
-        List<BigInteger> toMult = new ArrayList<>(set.size());
+    public Serializable execute(Serializable xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
+        List<Serializable> toMult = new ArrayList<>(set.size());
         for (int i = 0; i < set.size(); i++) {
-            toMult.add(params.getMult().mult(temp, RSAUtil.subConst(params, xShare, set.get(i), modulo), modulo));
+            toMult.add(params.getMult().addConst(xShare, set.get(i).negate(), modulo));
         }
         while (toMult.size() > 1) {
-            List<BigInteger> nextToMult = new ArrayList<>(1+toMult.size()/2);
+            List<Serializable> nextToMult = new ArrayList<>(1+toMult.size()/2);
             for (int i = 0; i < toMult.size(); i=i+2) {
                 if (i+1 < toMult.size()) {
-                    nextToMult.add(params.getMult().mult(toMult.get(i), toMult.get(i + 1), modulo));
+                    nextToMult.add(params.getMult().multShares(toMult.get(i), toMult.get(i + 1), modulo));
                 } else {
                     nextToMult.add(toMult.get(i));
                 }
             }
             toMult = nextToMult;
         }
-        BigInteger rShare = RSAUtil.sample(params.getRandom(), modulo);
-        return params.getMult().mult(toMult.get(0), rShare, modulo);
+        BigInteger rPart = RSAUtil.sample(params.getRandom(), modulo);
+        Serializable rShare = params.getMult().shareFromAdditive(rPart, modulo);
+        return params.getMult().multShares(toMult.get(0), rShare, modulo);
     }
 }

@@ -5,6 +5,7 @@ import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 import dk.jot2re.rsa.our.sub.invert.Invert;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -17,43 +18,46 @@ public class MembershipConst implements IMembership {
         this.inverter = new Invert(params);
     }
 
-    public BigInteger execute(BigInteger xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
+    public Serializable execute(Serializable xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
         int m = set.size();
         if (m == 0) {
             throw new RuntimeException("empty set");
         }
         if (m == 1) {
             BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
-            BigInteger temp = RSAUtil.subConst(params, xShare, set.get(0), modulo);
-            return params.getMult().mult(rho, temp, modulo);
+            Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
+            Serializable temp = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
+            return params.getMult().multShares(rhoShare, temp, modulo);
         }
         if (m == 2) {
             BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
-            BigInteger left = RSAUtil.subConst(params, xShare, set.get(0), modulo);
-            BigInteger right = RSAUtil.subConst(params, xShare, set.get(1), modulo);
-            BigInteger temp = params.getMult().mult(left, right, modulo);
-            return params.getMult().mult(rho, temp, modulo);
+            Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
+            Serializable left = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
+            Serializable right = params.getMult().addConst(xShare, set.get(1).negate(), modulo);
+            Serializable temp = params.getMult().multShares(left, right, modulo);
+            return params.getMult().multShares(rhoShare, temp, modulo);
         }
         // Step 1; sample
         long start, stop;
         start = System.currentTimeMillis();
         BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
-        Map<Integer, BigInteger> rShares = new HashMap<>(m);
-        rShares.put(1, RSAUtil.sample(params.getRandom(), modulo));
-        Map<Integer, BigInteger> alphaShares = new HashMap<>(m-1);
+        Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
+        Map<Integer, Serializable> rShares = new HashMap<>(m);
+        rShares.put(1, params.getMult().shareFromAdditive(RSAUtil.sample(params.getRandom(), modulo), modulo));
+        Map<Integer, Serializable> alphaShares = new HashMap<>(m-1);
         for (int i = 2; i <= m; i++) {
-            rShares.put(i, RSAUtil.sample(params.getRandom(), modulo));
-            alphaShares.put(i, RSAUtil.sample(params.getRandom(), modulo));
+            rShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(params.getRandom(), modulo), modulo));
+            alphaShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(params.getRandom(), modulo), modulo));
         }
         stop = System.currentTimeMillis();
         System.out.println("step 1: " + (stop-start));
         // Step 2; invert
         start = System.currentTimeMillis();
-        Map<Integer, BigInteger> invertedRShares = new HashMap<>(m);
+        Map<Integer, Serializable> invertedRShares = new HashMap<>(m);
         for (int i: rShares.keySet()) {
             invertedRShares.put(i, inverter.execute(rShares.get(i), modulo));
         }
-        Map<Integer, BigInteger> invertedAlphaShares = new HashMap<>(m-1);
+        Map<Integer, Serializable> invertedAlphaShares = new HashMap<>(m-1);
         for (int i: alphaShares.keySet()) {
             invertedAlphaShares.put(i, inverter.execute(alphaShares.get(i), modulo));
         }
@@ -61,18 +65,18 @@ public class MembershipConst implements IMembership {
         System.out.println("step 2: " + (stop-start));
         // Step 3; compute products
         start = System.currentTimeMillis();
-        Map<Integer, BigInteger> tShares = new HashMap<>(m);
+        Map<Integer, Serializable> tShares = new HashMap<>(m);
         for (int i: invertedRShares.keySet()) {
-            tShares.put(i, params.getMult().mult(xShare, invertedRShares.get(i), modulo));
+            tShares.put(i, params.getMult().multShares(xShare, invertedRShares.get(i), modulo));
         }
-        Map<Integer, BigInteger> vShares = new HashMap<>(m-1);
+        Map<Integer, Serializable> vShares = new HashMap<>(m-1);
         for (int i: alphaShares.keySet()) {
-            BigInteger temp = params.getMult().mult(alphaShares.get(i), tShares.get(i), modulo);
-            vShares.put(i, params.getMult().mult(temp, rShares.get(1), modulo));
+            Serializable temp = params.getMult().multShares(alphaShares.get(i), tShares.get(i), modulo);
+            vShares.put(i, params.getMult().multShares(temp, rShares.get(1), modulo));
         }
-        Map<Integer, BigInteger> wShares = new HashMap<>(m-1);
+        Map<Integer, Serializable> wShares = new HashMap<>(m-1);
         for (int i = 2; i <= m; i++) {
-            wShares.put(i, params.getMult().mult(tShares.get(i-1), rShares.get(i), modulo));
+            wShares.put(i, params.getMult().multShares(tShares.get(i-1), rShares.get(i), modulo));
         }
         stop = System.currentTimeMillis();
         System.out.println("step 3: " + (stop-start));
@@ -80,11 +84,11 @@ public class MembershipConst implements IMembership {
         start = System.currentTimeMillis();
         Map<Integer, BigInteger> vValues = new HashMap<>(m-1);
         for (int i: vShares.keySet()) {
-            vValues.put(i, RSAUtil.open(params, vShares.get(i), modulo));
+            vValues.put(i, params.getMult().open(vShares.get(i), modulo));
         }
         Map<Integer, BigInteger> wValues = new HashMap<>(m-1);
         for (int i: wShares.keySet()) {
-            wValues.put(i, RSAUtil.open(params, wShares.get(i), modulo));
+            wValues.put(i, params.getMult().open(wShares.get(i), modulo));
         }
         stop = System.currentTimeMillis();
         System.out.println("step 3 open : " + (stop-start));
@@ -108,20 +112,23 @@ public class MembershipConst implements IMembership {
         // Step 6; compute result
         //      x term
         start = System.currentTimeMillis();
-        BigInteger zShare = coef[1].multiply(xShare).mod(modulo);
+        Serializable zShare = params.getMult().multConst(xShare, coef[1], modulo);
         if (params.getMyId() == 0) {
             //  constant term
-            zShare = zShare.add(coef[0]).mod(modulo);
+            zShare = params.getMult().addConst(zShare, coef[0], modulo);
         }
         //      x^2 to x^(m-1) terms
         for (int i = 2; i < coef.length; i++) {
-            zShare = zShare.add(yValues.get(i).multiply(coef[i]).multiply(invertedAlphaShares.get(i))).mod(modulo);
+            zShare = params.getMult().add(zShare,
+                    params.getMult().multConst(invertedAlphaShares.get(i),
+                            yValues.get(i).multiply(coef[i]).mod(modulo), modulo), modulo);
         }
         //      x^m term
-        zShare = zShare.add(invertedAlphaShares.get(m).multiply(yValues.get(m))).mod(modulo);
+        zShare = params.getMult().add(zShare,
+                params.getMult().multConst(invertedAlphaShares.get(m), yValues.get(m), modulo), modulo);
         stop = System.currentTimeMillis();
         System.out.println("step 6 : " + (stop-start));
-        return params.getMult().mult(zShare, rho, modulo);
+        return params.getMult().multShares(zShare, rhoShare, modulo);
     }
 
     protected BigInteger[] computePolyConsts(List<BigInteger> roots, BigInteger modulo) {
