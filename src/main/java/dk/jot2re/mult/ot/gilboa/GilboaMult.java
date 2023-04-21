@@ -33,8 +33,6 @@ public class GilboaMult extends AbstractAdditiveMult {
         this.resources = resources;
         this.safeExpansion = safeExpansion;
         this.adjustedBatchSize = batchSize - resources.getComputationalSecurityParameter()- resources.getLambdaSecurityParam();
-        super.network = resources.getNetwork();
-        super.rand = getRandom(resources);
     }
 
     public GilboaMult(OtExtensionResourcePool resources) {
@@ -52,7 +50,9 @@ public class GilboaMult extends AbstractAdditiveMult {
     }
 
     @Override
-    public void init(INetwork network) {
+    public void init(INetwork networ, Random random) {
+        super.network = resources.getNetwork();
+        super.random = random; //getRandom(resources);
         if (this.factory == null) {
             RotFactory rotFactory = new RotFactory(resources, network);
             this.factory = new GilboaOTFactory(rotFactory, resources, network, adjustedBatchSize);
@@ -64,8 +64,6 @@ public class GilboaMult extends AbstractAdditiveMult {
                 this.factory.initSender();
             }
         }
-        super.network = resources.getNetwork();
-        super.rand = getRandom(resources);
     }
 
     @Override

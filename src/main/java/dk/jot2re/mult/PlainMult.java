@@ -1,9 +1,6 @@
 package dk.jot2re.mult;
 
-import dk.jot2re.network.INetwork;
-
 import java.math.BigInteger;
-import java.util.Random;
 
 /**
  * Multiplication class for debugging and protocol benchmark.
@@ -11,8 +8,6 @@ import java.util.Random;
  */
 public class PlainMult extends AbstractAdditiveMult{
     private final int pivotId;
-    private Random rand;
-    private INetwork network;
     private int multCalls = 0;
     private BigInteger defaultResponse = BigInteger.ZERO;
 
@@ -22,12 +17,6 @@ public class PlainMult extends AbstractAdditiveMult{
      */
     public PlainMult(int pivotId) {
         this.pivotId = pivotId;
-    }
-
-    @Override
-    public void init(INetwork network) {
-        this.network = network;
-        this.rand = new Random(DummyMult.class.hashCode() + network.myId());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package dk.jot2re.rsa.our.sub.invert;
 
 import dk.jot2re.AbstractProtocolTest;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.bf.BFParameters;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,9 +25,10 @@ public class InvertProtocolTest extends AbstractProtocolTest {
         BigInteger refValue = input.modInverse(MODULO);
         Map<Integer, BigInteger> shares = share(input, parties, MODULO, rand);
 
-        RunProtocol<BigInteger> protocolRunner = (param) -> {
+        RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             Invert protocol = new Invert((BFParameters) param);
-            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), MODULO);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(network.myId()), MODULO);
             Serializable res = protocol.execute(myShare, MODULO);
             return ((BFParameters) param).getMult().combineToAdditive(res, MODULO);
         };
@@ -42,6 +44,7 @@ public class InvertProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 }

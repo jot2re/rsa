@@ -1,20 +1,16 @@
 package dk.jot2re.mult.shamir;
 
-import dk.jot2re.mult.ot.util.Drng;
-
 public class ShamirResourcePool {
     private final int myId;
     private final int parties;
     private final int compSec;
     private final int statSec;
-    private final Drng rng;
 
-    public ShamirResourcePool(int myId, int parties,  int compSec, int statSec, Drng drng) {
+    public ShamirResourcePool(int myId, int parties,  int compSec, int statSec) {
         this.myId = myId;
         this.parties = parties;
         this.compSec = compSec;
         this.statSec = statSec;
-        this.rng = drng;
     }
 
     public int getMyId() {
@@ -31,10 +27,6 @@ public class ShamirResourcePool {
 
     public int getStatSec() {
         return statSec;
-    }
-
-    public Drng getRng() {
-        return rng;
     }
 
     public int getThreshold() {

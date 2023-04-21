@@ -3,7 +3,7 @@ package dk.jot2re.rsa;
 import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.PlainMult;
-import dk.jot2re.network.INetwork;
+import dk.jot2re.mult.ot.util.ExceptionConverter;
 import dk.jot2re.network.PlainNetwork;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.bf.BFProtocol;
@@ -33,6 +33,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     private static final int STATSEC = 40;
     private static final String TYPE = "linear";
     private static final boolean PIVOT = true;
+    private static final Random rand = ExceptionConverter.safe(()->SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not init random)");
 
     @State(Scope.Thread)
     public static class BenchState {
@@ -43,7 +44,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger N;
 
         @Setup(Level.Invocation)
-        public void setupVariables() {
+        public void setupVariables() throws Exception {
+            rand.setSeed(42);
             BigInteger p = BigInteger.probablePrime(BITS, rand);
             BigInteger q = BigInteger.probablePrime(BITS, rand);
             BigInteger N = p.multiply(q);
@@ -66,20 +68,24 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         new Runner(opt).run();
     }
 
-    public static OurProtocol setupOur(int parties, int bitlength, int statsec, String type, boolean pivot) {
-        OurParameters parameters = getOurBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1);
-        // Set values to something large to ensure that things takes as long as in real executions
-        ((PlainNetwork) parameters.getNetwork()).setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
+    public static OurProtocol setupOur(int parties, int bitlength, int statsec, String type, boolean pivot) throws Exception {
+        OurParameters parameters = getOurBenchParameters(bitlength, statsec, pivot ? 0 : 1);
         IMembership membership = switch (type) {
             case "const" -> new MembershipConst(parameters);
             case "log" -> new MembershipLog(parameters);
             case "linear" ->  new MembershipLinear(parameters);
             default -> throw new IllegalArgumentException("Unknown membership protocol");
         };
-        OurParameters multToAddParams = getOurBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1);
+        MultToAdd mta = new MultToAdd(parameters);
+        PlainNetwork mtaNetwork = new PlainNetwork(pivot ? 0 : 1, parties, pivot ? 0 : 1, null);
         // Change the default value to ensure that things work multiplicatively, although still not correctly
-        ((PlainNetwork) multToAddParams.getNetwork()).setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
-        return new OurProtocol(parameters, membership, new Invert(parameters), new MultToAdd(multToAddParams));
+        mtaNetwork.setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
+        OurProtocol prot = new OurProtocol(parameters, membership, new Invert(parameters), mta);
+        PlainNetwork network = new PlainNetwork(pivot ? 0 : 1, parties, pivot ? 0 : 1, null);
+        // Set values to something large to ensure that things takes as long as in real executions
+        network.setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
+        prot.init(network, rand);
+        return prot;
     }
 
     @Fork(value = 1, warmups = 2)
@@ -91,9 +97,12 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
     public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot) {
+        PlainNetwork network = new PlainNetwork(pivot ? 0 : 1, parties, pivot ? 0 : 1, null);
         BFParameters parameters = getBFBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1);
-        ((PlainNetwork) parameters.getNetwork()).setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
-        return new BFProtocol(parameters);
+        network.setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
+        BFProtocol prot = new BFProtocol(parameters);
+        prot.init(network, rand);
+        return prot;
     }
 
 //    @Fork(value = 1, warmups = 2)
@@ -104,7 +113,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return state.bfProtocol.execute(state.p, state.q, state.N);
     }
 
-    public static OurParameters getOurBenchParameters(int bits, int statSec, int parties, int pivotId) {
+    public static OurParameters getOurBenchParameters(int bits, int statSec, int pivotId) {
         try {
             // M > 2^2*bits TODO is that correct?
             BigInteger M = RSATestUtils.prime(2*bits+1, new Random(42));
@@ -117,10 +126,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             // Note that seed is only updated if different from 0
             rand.setSeed(pivotId);
             IMult pivotMult = new PlainMult(pivotId);
-            INetwork network = new PlainNetwork(pivotId, parties, pivotId, null);
-            network.init();
-            pivotMult.init(network);
-            return new OurParameters(bits, statSec, P, Q, M, network, pivotMult, rand);
+            return new OurParameters(bits, statSec, P, Q, M, pivotMult);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);
@@ -145,10 +151,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
                 map.put(j, array);
             }
             emulatedMsgs.add(map);
-            INetwork network = new PlainNetwork(pivotId, parties, pivotId, emulatedMsgs);
-            network.init();
-            pivotMult.init(network);
-            return new BFParameters(bits, statSec, network, pivotMult, rand);
+            return new BFParameters(bits, statSec, pivotMult);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);

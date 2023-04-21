@@ -52,7 +52,9 @@ public class IPSMult extends AbstractAdditiveMult {
     }
 
     @Override
-    public void init(INetwork network) {
+    public void init(INetwork network, Random random) {
+        super.network = network;
+        super.random = random;//getRandom(resources);
         //todo fix consistency in when network is supplied
         if (this.factory == null) {
             this.factory = new HashMap<>(resources.getParties()-1);
@@ -71,8 +73,6 @@ public class IPSMult extends AbstractAdditiveMult {
                 }
             }
         }
-        super.network = network;
-        super.rand = getRandom(resources);
     }
 
     @Override

@@ -2,6 +2,7 @@ package dk.jot2re.rsa.bf;
 
 import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.network.DummyNetwork;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -27,13 +28,14 @@ public class BFProtocolTest extends AbstractProtocolTest {
         BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
         BigInteger N = p.multiply(q);
 
-        RunProtocol<Boolean> protocolRunner = (param) -> {
+        RunProtocol<Boolean> protocolRunner = (param, network) -> {
             BFProtocol protocol = new BFProtocol((BFParameters) param);
-            if (!protocol.validateParameters(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N)) {
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            if (!protocol.validateParameters(pShares.get(network.myId()), qShares.get(network.myId()), N)) {
                 return false;
             }
             long start = System.currentTimeMillis();
-            boolean res = protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
+            boolean res = protocol.execute(pShares.get(network.myId()), qShares.get(network.myId()), N);
             long stop = System.currentTimeMillis();
             System.out.println("time: " + (stop-start));
             return res;
@@ -46,12 +48,13 @@ public class BFProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
 //        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
-        System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());
-        System.out.println("Nettime " + ((DummyNetwork) parameters.get(0).getNetwork()).getNetworkTime());
-        System.out.println("Nettrans " + ((DummyNetwork) parameters.get(0).getNetwork()).getTransfers());
-        System.out.println("Net bytes " + ((DummyNetwork) parameters.get(0).getNetwork()).getBytesSent());
+        System.out.println("Rounds " + ((DummyNetwork) networks.get(0)).getRounds());
+        System.out.println("Nettime " + ((DummyNetwork) networks.get(0)).getNetworkTime());
+        System.out.println("Nettrans " + ((DummyNetwork) networks.get(0)).getTransfers());
+        System.out.println("Net bytes " + ((DummyNetwork) networks.get(0)).getBytesSent());
     }
 
     // First 3 tests are from https://www.mathworks.com/help/symbolic/jacobisymbol.html

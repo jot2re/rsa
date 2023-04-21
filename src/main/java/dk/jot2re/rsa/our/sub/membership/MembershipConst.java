@@ -1,5 +1,7 @@
 package dk.jot2re.rsa.our.sub.membership;
 
+import dk.jot2re.AbstractProtocol;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
@@ -9,7 +11,7 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.*;
 
-public class MembershipConst implements IMembership {
+public class MembershipConst extends AbstractProtocol implements IMembership {
     private final BFParameters params;
     private final Invert inverter;
 
@@ -18,19 +20,25 @@ public class MembershipConst implements IMembership {
         this.inverter = new Invert(params);
     }
 
+    @Override
+    public void init(INetwork network, Random random) {
+        super.init(network, random);
+        inverter.init(network, random);
+    }
+
     public Serializable execute(Serializable xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {
         int m = set.size();
         if (m == 0) {
             throw new RuntimeException("empty set");
         }
         if (m == 1) {
-            BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
+            BigInteger rho = RSAUtil.sample(random, modulo);
             Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
             Serializable temp = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
             return params.getMult().multShares(rhoShare, temp, modulo);
         }
         if (m == 2) {
-            BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
+            BigInteger rho = RSAUtil.sample(random, modulo);
             Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
             Serializable left = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
             Serializable right = params.getMult().addConst(xShare, set.get(1).negate(), modulo);
@@ -40,14 +48,14 @@ public class MembershipConst implements IMembership {
         // Step 1; sample
         long start, stop;
         start = System.currentTimeMillis();
-        BigInteger rho = RSAUtil.sample(params.getRandom(), modulo);
+        BigInteger rho = RSAUtil.sample(random, modulo);
         Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
         Map<Integer, Serializable> rShares = new HashMap<>(m);
-        rShares.put(1, params.getMult().shareFromAdditive(RSAUtil.sample(params.getRandom(), modulo), modulo));
+        rShares.put(1, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
         Map<Integer, Serializable> alphaShares = new HashMap<>(m-1);
         for (int i = 2; i <= m; i++) {
-            rShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(params.getRandom(), modulo), modulo));
-            alphaShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(params.getRandom(), modulo), modulo));
+            rShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
+            alphaShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
         }
         stop = System.currentTimeMillis();
         System.out.println("step 1: " + (stop-start));
@@ -113,7 +121,7 @@ public class MembershipConst implements IMembership {
         //      x term
         start = System.currentTimeMillis();
         Serializable zShare = params.getMult().multConst(xShare, coef[1], modulo);
-        if (params.getMyId() == 0) {
+        if (network.myId() == 0) {
             //  constant term
             zShare = params.getMult().addConst(zShare, coef[0], modulo);
         }

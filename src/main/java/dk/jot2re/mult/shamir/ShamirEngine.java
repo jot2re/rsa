@@ -1,12 +1,9 @@
 package dk.jot2re.mult.shamir;
 
-import dk.jot2re.mult.ot.util.Drng;
+import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Assumes parties have IDs incrementally starting from 0 to n-1.
@@ -17,8 +14,8 @@ import java.util.Map;
 public class ShamirEngine {
     private final int parties;
     private final int threshold;
-    private final Drng rng;
-    public ShamirEngine(int parties, Drng rng) {
+    private final Random rng;
+    public ShamirEngine(int parties, Random rng) {
         this.parties = parties;
         this.threshold = (parties-1)/2;
         this.rng = rng;
@@ -54,7 +51,7 @@ public class ShamirEngine {
         BigInteger[] coeff = new BigInteger[degree+1];
         coeff[0] = input;
         for (int i = 1; i < degree+1; i++) {
-            coeff[i] = rng.nextBigInteger(modulo);
+            coeff[i] = RSAUtil.sample(rng, modulo);
         }
 
         final Map<Integer, BigInteger> shares = new HashMap<>(parties);

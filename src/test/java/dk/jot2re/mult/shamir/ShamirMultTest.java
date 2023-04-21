@@ -1,13 +1,13 @@
 package dk.jot2re.mult.shamir;
 
+import dk.jot2re.AbstractProtocol;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.MultCounter;
 import dk.jot2re.mult.MultFactory;
-import dk.jot2re.mult.ot.helper.HelperForTests;
-import dk.jot2re.mult.ot.util.AesCtrDrbg;
-import dk.jot2re.mult.ot.util.DrngImpl;
 import dk.jot2re.network.DummyNetwork;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
+import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -34,6 +34,7 @@ public class ShamirMultTest {
         BigInteger[] B = new BigInteger[parties];
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY, true);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(MODULO_BITLENGTH, rand);
             B[i] = new BigInteger(MODULO_BITLENGTH, rand);
@@ -43,6 +44,7 @@ public class ShamirMultTest {
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
+                mults.get(finalI).init(networks.get(finalI), RSATestUtils.getRandom(finalI));
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
@@ -81,9 +83,10 @@ public class ShamirMultTest {
         BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         BigInteger aValue = new BigInteger(MODULO_BITLENGTH, rand);
         BigInteger bValue = new BigInteger(MODULO_BITLENGTH, rand);
-        ShamirEngine engine = new ShamirEngine(parties,  new DrngImpl(new AesCtrDrbg(HelperForTests.seedOne)));
+        ShamirEngine engine = new ShamirEngine(parties, new Random(42));
         Map<Integer, BigInteger> sharesOfA = engine.share(aValue, modulo);
         Map<Integer, BigInteger> sharesOfB = engine.share(bValue, modulo);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
@@ -91,6 +94,7 @@ public class ShamirMultTest {
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
+                mults.get(finalI).init(networks.get(finalI), RSATestUtils.getRandom(finalI));
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
@@ -111,7 +115,7 @@ public class ShamirMultTest {
         BigInteger refC = engine.combine(engine.getThreshold(), resShares, modulo);
         assertEquals(aValue.multiply(bValue).mod(modulo), refC.mod(modulo));
 
-        Field privateField = ShamirMult.class.getDeclaredField("network");
+        Field privateField = AbstractProtocol.class.getDeclaredField("network");
         privateField.setAccessible(true);
         DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
         System.out.println("Rounds " + network.getRounds());
@@ -127,12 +131,14 @@ public class ShamirMultTest {
         BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         BigInteger input = new BigInteger(MODULO_BITLENGTH, rand);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
+                mults.get(finalI).init(networks.get(finalI), RSATestUtils.getRandom(finalI));
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
@@ -150,11 +156,11 @@ public class ShamirMultTest {
         for (Future<BigInteger> cur : C) {
             resShares.add(cur.get());
         }
-        ShamirEngine engine = new ShamirEngine(parties,  new DrngImpl(new AesCtrDrbg(HelperForTests.seedOne)));
+        ShamirEngine engine = new ShamirEngine(parties, new Random(42));
         BigInteger refC = engine.combine(parties-1, resShares, modulo);
         assertEquals(input.multiply(BigInteger.valueOf(parties)).mod(modulo), refC);
 
-        Field privateField = ShamirMult.class.getDeclaredField("network");
+        Field privateField = AbstractProtocol.class.getDeclaredField("network");
         privateField.setAccessible(true);
         DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
         System.out.println("Rounds " + network.getRounds());

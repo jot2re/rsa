@@ -19,14 +19,14 @@ public class ShamirEngineTest {
     @BeforeAll
     public static void setup() {
         DEFAULT_RESOURCE = getResourcePool(0, 3, COMP_SEC, STAT_SEC);
-        DEFAULT_ENGINE = new ShamirEngine(DEFAULT_RESOURCE.getParties(), DEFAULT_RESOURCE.getRng());
+        DEFAULT_ENGINE = new ShamirEngine(DEFAULT_RESOURCE.getParties(), new Random(42));
     }
 
     public static ShamirResourcePool getResourcePool(int myId, int parties, int compSec, int statSec) {
         byte[] seed = new byte[32];
         seed[0] = (byte) myId;
         Drng rand = new DrngImpl(new AesCtrDrbg(seed));
-        return new ShamirResourcePool(myId, parties, compSec, statSec, rand);
+        return new ShamirResourcePool(myId, parties, compSec, statSec);
     }
 
     @Test

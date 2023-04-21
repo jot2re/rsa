@@ -1,6 +1,7 @@
 package dk.jot2re.rsa.our.sub.multToAdd;
 
 import dk.jot2re.AbstractProtocolTest;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.OurParameters;
@@ -24,9 +25,12 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
     @BeforeAll
     public static void setup() {
         Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, DEFAULT_PARTIES);
+        Map<Integer, INetwork> nets = RSATestUtils.getNetworks(DEFAULT_PARTIES);
         multToAddMap = new HashMap<>(DEFAULT_PARTIES);
-        for (BFParameters cur : params.values()) {
-            multToAddMap.put(cur.getMyId(), new MultToAdd(cur));
+        for (int i = 0; i < params.size(); i++) {
+            MultToAdd mta =new MultToAdd(params.get(i));
+            mta.init(nets.get(i), RSATestUtils.getRandom(i));
+            multToAddMap.put(i, mta);
         }
     }
 
@@ -41,9 +45,10 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
             refValue = refValue.multiply(multShare).mod(MODULO);
         }
 
-        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             MultToAdd protocol = new MultToAdd((BFParameters) param);
-            return protocol.execute(multShares.get(param.getMyId()), MODULO);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            return protocol.execute(multShares.get(network.myId()), MODULO);
         };
 
         BigInteger finalRefValue = refValue;
@@ -58,7 +63,8 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 
     @ParameterizedTest
@@ -72,9 +78,10 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
             refValue = refValue.multiply(multShare).mod(MODULO);
         }
 
-        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             MultToAdd protocol = new MultToAdd((BFParameters) param);
-            return protocol.executeWithCorrelatedRandomness(multShares.get(param.getMyId()), MODULO);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            return protocol.executeWithCorrelatedRandomness(multShares.get(network.myId()), MODULO);
         };
 
         BigInteger finalRefValue = refValue;
@@ -89,7 +96,8 @@ public class MultToAddProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 
     @ParameterizedTest

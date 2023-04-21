@@ -3,6 +3,8 @@ package dk.jot2re.rsa.our;
 import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.mult.MultCounter;
 import dk.jot2re.network.DummyNetwork;
+import dk.jot2re.network.INetwork;
+import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -26,7 +28,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
         BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
         BigInteger N = p.multiply(q);
 
-        AbstractProtocolTest.RunProtocol<Boolean> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<Boolean> protocolRunner = (param, network) -> {
             OurProtocol.MembershipProtocol membership = switch (type) {
                 case "linear" -> OurProtocol.MembershipProtocol.LINEAR;
                 case "log" -> OurProtocol.MembershipProtocol.LOG;
@@ -34,11 +36,12 @@ public class OurProtocolTest extends AbstractProtocolTest {
                 default -> throw new RuntimeException("unknown type");
             };
             OurProtocol protocol = new OurProtocol((OurParameters) param, membership);
-            if (!protocol.validateParameters(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N)) {
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            if (!protocol.validateParameters(pShares.get(network.myId()), qShares.get(network.myId()), N)) {
                 return false;
             }
             long start = System.currentTimeMillis();
-            boolean res = protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
+            boolean res = protocol.execute(pShares.get(network.myId()), qShares.get(network.myId()), N);
             long stop = System.currentTimeMillis();
             System.out.println("time: " + (stop-start));
             return res;
@@ -51,12 +54,14 @@ public class OurProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        Map<Integer, INetwork> nets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+        runProtocolTest(nets, parameters, protocolRunner, checker);
         System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
-        System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());
-        System.out.println("Nettime " + ((DummyNetwork) parameters.get(0).getNetwork()).getNetworkTime());
-        System.out.println("Nettrans " + ((DummyNetwork) parameters.get(0).getNetwork()).getTransfers());
-        System.out.println("Net bytes " + ((DummyNetwork) parameters.get(0).getNetwork()).getBytesSent());
+        System.out.println("Rounds " + ((DummyNetwork) nets.get(0)).getRounds());
+        System.out.println("Nettime " + ((DummyNetwork) nets.get(0)).getNetworkTime());
+        System.out.println("Nettrans " + ((DummyNetwork) nets.get(0)).getTransfers());
+        System.out.println("Net bytes " + ((DummyNetwork) nets.get(0)).getBytesSent());
     }
 
 }

@@ -3,16 +3,19 @@ package dk.jot2re.mult.replicated;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
+import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
     private final ReplictedMultResourcePool resourcePool;
     private final int maxCorrupt;
     private INetwork network;
+    private Random random;
 
     public ReplicatedMult(ReplictedMultResourcePool resourcePool) {
         if (resourcePool.getParties() != 3) {
@@ -23,8 +26,9 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
     }
 
     @Override
-    public void init(INetwork network) {
+    public void init(INetwork network, Random random) {
         this.network = network;
+        this.random = random;
     }
 
     @Override
@@ -154,7 +158,7 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
         ArrayList<BigInteger> shares = new ArrayList<>(resourcePool.getParties());
         BigInteger partialSum = BigInteger.ZERO;
         for (int i = 0; i < resourcePool.getParties()-1; i++) {
-            BigInteger curShare = resourcePool.getRng().nextBigInteger(modulo);
+            BigInteger curShare = RSAUtil.sample(random, modulo);
             partialSum = partialSum.add(curShare);
             shares.add(curShare);
         }

@@ -1,5 +1,7 @@
 package dk.jot2re.rsa.bf;
 
+import dk.jot2re.AbstractProtocol;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.dto.Phase1Pivot;
 import dk.jot2re.rsa.our.RSAUtil;
@@ -11,8 +13,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-public class BFProtocol {
+public class BFProtocol extends AbstractProtocol {
     private static final Logger logger = LoggerFactory.getLogger(BFProtocol.class);
     private final BFParameters params;
 
@@ -20,8 +23,14 @@ public class BFProtocol {
         this.params = params;
     }
 
+    @Override
+    public void init(INetwork network, Random random) {
+        super.init(network, random);
+        params.getMult().init(network, random);
+    }
+
     public boolean validateParameters(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        if (params.getMyId() == 0) {
+        if (network.myId() == 0) {
             if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
                     !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
                 logger.error("P or Q share is congruent to 3 mod 4 for pivot party");
@@ -42,7 +51,7 @@ public class BFProtocol {
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        if (params.getMyId() == 0) {
+        if (network.myId() == 0) {
             return executePivot(pShare, qShare, N);
         } else {
             return executeOther(pShare, qShare, N);
@@ -51,9 +60,9 @@ public class BFProtocol {
 
     protected boolean executePivot(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
-        params.getNetwork().sendToAll(dto.getGammas());
-        params.getNetwork().sendToAll(dto.getNuShares());
-        Map<Integer, ArrayList<BigInteger>> receivedDto = params.getNetwork().receiveFromAllPeers();
+        network.sendToAll(dto.getGammas());
+        network.sendToAll(dto.getNuShares());
+        Map<Integer, ArrayList<BigInteger>> receivedDto = network.receiveFromAllPeers();
         if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
             return false;
         }
@@ -61,12 +70,12 @@ public class BFProtocol {
     }
 
     protected boolean executeOther(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        ArrayList<BigInteger> gamma = params.getNetwork().receive(0);
-        ArrayList<BigInteger> nu = params.getNetwork().receive(0);
+        ArrayList<BigInteger> gamma = network.receive(0);
+        ArrayList<BigInteger> nu = network.receive(0);
         Phase1Pivot receivedDto = new Phase1Pivot(gamma, nu);
         ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
-        params.getNetwork().sendToAll(myNuShare);
-        Map<Integer, ArrayList<BigInteger>> nuShares = params.getNetwork().receiveFromNonPivotPeers();
+        network.sendToAll(myNuShare);
+        Map<Integer, ArrayList<BigInteger>> nuShares = network.receiveFromNonPivotPeers();
         nuShares.put(0, receivedDto.getNuShares());
         if (!executePhase2(nuShares, myNuShare,  N)) {
             return false;
@@ -102,7 +111,7 @@ public class BFProtocol {
     protected boolean executePhase2(Map<Integer, ArrayList<BigInteger>> nuShares, List<BigInteger> myNuShares, BigInteger N) {
         for (int i = 0; i < params.getStatBits(); i++) {
             BigInteger nu = myNuShares.get(i);
-            for (int j : params.getNetwork().peers()) {
+            for (int j : network.peers()) {
                 nu = nuShares.get(j).get(i).multiply(nu).mod(N);
             }
             if (!nu.equals(BigInteger.ONE) && !nu.equals(N.subtract(BigInteger.ONE))) {
@@ -113,7 +122,7 @@ public class BFProtocol {
     }
 
     protected boolean executePhase3Pivot(BigInteger p, BigInteger q, BigInteger N) {
-        BigInteger r = RSAUtil.sample(params.getRandom(), N);
+        BigInteger r = RSAUtil.sample(random, N);
         Serializable rShare = params.getMult().shareFromAdditive(r, N);
         Serializable toMult = params.getMult().shareFromAdditive(p.add(q).subtract(BigInteger.ONE), N);
         Serializable res = params.getMult().multShares(rShare, toMult, N);
@@ -122,7 +131,7 @@ public class BFProtocol {
     }
 
     protected boolean executePhase3Other(BigInteger p, BigInteger q, BigInteger N) {
-        BigInteger r = RSAUtil.sample(params.getRandom(), N);
+        BigInteger r = RSAUtil.sample(random, N);
         Serializable rShare = params.getMult().shareFromAdditive(r, N);
         Serializable toMult = params.getMult().shareFromAdditive(p.add(q), N);
         Serializable res = params.getMult().multShares(rShare, toMult, N);
@@ -133,14 +142,14 @@ public class BFProtocol {
     private BigInteger sampleGamma(BigInteger N) {
         BigInteger candidate;
         do {
-            candidate = new BigInteger(N.bitLength() + params.getStatBits(), params.getRandom());
+            candidate = new BigInteger(N.bitLength() + params.getStatBits(), random);
         } while (jacobiSymbol(candidate, N) != 1);
         return candidate;
     }
 
     protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, N);
-        BigInteger NPrime = RSAUtil.open(params, NPrimeShare, N);
+        BigInteger NPrime = RSAUtil.open(network, NPrimeShare, N);
         if (!NPrime.equals(BigInteger.ZERO)) {
             return false;
         }

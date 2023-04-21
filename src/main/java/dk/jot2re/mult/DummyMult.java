@@ -1,19 +1,10 @@
 package dk.jot2re.mult;
 
-import dk.jot2re.network.INetwork;
-
 import java.math.BigInteger;
-import java.util.Random;
 
 public class DummyMult extends AbstractAdditiveMult {
     private int multCalls = 0;
     public DummyMult() {
-    }
-
-    @Override
-    public void init(INetwork network) {
-        super.network = network;
-        super.rand = new Random(DummyMult.class.hashCode() + network.myId());
     }
 
     @Override
@@ -27,7 +18,7 @@ public class DummyMult extends AbstractAdditiveMult {
                 network.send(0, shareA);
                 network.send(0, shareB);
                 // All except the pivot party picks their own shares
-                BigInteger shareC = new BigInteger(modulo.bitLength(), rand);
+                BigInteger shareC = new BigInteger(modulo.bitLength(), random);
                 network.send(0, shareC);
                 return shareC;
             }

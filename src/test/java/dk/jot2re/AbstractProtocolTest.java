@@ -1,5 +1,6 @@
 package dk.jot2re;
 
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.Parameters;
 
@@ -15,17 +16,16 @@ public abstract class AbstractProtocolTest {
     protected static final int DEFAULT_PARTIES = 3;
     protected static final Random rand = new Random(42);
 
-    public <ReturnT, ParameterT extends Parameters> void runProtocolTest(Map<Integer, ParameterT> params, RunProtocol<ReturnT> protocolRunner, ResultCheck<ReturnT> resultChecker) throws Exception {
+    public <ReturnT, ParameterT extends Parameters> void runProtocolTest(Map<Integer, INetwork> networks, Map<Integer, ParameterT> params, RunProtocol<ReturnT> protocolRunner, ResultCheck<ReturnT> resultChecker) throws Exception {
         // NOTE: ENABLE FOR DEBUGGING
         //        DummyNetwork.TIME_OUT_MS = 100000000;
-        int parties = params.get(0).getAmountOfPeers()+1;
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<ReturnT>> res = new ArrayList<>(parties);
-        for (int i = 0; i < parties; i++) {
+        List<Future<ReturnT>> res = new ArrayList<>(params.size());
+        for (int i = 0; i < params.size(); i++) {
             int finalI = i;
             res.add(executor.submit(() -> {
                 try {
-                    return protocolRunner.apply(params.get(finalI));
+                    return protocolRunner.apply(params.get(finalI), networks.get(finalI));
                 } catch (Exception e) {
                     System.err.println("Error: " + e.getMessage());
                     throw new RuntimeException(e);
@@ -40,7 +40,7 @@ public abstract class AbstractProtocolTest {
 
     @FunctionalInterface
     public interface RunProtocol<OutputT> {
-        OutputT apply(Parameters params) throws NetworkException;
+        OutputT apply(Parameters params, INetwork network) throws NetworkException;
     }
 
     @FunctionalInterface

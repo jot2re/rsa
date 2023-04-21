@@ -1,7 +1,7 @@
 package dk.jot2re.rsa.our;
 
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
-import dk.jot2re.rsa.Parameters;
 import dk.jot2re.rsa.bf.BFParameters;
 
 import java.io.Serializable;
@@ -29,22 +29,22 @@ public class RSAUtil {
         }
     }
 
-    public static BigInteger open(Parameters params, BigInteger share, BigInteger modulo) throws NetworkException {
-        params.getNetwork().sendToAll(share);
-        Map<Integer, BigInteger> otherShares = params.getNetwork().receiveFromAllPeers();
+    public static BigInteger open(INetwork network, BigInteger share, BigInteger modulo) throws NetworkException {
+        network.sendToAll(share);
+        Map<Integer, BigInteger> otherShares = network.receiveFromAllPeers();
         return otherShares.values().stream().reduce(share, (a, b) -> a.add(b)).mod(modulo);
     }
 
-    public static BigInteger addConst(Parameters params, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
-        if (params.getMyId() == 0) {
+    public static BigInteger addConst(int myId, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
+        if (myId == 0) {
             return share.add(constant);
         } else {
             return share;
         }
     }
 
-    public static BigInteger subConst(Parameters params, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
-        if (params.getMyId() == 0) {
+    public static BigInteger subConst(int myId, BigInteger share, BigInteger constant, BigInteger modulo) throws NetworkException {
+        if (myId == 0) {
             return share.subtract(constant);
         } else {
             return share;

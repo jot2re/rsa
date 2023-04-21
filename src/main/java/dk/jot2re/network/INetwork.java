@@ -9,8 +9,14 @@ public interface INetwork {
     void init();
     void send(int recipientId, Serializable data);
     <T extends Serializable> T receive(int senderId);
-    void sendToAll(Serializable data) throws NetworkException;
     int getNoOfParties();
+    default void sendToAll(Serializable data) throws NetworkException {
+        for (int i = 0; i < getNoOfParties(); i++) {
+            if (i != myId()) {
+                send(i, data);
+            }
+        }
+    }
 
     /**
      * @return Peers, excluding the current party.

@@ -1,6 +1,7 @@
 package dk.jot2re.rsa.our.sub.membership;
 
 import dk.jot2re.AbstractProtocolTest;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.OurParameters;
@@ -28,14 +29,15 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(34535), BigInteger.valueOf(5534315), BigInteger.valueOf(42), BigInteger.valueOf(890637));
         Map<Integer, BigInteger> shares = share(input, parties, MODULO, rand);
 
-        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             IMembership protocol = switch (type) {
                 case "linear" -> new MembershipLinear((BFParameters) param);
                 case "log" -> new MembershipLog((BFParameters) param);
                 case "const" -> new MembershipConst((BFParameters) param);
                 default -> throw new RuntimeException("unknown type");
             };
-            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), MODULO);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(network.myId()), MODULO);
             Serializable res = protocol.execute(myShare, set, MODULO);
             return ((BFParameters) param).getMult().combineToAdditive(res, MODULO);
         };
@@ -51,7 +53,8 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 
     @Test
@@ -61,9 +64,10 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(42));
         Map<Integer, BigInteger> shares = share(input, DEFAULT_PARTIES, mod, rand);
 
-        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             IMembership protocol = new MembershipConst((BFParameters) param);
-            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), mod);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(network.myId()), mod);
             Serializable res = protocol.execute(myShare, set, mod);
             return ((BFParameters) param).getMult().combineToAdditive(res, mod);
         };
@@ -79,7 +83,8 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, DEFAULT_PARTIES);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(DEFAULT_PARTIES);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 
     @Test
@@ -89,9 +94,10 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(42), BigInteger.valueOf(43));
         Map<Integer, BigInteger> shares = share(input, DEFAULT_PARTIES, mod, rand);
 
-        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             IMembership protocol = new MembershipConst((BFParameters) param);
-            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), mod);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(network.myId()), mod);
             Serializable res = protocol.execute(myShare, set, mod);
             return ((BFParameters) param).getMult().combineToAdditive(res, mod);
         };
@@ -107,7 +113,8 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, DEFAULT_PARTIES);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(DEFAULT_PARTIES);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 
     @ParameterizedTest
@@ -117,14 +124,15 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         List<BigInteger> set = Arrays.asList(BigInteger.valueOf(12), BigInteger.valueOf(2544), BigInteger.valueOf(4), BigInteger.valueOf(1000));
         Map<Integer, BigInteger> shares = share(input, parties, MODULO, rand);
 
-        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param) -> {
+        AbstractProtocolTest.RunProtocol<BigInteger> protocolRunner = (param, network) -> {
             IMembership protocol = switch (type) {
                 case "linear" -> new MembershipLinear((BFParameters) param);
                 case "log" -> new MembershipLog((BFParameters) param);
                 case "const" -> new MembershipConst((BFParameters) param);
                 default -> throw new RuntimeException("unknown type");
             };
-            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(param.getMyId()), MODULO);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            Serializable myShare = ((BFParameters) param).getMult().shareFromAdditive(shares.get(network.myId()), MODULO);
             Serializable res = protocol.execute(myShare, set, MODULO);
             return ((BFParameters) param).getMult().combineToAdditive(res, MODULO);
         };
@@ -140,7 +148,8 @@ public class MembershipProtocolTest extends AbstractProtocolTest {
         };
 
         Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        runProtocolTest(parameters, protocolRunner, checker);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
     }
 
     // TODO test for equal roots

@@ -1,29 +1,19 @@
 package dk.jot2re.mult;
 
-import dk.jot2re.network.INetwork;
+import dk.jot2re.AbstractProtocol;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.Map;
-import java.util.Random;
 
-public abstract class AbstractAdditiveMult implements IMult<BigInteger> {
-    protected Random rand;
-    protected INetwork network;
-
-    @Override
-    public void init(INetwork network) {
-        this.network = network;
-        this.rand = new SecureRandom();
-    }
+public abstract class AbstractAdditiveMult extends AbstractProtocol implements IMult<BigInteger> {
 
     @Override
     public BigInteger share(BigInteger value, BigInteger modulo) {
         BigInteger randomSum = BigInteger.ZERO;
         for (int i : network.peers()) {
-            BigInteger share = RSAUtil.sample(rand, modulo);
+            BigInteger share = RSAUtil.sample(random, modulo);
             randomSum = randomSum.add(share);
             network.send(i, share);
         }

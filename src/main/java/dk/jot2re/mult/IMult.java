@@ -1,12 +1,11 @@
 package dk.jot2re.mult;
 
-import dk.jot2re.network.INetwork;
+import dk.jot2re.IProtocol;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 
-public interface IMult<T extends Serializable> {
-    void init(INetwork network);
+public interface IMult<T extends Serializable> extends IProtocol {
 
     /**
      * @param shareA The additive share of a number A

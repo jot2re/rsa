@@ -2,6 +2,7 @@ package dk.jot2re.rsa;
 
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.MultFactory;
+import dk.jot2re.mult.ot.util.ExceptionConverter;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.rsa.bf.BFParameters;
@@ -42,11 +43,15 @@ public class RSATestUtils {
         return shares;
     }
 
+    public static Map<Integer, INetwork> getNetworks(int parties) {
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        return netFactory.getNetworks(NETWORK_TYPE);
+    }
+
     public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties) {
         try {
-            NetworkFactory netFactory = new NetworkFactory(parties);
             MultFactory multFactory = new MultFactory(parties);
-            Map<Integer, INetwork> networks = netFactory.getNetworks(NETWORK_TYPE);
+            Map<Integer, INetwork> networks = getNetworks(parties);
             Map<Integer, BFParameters> params = new HashMap<>(parties);
             Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE, true);
             for (int i = 0; i < networks.size(); i++) {
@@ -54,7 +59,7 @@ public class RSATestUtils {
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
                 // Note that seed is only updated if different from 0
                 rand.setSeed(networks.get(i).myId() + 1);
-                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, networks.get(i), mults.get(i), rand));
+                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, mults.get(i)));
             }
             return params;
         } catch (Exception e) {
@@ -72,9 +77,8 @@ public class RSATestUtils {
             BigInteger P = RSATestUtils.prime(2*bits+16, new Random(42));
             // Q > P
             BigInteger Q = RSATestUtils.prime(2*bits+24, new Random(42));
-            NetworkFactory netFactory = new NetworkFactory(parties);
             MultFactory multFactory = new MultFactory(parties);
-            Map<Integer, INetwork> networks = netFactory.getNetworks(NETWORK_TYPE);
+            Map<Integer, INetwork> networks = getNetworks(parties);
             Map<Integer, OurParameters> params = new HashMap<>(parties);
             Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE, true);
             for (int i = 0; i < networks.size(); i++) {
@@ -82,7 +86,7 @@ public class RSATestUtils {
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
                 // Note that seed is only updated if different from 0
                 rand.setSeed(networks.get(i).myId() + 1);
-                params.put(networks.get(i).myId(), new OurParameters(bits, statSec, P, Q, M, networks.get(i), mults.get(i), rand));
+                params.put(networks.get(i).myId(), new OurParameters(bits, statSec, P, Q, M, mults.get(i)));
             }
             return params;
         } catch (Exception e) {
@@ -105,5 +109,11 @@ public class RSATestUtils {
             res.put(i, new BigInteger(modulo.bitLength(), rand));
         }
         return res;
+    }
+
+    public static Random getRandom(int myId) {
+        SecureRandom random = ExceptionConverter.safe( ()-> SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not get random");
+        random.setSeed(myId);
+        return random;
     }
 }

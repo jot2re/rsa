@@ -1,5 +1,7 @@
 package dk.jot2re.rsa.our;
 
+import dk.jot2re.AbstractProtocol;
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.our.sub.invert.Invert;
 import dk.jot2re.rsa.our.sub.membership.IMembership;
@@ -14,8 +16,9 @@ import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
-public class OurProtocol {
+public class OurProtocol extends AbstractProtocol {
     private static final Logger logger = LoggerFactory.getLogger(OurProtocol.class);
     public enum MembershipProtocol {
         CONST,
@@ -27,17 +30,13 @@ public class OurProtocol {
     private final Invert inverter;
     private final MultToAdd multToAdd;
     // List of the set of parties, shifted to ensure positive indexes, plus 1 to account for overflow
-    private final List<BigInteger> partySet;
+    private List<BigInteger> partySet;
 
     public OurProtocol(OurParameters params, IMembership membership, Invert inverter, MultToAdd multToAdd) {
         this.params = params;
         this.inverter = inverter;
         this.multToAdd = multToAdd;
         this.membership = membership;
-        partySet = new ArrayList<>(params.getAmountOfPeers()+1);
-        for (int i = 1; i <= params.getAmountOfPeers()+1; i++) {
-            partySet.add(BigInteger.valueOf(i));
-        }
     }
 
     public OurProtocol(OurParameters params, MembershipProtocol membershipProtocolType) {
@@ -50,15 +49,24 @@ public class OurProtocol {
             case LINEAR -> this.membership = new MembershipLinear(params);
             default -> throw new IllegalArgumentException("Unknown membership protocol");
         }
-        partySet = new ArrayList<>(params.getAmountOfPeers()+1);
-        for (int i = 1; i <= params.getAmountOfPeers()+1; i++) {
+    }
+
+    @Override
+    public void init(INetwork network, Random random) {
+        super.init(network, random);
+        membership.init(network, random);
+        inverter.init(network, random);
+        multToAdd.init(network, random);
+        partySet = new ArrayList<>(network.getNoOfParties());
+        for (int i = 1; i <= network.getNoOfParties(); i++) {
             partySet.add(BigInteger.valueOf(i));
         }
     }
 
+
     public boolean validateParameters(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         // TODO validate M bound
-        if (params.getP().compareTo(N.multiply(BigInteger.valueOf(params.getAmountOfPeers()+1))) <= 0) {
+        if (params.getP().compareTo(N.multiply(BigInteger.valueOf(network.getNoOfParties()))) <= 0) {
             logger.error("P bound is too small");
             return false;
         }
@@ -70,7 +78,7 @@ public class OurProtocol {
             logger.error("Input share is too large");
             return false;
         }
-        if (params.getMyId() == 0) {
+        if (network.myId() == 0) {
             if (!pShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3)) ||
                     !qShare.mod(BigInteger.valueOf(4)).equals(BigInteger.valueOf(3))) {
                 logger.error("P or Q share is congruent to 3 mod 4 for pivot party");
@@ -99,7 +107,7 @@ public class OurProtocol {
 
     protected boolean verifyInputs(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         BigInteger NPrimeShare = params.getMult().mult(pShare, qShare, params.getM(), params.getPrimeBits());
-        BigInteger NPrime = RSAUtil.open(params, NPrimeShare, params.getM());
+        BigInteger NPrime = RSAUtil.open(network, NPrimeShare, params.getM());
         if (!NPrime.equals(N)) {
             return false;
         }
@@ -108,12 +116,12 @@ public class OurProtocol {
 
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
         BigInteger multGammaShare;
-        if (params.getMyId() == 0) {
-            BigInteger v = RSAUtil.sample(params.getRandom(), N);
-            params.getNetwork().sendToAll(v);
+        if (network.myId() == 0) {
+            BigInteger v = RSAUtil.sample(random, N);
+            network.sendToAll(v);
             multGammaShare = v.modPow(share.subtract(BigInteger.valueOf(1)).shiftRight(1), N);
         } else {
-            BigInteger v = params.getNetwork().receive(0);
+            BigInteger v = network.receive(0);
             multGammaShare = v.modPow(share.shiftRight(1), N);
         }
         BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
@@ -121,8 +129,8 @@ public class OurProtocol {
                 params.getMult().shareFromAdditive(share, params.getP()), params.getP());
         Serializable inverseShareQ = inverter.execute(
                 params.getMult().shareFromAdditive(share, params.getQ()), params.getQ());
-        BigInteger gammaAdd = RSAUtil.addConst(params, addGammaShare, BigInteger.ONE, N);
-        BigInteger gammaSub = RSAUtil.subConst(params, addGammaShare, BigInteger.ONE, N);
+        BigInteger gammaAdd = RSAUtil.addConst(network.myId(), addGammaShare, BigInteger.ONE, N);
+        BigInteger gammaSub = RSAUtil.subConst(network.myId(), addGammaShare, BigInteger.ONE, N);
         if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &
                 !validateGamma(gammaAdd, inverseShareP, inverseShareQ, N)) {
             return false;

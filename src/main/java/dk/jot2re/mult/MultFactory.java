@@ -7,10 +7,7 @@ import dk.jot2re.mult.ot.ot.base.DummyOt;
 import dk.jot2re.mult.ot.ot.base.Ot;
 import dk.jot2re.mult.ot.ot.otextension.OtExtensionDummyContext;
 import dk.jot2re.mult.ot.ot.otextension.OtExtensionResourcePool;
-import dk.jot2re.mult.ot.util.AesCtrDrbg;
-import dk.jot2re.mult.ot.util.Drbg;
-import dk.jot2re.mult.ot.util.Drng;
-import dk.jot2re.mult.ot.util.DrngImpl;
+import dk.jot2re.mult.ot.util.*;
 import dk.jot2re.mult.replicated.ReplicatedMult;
 import dk.jot2re.mult.replicated.ReplictedMultResourcePool;
 import dk.jot2re.mult.shamir.ShamirMult;
@@ -21,6 +18,7 @@ import dk.jot2re.network.NetworkFactory;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.*;
 
 import static dk.jot2re.DefaultSecParameters.*;
@@ -62,28 +60,29 @@ public class MultFactory {
 
     public Map<Integer, IMult> getMults(MultType multType, NetworkFactory.NetworkType networkType, boolean decorated) {
         Map<Integer, IMult> mults = new HashMap<>(parties);
-        Map<Integer, INetwork> networks = networkFactory.getNetworks(networkType);
         for (int i = 0; i < parties; i++) {
             IMult cur;
             if (multType == MultType.DUMMY) {
                 cur = decorated ? new MultCounter(new DummyMult()) : new DummyMult();
             } else if (multType == MultType.REPLICATED) {
-                ReplictedMultResourcePool resourcePool = new ReplictedMultResourcePool(i, parties, comSec, statSec, getDrng(i));
+                ReplictedMultResourcePool resourcePool = new ReplictedMultResourcePool(i, parties, comSec, statSec);
                 cur = decorated ? new MultCounter(new ReplicatedMult(resourcePool)) : new ReplicatedMult(resourcePool);
             } else if (multType == MultType.SHAMIR) {
-                ShamirResourcePool resourcePool = new ShamirResourcePool(i, parties, comSec, statSec, getDrng(i));
+                ShamirResourcePool resourcePool = new ShamirResourcePool(i, parties, comSec, statSec);
                 cur = decorated ? new MultCounter(new ShamirMult(resourcePool)) : new ShamirMult(resourcePool);
             } else if (multType == MultType.GILBOA) {
                 if (parties > 2) {
                     throw new IllegalArgumentException("Gilboa for more than 2 parties not implemented");
                 }
                 try {
+                    Map<Integer, INetwork> networks = networkFactory.getNetworks(networkType);
                     return getOTMult(networks, MultType.GILBOA, masterSeed, OT_SAFE_EXPANSION, decorated);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             } else if (multType == MultType.IPS) {
                 try {
+                    Map<Integer, INetwork> networks = networkFactory.getNetworks(networkType);
                     return getOTMult(networks, MultType.IPS, masterSeed, OT_SAFE_EXPANSION, decorated);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -92,7 +91,6 @@ public class MultFactory {
                 throw new IllegalArgumentException("Unsupported multiplication type");
             }
             mults.put(i, cur);
-            mults.get(i).init(networks.get(i));
         }
         return mults;
     }
@@ -122,7 +120,7 @@ public class MultFactory {
                     mult = decorated ? new MultCounter(new GilboaMult(pool, 32 * MODULO_BITLENGTH, safeExpansion)) : new GilboaMult(pool, 32 * MODULO_BITLENGTH, safeExpansion);
                 }
                 // the constant mult be a 2-power larger than the amount of parties
-                mult.init(networks.get(finalI));
+                mult.init(networks.get(finalI), getRandom(finalI));
                 return mult;
             });
             mults.put(i, curMult);
@@ -140,5 +138,13 @@ public class MultFactory {
         byte[] seed = masterSeed.clone();
         seed[0] ^= (byte) myId;
         return new DrngImpl(new AesCtrDrbg(seed));
+    }
+
+    private Random getRandom(int myId) {
+        SecureRandom random = ExceptionConverter.safe( ()-> SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not get random");
+        byte[] seed = masterSeed.clone();
+        seed[0] ^= (byte) myId;
+        random.setSeed(seed);
+        return random;
     }
 }

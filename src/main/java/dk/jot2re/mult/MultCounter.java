@@ -6,6 +6,7 @@ import dk.jot2re.network.INetwork;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Random;
 
 public class MultCounter<T extends Serializable> implements IMult<T> {
     private long timeSpent = 0;
@@ -68,9 +69,9 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     }
 
     @Override
-    public void init(INetwork network) {
+    public void init(INetwork network, Random random) {
         this.network = (DummyNetwork) network;
-        internalMult.init(network);
+        internalMult.init(network, random);
     }
 
     @Override

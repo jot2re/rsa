@@ -1,6 +1,8 @@
 package dk.jot2re.mult;
 
+import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
+import dk.jot2re.rsa.RSATestUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -24,6 +26,7 @@ public class DummyMultTest {
         BigInteger[] B = new BigInteger[parties];
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.DUMMY, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, INetwork> nets = RSATestUtils.getNetworks(parties);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(MODULO_BITLENGTH, rand);
@@ -33,7 +36,10 @@ public class DummyMultTest {
         List<Future<BigInteger>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
-            C.add(executor.submit(() -> mults.get(finalI).mult(A[finalI], B[finalI], MODULO)));
+            C.add(executor.submit(() -> {
+                mults.get(finalI).init(nets.get(finalI), RSATestUtils.getRandom(finalI));
+                return mults.get(finalI).mult(A[finalI], B[finalI], MODULO);
+            }));
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(3, TimeUnit.SECONDS));

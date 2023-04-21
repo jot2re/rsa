@@ -1,27 +1,29 @@
 package dk.jot2re.mult.shamir;
 
+import dk.jot2re.AbstractProtocol;
 import dk.jot2re.mult.IMult;
 import dk.jot2re.mult.ot.util.MaliciousException;
 import dk.jot2re.mult.ot.util.Pair;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
+import dk.jot2re.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
 import java.util.Map;
+import java.util.Random;
 
-public class ShamirMult implements IMult<BigInteger> {
+public class ShamirMult extends AbstractProtocol implements IMult<BigInteger> {
     private final ShamirResourcePool resourcePool;
-    private final ShamirEngine engine;
-    private INetwork network;
+    private ShamirEngine engine;
 
     public ShamirMult(ShamirResourcePool resourcePool) {
         this.resourcePool = resourcePool;
-        this.engine = new ShamirEngine(resourcePool.getParties(), resourcePool.getRng());
     }
 
     @Override
-    public void init(INetwork network) {
-        this.network = network;
+    public void init(INetwork network, Random random) {
+        super.init(network, random);
+        this.engine = new ShamirEngine(resourcePool.getParties(), random);
     }
 
     @Override
@@ -146,9 +148,9 @@ public class ShamirMult implements IMult<BigInteger> {
     }
 
     protected Pair<BigInteger, BigInteger> randomPair(BigInteger modulo) {
-        BigInteger random = resourcePool.getRng().nextBigInteger(modulo);
-        BigInteger myLargeShare = shareMyValue(resourcePool.getThreshold()*2, random, modulo);
-        BigInteger mySmallShare = shareMyValue(resourcePool.getThreshold(), random, modulo);
+        BigInteger r = RSAUtil.sample(random, modulo);
+        BigInteger myLargeShare = shareMyValue(resourcePool.getThreshold()*2, r, modulo);
+        BigInteger mySmallShare = shareMyValue(resourcePool.getThreshold(), r, modulo);
         Map<Integer, BigInteger> largePeerShares = network.receiveFromAllPeers();
         Map<Integer, BigInteger> smallPeerShares = network.receiveFromAllPeers();
         if (largePeerShares.size() != smallPeerShares.size() || smallPeerShares.size() != resourcePool.getParties()-1) {

@@ -1,5 +1,6 @@
  package dk.jot2re.rsa;
 
+import dk.jot2re.network.INetwork;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.our.RSAUtil;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,7 +33,8 @@ public class RSAFiddlingTest {
     public void testMultList(int parties, int amount) throws Exception {
         int bits = 32;
         Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(bits, 20, parties);
-        BigInteger modulo = BigInteger.probablePrime(bits, params.get(0).getRandom());
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        BigInteger modulo = BigInteger.probablePrime(bits, new Random(42));
         BigInteger[] ref = new BigInteger[amount];
         for (int j = 0; j < amount; j++) {
             ref[j] = BigInteger.ZERO;
@@ -41,7 +43,7 @@ public class RSAFiddlingTest {
         for (int i = 0; i < parties; i++) {
             BigInteger[] cur = new BigInteger[amount];
             for (int j = 0; j < amount; j++) {
-                cur[j] = new BigInteger(bits, params.get(i).getRandom());
+                cur[j] = new BigInteger(bits, new Random(i));
                 ref[j] = ref[j].add(cur[j]).mod(modulo);
             }
             toMult.put(i, cur);
@@ -51,6 +53,7 @@ public class RSAFiddlingTest {
         List<Future<BigInteger>> shares = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
+            params.get(finalI).getMult().init(networks.get(i), RSATestUtils.getRandom(i));
             shares.add(executor.submit(() -> params.get(finalI).getMult().combineToAdditive(RSAUtil.multList(params.get(finalI), toMult.get(finalI), modulo), modulo)));
         }
         executor.shutdown();

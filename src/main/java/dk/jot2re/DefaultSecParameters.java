@@ -1,8 +1,11 @@
 package dk.jot2re;
 
 import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class DefaultSecParameters {
+    public static final String DIGEST_ALGO = "SHA-256";
     public static final boolean REJECTION_SAMPLING = true;
     public static final int COMP_SEC = 256;
     public static final int STAT_SEC = 40;
@@ -16,5 +19,15 @@ public class DefaultSecParameters {
             candidate = candidate.subtract(BigInteger.TWO);
         }
         return candidate;
+    }
+
+    public static MessageDigest getDigest() {
+        MessageDigest digest;
+        try {
+            digest = MessageDigest.getInstance(DIGEST_ALGO);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(DIGEST_ALGO + " not supported", e);
+        }
+        return digest;
     }
 }
