@@ -1,6 +1,7 @@
 package dk.jot2re.rsa.our;
 
 import dk.jot2re.AbstractProtocol;
+import dk.jot2re.compiler.ICompilableProtocol;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.our.sub.invert.Invert;
@@ -15,10 +16,11 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class OurProtocol extends AbstractProtocol {
+public class OurProtocol extends AbstractProtocol implements ICompilableProtocol {
     private static final Logger logger = LoggerFactory.getLogger(OurProtocol.class);
     public enum MembershipProtocol {
         CONST,
@@ -31,6 +33,7 @@ public class OurProtocol extends AbstractProtocol {
     private final MultToAdd multToAdd;
     // List of the set of parties, shifted to ensure positive indexes, plus 1 to account for overflow
     private List<BigInteger> partySet;
+    private boolean initialized = false;
 
     public OurProtocol(OurParameters params, IMembership membership, Invert inverter, MultToAdd multToAdd) {
         this.params = params;
@@ -53,13 +56,16 @@ public class OurProtocol extends AbstractProtocol {
 
     @Override
     public void init(INetwork network, Random random) {
-        super.init(network, random);
-        membership.init(network, random);
-        inverter.init(network, random);
-        multToAdd.init(network, random);
-        partySet = new ArrayList<>(network.getNoOfParties());
-        for (int i = 1; i <= network.getNoOfParties(); i++) {
-            partySet.add(BigInteger.valueOf(i));
+        if (!initialized) {
+            super.init(network, random);
+            membership.init(network, random);
+            inverter.init(network, random);
+            multToAdd.init(network, random);
+            partySet = new ArrayList<>(network.getNoOfParties());
+            for (int i = 1; i <= network.getNoOfParties(); i++) {
+                partySet.add(BigInteger.valueOf(i));
+            }
+            initialized = true;
         }
     }
 
@@ -96,6 +102,16 @@ public class OurProtocol extends AbstractProtocol {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public List<BigInteger> executeList(List<BigInteger> privateInput, List<BigInteger> publicInput) {
+        try {
+            boolean res = execute(privateInput.get(0), privateInput.get(1), publicInput.get(0));
+            return Arrays.asList(res ? BigInteger.ONE : BigInteger.ZERO);
+        } catch (Exception e) {
+            throw new RuntimeException("Party " + network.myId() + " with error " +e.getMessage());
+        }
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {

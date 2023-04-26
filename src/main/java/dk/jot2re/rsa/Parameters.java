@@ -1,6 +1,6 @@
 package dk.jot2re.rsa;
 
-public class Parameters {
+public class Parameters implements Cloneable {
     private final int primeBits;
     private final int statBits;
 
@@ -15,5 +15,10 @@ public class Parameters {
 
     public int getStatBits() {
         return statBits;
+    }
+
+    @Override
+    public Object clone()  {
+        return new Parameters(primeBits ,statBits);
     }
 }

@@ -1,41 +1,70 @@
 package dk.jot2re.compiler;
 
 import dk.jot2re.AbstractProtocolTest;
+import dk.jot2re.network.INetwork;
+import dk.jot2re.network.NetworkFactory;
+import dk.jot2re.rsa.RSATestUtils;
+import dk.jot2re.rsa.our.OurParameters;
+import dk.jot2re.rsa.our.OurProtocol;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static dk.jot2re.DefaultSecParameters.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompilerTest extends AbstractProtocolTest {
-//    @ParameterizedTest
-//    @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log", "2,const", "3,const", "5,const"})
-//    public void sunshine(int parties, String type) throws Exception {
-//        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
-//        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
-//        BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
-//        BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
-//        BigInteger N = p.multiply(q);
-//
-//        AbstractProtocolTest.RunProtocol<Boolean> protocolRunner = (param) -> {
-//            OurParameters baseParam = (OurParameters) param;
-//            OurProtocol.MembershipProtocol membership =  OurProtocol.MembershipProtocol.LINEAR;
-//            OurProtocol brain = new OurProtocol(new OurParameters(baseParam.getPrimeBits(), baseParam.getStatBits(), baseParam.getP(), baseParam.getQ(), baseParam.getM(), ));
-//            CompiledProtocol protocol = new CompiledProtocol(new OurProtocol((OurParameters) param, membership));
-//            long start = System.currentTimeMillis();
-//            boolean res = protocol.execute(pShares.get(param.getMyId()), qShares.get(param.getMyId()), N);
-//            long stop = System.currentTimeMillis();
-//            System.out.println("time: " + (stop-start));
-//            return res;
-//        };
-//
-//        AbstractProtocolTest.ResultCheck<Boolean> checker = (res) -> {
-//            for (Future<Boolean> cur : res) {
-//                assertTrue(cur.get());
-//            }
-//        };
-//
-//        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-//        runProtocolTest(parameters, protocolRunner, checker);
+    @Test
+    public void sunshine() throws Exception {
+        int parties = 3;
+        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
+        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
+        BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
+        BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
+        BigInteger N = p.multiply(q);
+
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        Map<Integer, INetwork> brainNets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, INetwork> pinkyNets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        List<Future<BigInteger>> res = new ArrayList<>(parties);
+        for (int i = 0; i < parties; i++) {
+            int finalI = i;
+            res.add(executor.submit(() -> {
+                OurProtocol.MembershipProtocol membership = OurProtocol.MembershipProtocol.LINEAR;
+                CompiledProtocolResources resources = new CompiledProtocolResources(COMP_SEC);
+                CompiledProtocol protocol = new CompiledProtocol(resources, new OurProtocol((OurParameters) parameters.get(finalI), membership), new OurProtocol((OurParameters) parameters.get(finalI), membership));
+                long start = System.currentTimeMillis();
+                protocol.init(brainNets.get(finalI), pinkyNets.get(finalI), RSATestUtils.getRandom(finalI));
+                BigInteger localRes = protocol.execute(Arrays.asList(pShares.get(finalI), qShares.get(finalI)), Arrays.asList(N)).get(0);
+                long stop = System.currentTimeMillis();
+                System.out.println("time: " + (stop-start));
+                return localRes;
+            }));
+        }
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
+
+        for (Future<BigInteger> cur : res) {
+            assertEquals(BigInteger.ONE, cur.get());
+        }
+
+
+//        runProtocolTest(brainNets, pinkyNets, parameters, protocolRunner, checker);
 //        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
-//        System.out.println("Rounds " + ((DummyNetwork) parameters.get(0).getNetwork()).getRounds());
-//        System.out.println("Nettime " + ((DummyNetwork) parameters.get(0).getNetwork()).getNetworkTime());
-//        System.out.println("Nettrans " + ((DummyNetwork) parameters.get(0).getNetwork()).getTransfers());
-//        System.out.println("Net bytes " + ((DummyNetwork) parameters.get(0).getNetwork()).getBytesSent());
-//    }
+//        System.out.println("Rounds " + ((DummyNetwork) brainNets.get(0)).getRounds());
+//        System.out.println("Nettime " + ((DummyNetwork) nets.get(0)).getNetworkTime());
+//        System.out.println("Nettrans " + ((DummyNetwork) nets.get(0)).getTransfers());
+//        System.out.println("Net bytes " + ((DummyNetwork) nets.get(0)).getBytesSent());
+    }
 }

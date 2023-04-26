@@ -1,16 +1,15 @@
 package dk.jot2re.network;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DummyNetwork implements INetwork {
-    public static long TIME_OUT_MS  = 10000;
+    public static long TIME_OUT_MS  = 100000;
     public static final int WAIT_MS = 1;
     private final int myId;
     private final int parties;
     private final Map<Integer, DummyP2P> networks;
+    private Queue<Serializable> selfBuffer;
 
     private long networkTime = 0;
 
@@ -18,6 +17,7 @@ public class DummyNetwork implements INetwork {
         this.myId = myId;
         this.parties = state.parties();
         this.networks = new HashMap<>(parties);
+        this.selfBuffer = new LinkedList<>();
         for (int i = 0; i < parties; i++) {
             if (i == myId) {
                 continue;
@@ -35,15 +35,29 @@ public class DummyNetwork implements INetwork {
 
     @Override
     public void send(int recipientId, Serializable data) {
-        networks.get(recipientId).send(data);
+        if (recipientId != myId) {
+            networks.get(recipientId).send(data);
+        } else {
+            selfBuffer.add(data);
+        }
     }
 
     @Override
     public Serializable receive(int senderId) {
+        if (senderId == myId) {
+            Serializable res =selfBuffer.poll();
+            long startTime = System.nanoTime();
+            while (res == null  && System.nanoTime() < startTime + 1000000*TIME_OUT_MS) {
+                res = selfBuffer.poll();
+            }
+            long nowTime = System.nanoTime();
+            networkTime += nowTime-startTime;
+            return res;
+        }
         Serializable res = networks.get(senderId).receive();
         if (res == null) {
             long startTime = System.nanoTime();
-            while (res == null) {
+            while (res == null  && System.nanoTime() < startTime + 1000000*TIME_OUT_MS) {
                 res = networks.get(senderId).receive();
             }
             long nowTime = System.nanoTime();

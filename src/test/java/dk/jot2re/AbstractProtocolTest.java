@@ -19,7 +19,7 @@ public abstract class AbstractProtocolTest {
     public <ReturnT, ParameterT extends Parameters> void runProtocolTest(Map<Integer, INetwork> networks, Map<Integer, ParameterT> params, RunProtocol<ReturnT> protocolRunner, ResultCheck<ReturnT> resultChecker) throws Exception {
         // NOTE: ENABLE FOR DEBUGGING
         //        DummyNetwork.TIME_OUT_MS = 100000000;
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(networks.size());
         List<Future<ReturnT>> res = new ArrayList<>(params.size());
         for (int i = 0; i < params.size(); i++) {
             int finalI = i;

@@ -53,7 +53,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties, true);
         NetworkFactory netFactory = new NetworkFactory(parties);
         Map<Integer, INetwork> nets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         runProtocolTest(nets, parameters, protocolRunner, checker);

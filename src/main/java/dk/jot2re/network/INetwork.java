@@ -25,7 +25,7 @@ public interface INetwork {
     int myId();
 
     default <T extends Serializable> Map<Integer, T> receiveFromAllPeers() {
-        Map<Integer, T> values = new HashMap<>(peers().size()+1);
+        Map<Integer, T> values = new HashMap<>(getNoOfParties());
         for (int i : peers()) {
             values.put(i, receive(i));
         }

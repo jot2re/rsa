@@ -15,6 +15,7 @@ import java.util.Random;
 public class ShamirMult extends AbstractProtocol implements IMult<BigInteger> {
     private final ShamirResourcePool resourcePool;
     private ShamirEngine engine;
+    private boolean initialized = false;
 
     public ShamirMult(ShamirResourcePool resourcePool) {
         this.resourcePool = resourcePool;
@@ -22,8 +23,11 @@ public class ShamirMult extends AbstractProtocol implements IMult<BigInteger> {
 
     @Override
     public void init(INetwork network, Random random) {
-        super.init(network, random);
-        this.engine = new ShamirEngine(resourcePool.getParties(), random);
+        if (!initialized) {
+            super.init(network, random);
+            this.engine = new ShamirEngine(resourcePool.getParties(), random);
+            initialized = true;
+        }
     }
 
     @Override

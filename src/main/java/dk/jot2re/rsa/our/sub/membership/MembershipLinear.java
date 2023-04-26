@@ -13,6 +13,7 @@ import java.util.Random;
 
 public class MembershipLinear extends AbstractProtocol implements IMembership {
     private final BFParameters params;
+    private boolean initialized = false;
 
     public MembershipLinear(BFParameters params) {
         this.params = params;
@@ -20,8 +21,11 @@ public class MembershipLinear extends AbstractProtocol implements IMembership {
 
     @Override
     public void init(INetwork network, Random random) {
-        super.init(network, random);
-        params.getMult().init(network, random);
+        if (!initialized) {
+            super.init(network, random);
+            params.getMult().init(network, random);
+            initialized = true;
+        }
     }
 
     public Serializable execute(Serializable xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {

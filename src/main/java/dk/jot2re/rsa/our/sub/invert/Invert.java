@@ -12,6 +12,7 @@ import java.util.Random;
 
 public class Invert extends AbstractProtocol {
     private final BFParameters params;
+    private boolean initialized = false;
 
     public Invert(BFParameters params) {
         this.params = params;
@@ -19,8 +20,11 @@ public class Invert extends AbstractProtocol {
 
     @Override
     public void init(INetwork network, Random random) {
-        super.init(network, random);
-        params.getMult().init(network, random);
+        if (!initialized) {
+            super.init(network, random);
+            params.getMult().init(network, random);
+            initialized = true;
+        }
     }
 
     public Serializable execute(Serializable xShare, BigInteger modulo) throws NetworkException {

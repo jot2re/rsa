@@ -14,6 +14,7 @@ import java.util.*;
 public class MembershipConst extends AbstractProtocol implements IMembership {
     private final BFParameters params;
     private final Invert inverter;
+    private boolean initialized = false;
 
     public MembershipConst(BFParameters params) {
         this.params = params;
@@ -22,8 +23,11 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
 
     @Override
     public void init(INetwork network, Random random) {
-        super.init(network, random);
-        inverter.init(network, random);
+        if (!initialized) {
+            super.init(network, random);
+            inverter.init(network, random);
+            initialized = true;
+        }
     }
 
     public Serializable execute(Serializable xShare, List<BigInteger> set, BigInteger modulo) throws NetworkException {

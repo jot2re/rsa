@@ -23,6 +23,7 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     private long stopBytes;
     private DummyNetwork network;
     private final IMult<T> internalMult;
+    private boolean initialized = false;
 
     public MultCounter(IMult<T> internalMult) {
         this.internalMult = internalMult;
@@ -70,8 +71,11 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
 
     @Override
     public void init(INetwork network, Random random) {
-        this.network = (DummyNetwork) network;
-        internalMult.init(network, random);
+        if (!initialized) {
+            this.network = (DummyNetwork) network;
+            internalMult.init(network, random);
+            initialized = true;
+        }
     }
 
     @Override

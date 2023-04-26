@@ -18,6 +18,7 @@ import java.util.Random;
 public class BFProtocol extends AbstractProtocol {
     private static final Logger logger = LoggerFactory.getLogger(BFProtocol.class);
     private final BFParameters params;
+    private boolean initialized = false;
 
     public BFProtocol(BFParameters params) {
         this.params = params;
@@ -25,8 +26,11 @@ public class BFProtocol extends AbstractProtocol {
 
     @Override
     public void init(INetwork network, Random random) {
-        super.init(network, random);
-        params.getMult().init(network, random);
+        if (!initialized) {
+            super.init(network, random);
+            params.getMult().init(network, random);
+            initialized = true;
+        }
     }
 
     public boolean validateParameters(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
