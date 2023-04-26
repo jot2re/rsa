@@ -1,10 +1,13 @@
 package dk.jot2re.compiler;
 
 import dk.jot2re.network.INetwork;
+import dk.jot2re.network.NetworkException;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
-public class BrainNetwork extends CompiledNetwork {
+public class BrainNetwork extends BaseNetwork {
     private final INetwork pinkyNetwork;
 
     public BrainNetwork(INetwork brainNetwork, INetwork pinkyNetwork) {
@@ -15,17 +18,31 @@ public class BrainNetwork extends CompiledNetwork {
     @Override
     public void send(int recipientId, Serializable data) {
         // We don't want to send data to ourselves, but only store it
-//        if (getRecipientBrainId(recipientId) != myId()) {
-            internalNetwork.send(getRecipientBrainId(recipientId), data);
-//        }
-//        if (getRecipientPinkyId(recipientId) != myId()) {
-            pinkyNetwork.send(getRecipientPinkyId(recipientId), data);
-//        }
+        internalNetwork.send(recipientId, data);
+        pinkyNetwork.send(recipientId, data);
         digest.update(serializer.serialize(data));
     }
 
     @Override
-    public int myId() {
-        return getMyVirtualBrainId(internalNetwork);
+    public void sendToAll(Serializable data) throws NetworkException {
+        for (int i = 0; i < internalNetwork.getNoOfParties(); i++) {
+            if (i != internalNetwork.myId()) {
+                internalNetwork.send(i, data);
+            }
+            if (i != pinkyNetwork.myId()) {
+                pinkyNetwork.send(i, data);
+            }
+        }
+    }
+
+    @Override
+    public  <T extends Serializable> Map<Integer, T> receiveFromAllPeers() {
+        Map<Integer, T> values = new HashMap<>(getNoOfParties());
+        for (int i = 0; i < internalNetwork.getNoOfParties(); i++) {
+            if (i != myId()) {
+                values.put(i, receive(i));
+            }
+        }
+        return values;
     }
 }

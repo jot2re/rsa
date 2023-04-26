@@ -24,24 +24,22 @@ public class CompiledProtocol {
         this.internalProtocolPinky = internalProtocolPinky;
     }
 
-    public void init(INetwork brainNetwork, INetwork pinkyNetwork, Random random) {
+    public void init(NetworkPair networks, Random random) {
         try {
-            this.network = brainNetwork;
+            this.network = networks.getBrainNetwork().internalNetwork;
             this.random = random;
             byte[] subPinkySeed = new byte[resources.getCompSecBytes()];
             random.nextBytes(subPinkySeed);
-            INetwork compiledBrainNetwork = new BrainNetwork(brainNetwork, pinkyNetwork);
-            compiledBrainNetwork.init();
-            network.send(CompiledNetwork.getSubmissivePinkyId(network), subPinkySeed);
+            networks.getBrainNetwork().init();
+            network.send(BaseNetwork.getSubmissivePinkyId(network), subPinkySeed);
             SecureRandom myBrainRand = SecureRandom.getInstance("SHA1PRNG", "SUN");
-            internalProtocolBrain.init(compiledBrainNetwork, myBrainRand);
+            internalProtocolBrain.init(networks.getBrainNetwork(), myBrainRand);
 
-            INetwork compiledPinkyNetwork = new PinkyNetwork(pinkyNetwork);
-            compiledPinkyNetwork.init();
-            byte[] myPinkySeed = network.receive(CompiledNetwork.getMyVirtualPinkyId(network));
+            networks.getPinkyNetwork().init();
+            byte[] myPinkySeed = network.receive(BaseNetwork.getMyVirtualPinkyId(network));
             SecureRandom myPinkyRand = SecureRandom.getInstance("SHA1PRNG", "SUN");
             myPinkyRand.setSeed(myPinkySeed);
-            internalProtocolPinky.init(compiledPinkyNetwork, myPinkyRand);
+            internalProtocolPinky.init(networks.getPinkyNetwork(), myPinkyRand);
         } catch (Exception e) {
             throw new RuntimeException("Party " + network.myId() + " with error " +e.getMessage());
         }
@@ -63,6 +61,14 @@ public class CompiledProtocol {
 
     protected List<BigInteger> check(List<BigInteger> brainResult, List<BigInteger> pinkyResult) {
         // TODO check
+        if (brainResult.size() != pinkyResult.size()) {
+            throw new RuntimeException("Different size output of the protocols");
+        }
+        for (int i = 0; i < brainResult.size(); i++) {
+            if (!brainResult.get(i).equals(pinkyResult.get(i))) {
+                throw new RuntimeException("Inconsistent results");
+            }
+        }
         return brainResult;
     }
 

@@ -1,7 +1,9 @@
 package dk.jot2re.network;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DummyNetwork implements INetwork {
     public static long TIME_OUT_MS  = 100000;
@@ -9,7 +11,7 @@ public class DummyNetwork implements INetwork {
     private final int myId;
     private final int parties;
     private final Map<Integer, DummyP2P> networks;
-    private Queue<Serializable> selfBuffer;
+    private final List<Integer> peers;
 
     private long networkTime = 0;
 
@@ -17,7 +19,6 @@ public class DummyNetwork implements INetwork {
         this.myId = myId;
         this.parties = state.parties();
         this.networks = new HashMap<>(parties);
-        this.selfBuffer = new LinkedList<>();
         for (int i = 0; i < parties; i++) {
             if (i == myId) {
                 continue;
@@ -26,6 +27,7 @@ public class DummyNetwork implements INetwork {
             p2p.init();
             networks.put(i, p2p);
         }
+        peers = networks.keySet().stream().toList();
     }
 
     @Override
@@ -35,25 +37,11 @@ public class DummyNetwork implements INetwork {
 
     @Override
     public void send(int recipientId, Serializable data) {
-        if (recipientId != myId) {
-            networks.get(recipientId).send(data);
-        } else {
-            selfBuffer.add(data);
-        }
+        networks.get(recipientId).send(data);
     }
 
     @Override
     public Serializable receive(int senderId) {
-        if (senderId == myId) {
-            Serializable res =selfBuffer.poll();
-            long startTime = System.nanoTime();
-            while (res == null  && System.nanoTime() < startTime + 1000000*TIME_OUT_MS) {
-                res = selfBuffer.poll();
-            }
-            long nowTime = System.nanoTime();
-            networkTime += nowTime-startTime;
-            return res;
-        }
         Serializable res = networks.get(senderId).receive();
         if (res == null) {
             long startTime = System.nanoTime();
@@ -93,9 +81,19 @@ public class DummyNetwork implements INetwork {
         return parties;
     }
 
+
+    @Override
+    public <T extends Serializable> Map<Integer, T> receiveFromAllPeers() {
+        Map<Integer, T> values = new HashMap<>(getNoOfParties());
+        for (int i : peers()) {
+            values.put(i, (T) receive(i));
+        }
+        return values;
+    }
+
     @Override
     public List<Integer> peers() {
-        return networks.keySet().stream().toList();
+        return peers;
     }
 
     @Override

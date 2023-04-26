@@ -10,6 +10,7 @@ public class NetworkFactory {
     }
 
     private final int parties;
+    // TODO make parties part of getNetworks
     public NetworkFactory(int parties) {
         this.parties = parties;
     }
@@ -33,5 +34,9 @@ public class NetworkFactory {
             throw new IllegalArgumentException("Unknown network type");
         }
         return map;
+    }
+
+    public int getParties() {
+        return parties;
     }
 }

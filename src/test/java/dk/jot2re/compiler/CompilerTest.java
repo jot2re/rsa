@@ -1,7 +1,6 @@
 package dk.jot2re.compiler;
 
 import dk.jot2re.AbstractProtocolTest;
-import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.our.OurParameters;
@@ -32,10 +31,11 @@ public class CompilerTest extends AbstractProtocolTest {
         BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
         BigInteger N = p.multiply(q);
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        NetworkFactory netFactory = new NetworkFactory(parties);
-        Map<Integer, INetwork> brainNets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
-        Map<Integer, INetwork> pinkyNets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
+        // NOTE that we need copies of both, since the network for mult is stored in the parameters!!! Terrible decision! TODO FIX!
+        Map<Integer, OurParameters> brainParameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        Map<Integer, OurParameters> pinkyParameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        CompiledNetworkFactory netFactory = new CompiledNetworkFactory(new NetworkFactory(parties));
+        Map<Integer, NetworkPair> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
         List<Future<BigInteger>> res = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
@@ -43,9 +43,9 @@ public class CompilerTest extends AbstractProtocolTest {
             res.add(executor.submit(() -> {
                 OurProtocol.MembershipProtocol membership = OurProtocol.MembershipProtocol.LINEAR;
                 CompiledProtocolResources resources = new CompiledProtocolResources(COMP_SEC);
-                CompiledProtocol protocol = new CompiledProtocol(resources, new OurProtocol((OurParameters) parameters.get(finalI), membership), new OurProtocol((OurParameters) parameters.get(finalI), membership));
+                CompiledProtocol protocol = new CompiledProtocol(resources, new OurProtocol(brainParameters.get(finalI), membership), new OurProtocol(pinkyParameters.get(finalI), membership));
                 long start = System.currentTimeMillis();
-                protocol.init(brainNets.get(finalI), pinkyNets.get(finalI), RSATestUtils.getRandom(finalI));
+                protocol.init(networks.get(finalI), RSATestUtils.getRandom(finalI));
                 BigInteger localRes = protocol.execute(Arrays.asList(pShares.get(finalI), qShares.get(finalI)), Arrays.asList(N)).get(0);
                 long stop = System.currentTimeMillis();
                 System.out.println("time: " + (stop-start));
