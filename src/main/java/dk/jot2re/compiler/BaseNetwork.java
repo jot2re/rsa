@@ -40,7 +40,6 @@ public abstract class BaseNetwork implements INetwork {
         return brainRes;
     }
 
-
     @Override
     public int getNoOfParties() {
         return internalNetwork.getNoOfParties();
@@ -56,6 +55,10 @@ public abstract class BaseNetwork implements INetwork {
         return internalNetwork.myId();
     }
 
+    public byte[] getDigestRes() {
+        return digest.digest();
+    }
+
     public static int getSubmissivePinkyId(INetwork network) {
         if (network.myId() -1 >= 0) {
             return network.myId() -1;
@@ -66,5 +69,17 @@ public abstract class BaseNetwork implements INetwork {
 
     public static int getMyVirtualPinkyId(INetwork network) {
         return (network.myId()+1) % network.getNoOfParties();
+    }
+
+    public static int getSubmissivePinkyId(int id, int parties) {
+        if (id -1 >= 0) {
+            return id -1;
+        } else {
+            return id -1+parties;
+        }
+    }
+
+    public static int getMyVirtualPinkyId(int id, int parties) {
+        return (id+1) % parties;
     }
 }
