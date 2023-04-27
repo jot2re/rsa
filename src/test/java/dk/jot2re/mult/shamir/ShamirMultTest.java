@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -28,7 +29,7 @@ public class ShamirMultTest {
     @ParameterizedTest
     @ValueSource(ints = {3,5})
     void sunshine(int parties) throws Exception {
-        Random rand = new Random(42);
+        SecureRandom rand = new SecureRandom();
         BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
@@ -45,10 +46,10 @@ public class ShamirMultTest {
             int finalI = i;
             C.add(executor.submit(() -> {
                 mults.get(finalI).init(networks.get(finalI), RSATestUtils.getRandom(finalI));
-                long start = System.currentTimeMillis();
                 BigInteger res = null;
+                long start = System.currentTimeMillis();
                 for (int j = 0; j < 100; j++) {
-                    res = mults.get(finalI).mult(A[finalI], B[finalI], modulo);
+                    res = (BigInteger) mults.get(finalI).mult(A[finalI], B[finalI], modulo);
                 }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
@@ -98,7 +99,7 @@ public class ShamirMultTest {
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
-                    res = ((ShamirMult) mults.get(finalI)).degreeReduction(sharesOfA.get(finalI).multiply(sharesOfB.get(finalI)).mod(modulo), modulo);
+                    res = ((ShamirMult) mults.get(finalI)).bgwDegreeReduction(sharesOfA.get(finalI).multiply(sharesOfB.get(finalI)).mod(modulo), modulo);
                 }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
@@ -130,7 +131,7 @@ public class ShamirMultTest {
         Random rand = new Random(42);
         BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
         MultFactory factory = new MultFactory(parties);
-        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY, true);
         Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         BigInteger input = new BigInteger(MODULO_BITLENGTH, rand);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
@@ -142,7 +143,7 @@ public class ShamirMultTest {
                 long start = System.currentTimeMillis();
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
-                    res = ((ShamirMult) mults.get(finalI)).shareFromAdditive(input, modulo);
+                    res = (BigInteger) mults.get(finalI).shareFromAdditive(input, modulo);
                 }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
@@ -151,7 +152,7 @@ public class ShamirMultTest {
         }
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
-
+        System.out.println(((MultCounter) mults.get(0)).toString());
         List<BigInteger> resShares = new ArrayList<>();
         for (Future<BigInteger> cur : C) {
             resShares.add(cur.get());
@@ -160,12 +161,12 @@ public class ShamirMultTest {
         BigInteger refC = engine.combine(parties-1, resShares, modulo);
         assertEquals(input.multiply(BigInteger.valueOf(parties)).mod(modulo), refC);
 
-        Field privateField = AbstractProtocol.class.getDeclaredField("network");
-        privateField.setAccessible(true);
-        DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
-        System.out.println("Rounds " + network.getRounds());
-        System.out.println("Nettime " + network.getNetworkTime());
-        System.out.println("Nettrans " + network.getTransfers());
-        System.out.println("Net bytes " + network.getBytesSent());
+//        Field privateField = AbstractProtocol.class.getDeclaredField("network");
+//        privateField.setAccessible(true);
+//        DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
+//        System.out.println("Rounds " + network.getRounds());
+//        System.out.println("Nettime " + network.getNetworkTime());
+//        System.out.println("Nettrans " + network.getTransfers());
+//        System.out.println("Net bytes " + network.getBytesSent());
     }
 }

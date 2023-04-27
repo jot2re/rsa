@@ -2,8 +2,11 @@ package dk.jot2re.rsa;
 
 import dk.jot2re.AbstractProtocolTest;
 import dk.jot2re.mult.IMult;
+import dk.jot2re.mult.MultFactory;
 import dk.jot2re.mult.PlainMult;
 import dk.jot2re.mult.ot.util.ExceptionConverter;
+import dk.jot2re.network.INetwork;
+import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.network.PlainNetwork;
 import dk.jot2re.rsa.bf.BFParameters;
 import dk.jot2re.rsa.bf.BFProtocol;
@@ -20,6 +23,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
@@ -39,9 +43,13 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     public static class BenchState {
         public static BFProtocol bfProtocol;
         public static OurProtocol ourProtocol;
+        public static IMult shamir;
         public static BigInteger p;
         public static BigInteger q;
         public static BigInteger N;
+        public static BigInteger A;
+        public static BigInteger B;
+        public static BigInteger Q;
 
         @Setup(Level.Invocation)
         public void setupVariables() throws Exception {
@@ -53,9 +61,13 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             BenchState.p = p;
             BenchState.q = q;
             BenchState.N = N;
+            BenchState.A = new BigInteger(BITS, rand);
+            BenchState.B = new BigInteger(BITS, rand);
+            BenchState.Q = BigInteger.probablePrime(2*BITS+4, rand);
 
             BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT);
             BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT);
+            BenchState.shamir = setupShamir(PARTIES);
         }
     }
 
@@ -88,12 +100,49 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
+//    @Fork(value = 1, warmups = 2)
+//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+//    @Benchmark
+//    @BenchmarkMode({Mode.AverageTime})
+    public boolean executeOur(BenchState state) throws Exception {
+        return state.ourProtocol.execute(state.p, state.q, state.N);
+    }
+
+
+    public static IMult setupShamir(int parties) {
+        MultFactory factory = new MultFactory(parties);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.PLAIN, false);
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.PLAIN);
+        mults.get(0).init(networks.get(0), rand);
+        ((PlainNetwork) networks.get(0)).setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
+        return mults.get(0);
+    }
+
+//    @Fork(value = 1, warmups = 2)
+//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+//    @Benchmark
+//    @BenchmarkMode({Mode.AverageTime})
+//    public Serializable executeShamirMult(BenchState state) throws Exception {
+//        BigInteger res = BigInteger.ZERO;
+//        for (int i =0; i < 100; i++) {
+//            // operation to ensure actual computation don't get optimized away
+//            res =res.xor((BigInteger) state.shamir.multShares(state.A, state.B, state.Q));
+//        }
+//        return res;
+//    }
+
     @Fork(value = 1, warmups = 2)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
     @Benchmark
     @BenchmarkMode({Mode.AverageTime})
-    public boolean executeOur(BenchState state) throws Exception {
-        return state.ourProtocol.execute(state.p, state.q, state.N);
+    public Serializable executeShamirInput(BenchState state) throws Exception {
+        BigInteger res = BigInteger.ZERO;
+        for (int i =0; i < 100; i++) {
+            // operation to ensure actual computation don't get optimized away
+            res =res.xor((BigInteger) state.shamir.shareFromAdditive(state.A, state.Q));
+        }
+        return res;
     }
 
     public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot) {
@@ -118,13 +167,13 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             // M > 2^2*bits TODO is that correct?
             BigInteger M = RSATestUtils.prime(2*bits+1, new Random(42));
             // P > mN, we assume at most 2048 parties
-            BigInteger P = RSATestUtils.prime(2*bits+11, new Random(42));
+            BigInteger P = RSATestUtils.prime(2*bits+3, new Random(42));
             // Q > P
-            BigInteger Q = RSATestUtils.prime(2*bits+12, new Random(42));
+            BigInteger Q = RSATestUtils.prime(2*bits+4, new Random(42));
             // Unique but deterministic seed for each set of parameters
-            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
+//            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
             // Note that seed is only updated if different from 0
-            rand.setSeed(pivotId);
+//            rand.setSeed(pivotId);
             IMult pivotMult = new PlainMult(pivotId);
             return new OurParameters(bits, statSec, P, Q, M, pivotMult);
         } catch (Exception e) {

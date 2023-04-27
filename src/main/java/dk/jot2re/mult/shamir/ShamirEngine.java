@@ -102,7 +102,7 @@ public class ShamirEngine {
             return BigInteger.valueOf(threeVals[otherId]);
         }
         if (parties == 5) {
-            return BigInteger.valueOf(fiveValsNum[myId][otherId]).multiply(fiveValsDen).mod(modulo);
+            return BigInteger.valueOf(fiveValsNum[0][otherId]).multiply(fiveValsDen).mod(modulo);
         }
         throw new RuntimeException("not found yet");
     }

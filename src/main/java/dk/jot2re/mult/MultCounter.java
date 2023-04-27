@@ -29,6 +29,10 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
         this.internalMult = internalMult;
     }
 
+    public IMult getDecorated() {
+        return internalMult;
+    }
+
     private void start() {
         startBytes();
         startTime();
