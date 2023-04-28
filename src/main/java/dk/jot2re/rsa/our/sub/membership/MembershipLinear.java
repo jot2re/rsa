@@ -4,7 +4,6 @@ import dk.jot2re.AbstractProtocol;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.bf.BFParameters;
-import dk.jot2re.rsa.our.RSAUtil;
 
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -33,8 +32,6 @@ public class MembershipLinear extends AbstractProtocol implements IMembership {
         for (int i = 1; i < set.size(); i++) {
             temp = params.getMult().multShares(temp, params.getMult().addConst(xShare, set.get(i).negate(), modulo), modulo);
         }
-        BigInteger rPart = RSAUtil.sample(random, modulo);
-        Serializable rShare = params.getMult().shareFromAdditive(rPart, modulo);
-        return params.getMult().multShares(temp, rShare, modulo);
+        return temp;
     }
 }
