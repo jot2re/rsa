@@ -11,6 +11,7 @@ import java.util.Random;
 public class MultCounter<T extends Serializable> implements IMult<T> {
     private long timeSpent = 0;
     private long bytesSent;
+    private long bytesReceived;
     private int mults = 0;
     private int constMults = 0;
     private int fromAdd = 0;
@@ -19,8 +20,10 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     private int sharings = 0;
     private long startTime;
     private long stopTime;
-    private long startBytes;
-    private long stopBytes;
+    private long startBytesSend;
+    private long stopBytesSend;
+    private long startBytesReceived;
+    private long stopBytesReceived;
     private DummyNetwork network;
     private final IMult<T> internalMult;
     private boolean initialized = false;
@@ -53,12 +56,15 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     }
 
     private void startBytes() {
-        startBytes = network.getBytesSent();
+        startBytesSend = network.getBytesSent();
+        startBytesReceived = network.getBytesReceived();
     }
 
     private void stopBytes() {
-        stopBytes = network.getBytesSent();
-        bytesSent += stopBytes-startBytes;
+        stopBytesSend = network.getBytesSent();
+        stopBytesReceived = network.getBytesReceived();
+        bytesSent += stopBytesSend - startBytesSend;
+        bytesReceived += stopBytesReceived - startBytesReceived;
     }
 
     public long getBytesSent() {
@@ -66,7 +72,7 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     }
 
     public long getBytesReceived() {
-        return bytesSent*(network.getNoOfParties()-1);
+        return bytesReceived;
     }
 
     public long getTimeSpent() {
@@ -177,7 +183,7 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
                 "Sharings:          " + sharings + "\n" +
                 "Opens:             " + opens + "\n" +
                 "Total bytes sent:  " + bytesSent + "\n" +
-                "Total bytes rec*:  " + ((network.getNoOfParties()-1)*bytesSent) + "\n" +
-                "Total time:        " + timeSpent/1000 + " micro sec";
+                "Total bytes rec*:  " + bytesReceived + "\n" +
+                "Total time:        " + (timeSpent) + " nano sec";
     }
 }

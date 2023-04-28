@@ -116,6 +116,14 @@ public class DummyNetwork implements INetwork {
         return bytes;
     }
 
+    public long getBytesReceived() {
+        long bytes = 0L;
+        for (DummyP2P network: networks.values()) {
+            bytes += network.getBytesReceived();
+        }
+        return bytes;
+    }
+
     public int getTransfers() {
         int transfers = 0;
         for (DummyP2P network: networks.values()) {

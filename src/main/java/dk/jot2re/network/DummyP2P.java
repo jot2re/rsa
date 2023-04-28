@@ -12,6 +12,7 @@ public class DummyP2P implements IP2P {
     private final int peerId;
     private final Serializer serializer;
     private long bytesSent = 0L;
+    private long bytesReceived = 0L;
     private int transfers = 0;
     private int rounds = 0;
     private boolean lastOpSend = true;
@@ -44,9 +45,13 @@ public class DummyP2P implements IP2P {
     @Override
     public synchronized Serializable receive() {
         Serializable res = state.get(peerId, myId);
-        if (res != null && lastOpSend) {
-            rounds++;
-            lastOpSend = false;
+        if (res != null) {
+            byte[] serialized = serializer.serialize(res);
+            bytesReceived += serialized.length;
+            if (lastOpSend) {
+                rounds++;
+                lastOpSend = false;
+            }
         }
         return res;
     }
@@ -63,12 +68,17 @@ public class DummyP2P implements IP2P {
 
     public void resetCount() {
         bytesSent = 0;
+        bytesReceived = 0;
         transfers = 0;
         rounds = 0;
     }
 
     public long getBytesSent() {
         return bytesSent;
+    }
+
+    public long getBytesReceived() {
+        return bytesReceived;
     }
 
     public int getTransfers() {

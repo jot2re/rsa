@@ -1,7 +1,7 @@
 package dk.jot2re.rsa.our;
 
 import dk.jot2re.AbstractProtocolTest;
-import dk.jot2re.mult.MultCounter;
+import dk.jot2re.mult.DummyMult;
 import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
@@ -13,17 +13,18 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static dk.jot2re.DefaultSecParameters.PRIME_BITLENGTH;
 import static dk.jot2re.DefaultSecParameters.STAT_SEC;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OurProtocolTest extends AbstractProtocolTest {
     // TODO negative tests
-    @ParameterizedTest
-    @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log", "2,const", "3,const", "5,const"})
-    public void sunshine(int parties, String type) throws Exception {
-        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
-        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
+
+        @ParameterizedTest
+//    @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log", "2,const", "3,const", "5,const"})
+    @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1536,linear", "3,1536,linear", "5,1536,linear", "2,2048,linear", "3,2048,linear", "5,2048,linear"})
+    public void sunshine(int parties, int bitlength, String type) throws Exception {
+        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, bitlength, rand);
+        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, bitlength, rand);
         BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
         BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b));
         BigInteger N = p.multiply(q);
@@ -43,7 +44,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
             long start = System.currentTimeMillis();
             boolean res = protocol.execute(pShares.get(network.myId()), qShares.get(network.myId()), N);
             long stop = System.currentTimeMillis();
-            System.out.println("time: " + (stop-start));
+//            System.out.println("time: " + (stop-start));
             return res;
         };
 
@@ -53,15 +54,16 @@ public class OurProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties, true);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(bitlength, STAT_SEC, parties, false);
         NetworkFactory netFactory = new NetworkFactory(parties);
         Map<Integer, INetwork> nets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         runProtocolTest(nets, parameters, protocolRunner, checker);
-        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
-        System.out.println("Rounds " + ((DummyNetwork) nets.get(0)).getRounds());
-        System.out.println("Nettime " + ((DummyNetwork) nets.get(0)).getNetworkTime());
-        System.out.println("Nettrans " + ((DummyNetwork) nets.get(0)).getTransfers());
-        System.out.println("Net bytes " + ((DummyNetwork) nets.get(0)).getBytesSent());
+//        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
+            long sent = (((DummyNetwork) nets.get(0)).getBytesSent()-((DummyMult) parameters.get(0).getMult()).bytesSend());
+//        System.out.println("Net sent " + sent);
+            long received = (((DummyNetwork) nets.get(0)).getBytesReceived()-((DummyMult) parameters.get(0).getMult()).bytesReceived());
+//        System.out.println("Net rec " + received);
+            System.out.println("" + parties + ", " + bitlength + ", " + (received+sent)/2);
     }
 
 }

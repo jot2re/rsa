@@ -34,7 +34,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
 
     private static final int BITS = 1024;
     private static final int PARTIES = 3;
-    private static final int STATSEC = 40;
+    private static final int STATSEC = 120;
+    private static final int COMPSEC = 256;
     private static final String TYPE = "linear";
     private static final boolean PIVOT = true;
     private static final Random rand = ExceptionConverter.safe(()->SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not init random)");
@@ -44,6 +45,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BFProtocol bfProtocol;
         public static OurProtocol ourProtocol;
         public static IMult shamir;
+        public static IMult replicated;
         public static BigInteger p;
         public static BigInteger q;
         public static BigInteger N;
@@ -68,6 +70,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT);
             BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT);
             BenchState.shamir = setupShamir(PARTIES);
+            BenchState.replicated = setupReplicated(PARTIES);
         }
     }
 
@@ -119,28 +122,73 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return mults.get(0);
     }
 
+    public static IMult setupReplicated(int parties) {
+        MultFactory factory = new MultFactory(parties);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.PLAIN, false);
+        NetworkFactory netFactory = new NetworkFactory(parties);
+        Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.PLAIN);
+        mults.get(0).init(networks.get(0), rand);
+        ArrayList<BigInteger> resp = new ArrayList<>(PARTIES);
+        for (int i = 0; i < PARTIES; i++) {
+            resp.add(BenchState.N.subtract(BigInteger.valueOf(123456789*i+1)));
+        }
+        ((PlainNetwork) networks.get(0)).setDefaultResponse(resp);
+        return mults.get(0);
+    }
+
+
 //    @Fork(value = 1, warmups = 2)
 //    @OutputTimeUnit(TimeUnit.MICROSECONDS)
 //    @Benchmark
 //    @BenchmarkMode({Mode.AverageTime})
-//    public Serializable executeShamirMult(BenchState state) throws Exception {
-//        BigInteger res = BigInteger.ZERO;
-//        for (int i =0; i < 100; i++) {
-//            // operation to ensure actual computation don't get optimized away
-//            res =res.xor((BigInteger) state.shamir.multShares(state.A, state.B, state.Q));
-//        }
-//        return res;
-//    }
+    public Serializable executeShamirMult(BenchState state) throws Exception {
+        BigInteger res = BigInteger.ZERO;
+        for (int i =0; i < 100; i++) {
+            // operation to ensure actual computation don't get optimized away
+            res =res.xor((BigInteger) state.shamir.multShares(state.A, state.B, state.Q));
+        }
+        return res;
+    }
 
-    @Fork(value = 1, warmups = 2)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    @Benchmark
-    @BenchmarkMode({Mode.AverageTime})
+//    @Fork(value = 1, warmups = 2)
+//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+//    @Benchmark
+//    @BenchmarkMode({Mode.AverageTime})
     public Serializable executeShamirInput(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
             // operation to ensure actual computation don't get optimized away
             res =res.xor((BigInteger) state.shamir.shareFromAdditive(state.A, state.Q));
+        }
+        return res;
+    }
+
+//    @Fork(value = 1, warmups = 2)
+//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+//    @Benchmark
+//    @BenchmarkMode({Mode.AverageTime})
+    public Serializable executeReplicatedInput(BenchState state) throws Exception {
+        ArrayList<BigInteger> res = new ArrayList<>(100);
+        for (int i =0; i < 100; i++) {
+            // operation to ensure actual computation don't get optimized away
+            res.add(((ArrayList<BigInteger>) state.replicated.shareFromAdditive(state.A, state.Q)).get(0));
+        }
+        return res;
+    }
+
+    @Fork(value = 1, warmups = 2)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @Benchmark
+    @BenchmarkMode({Mode.AverageTime})
+    public Serializable executeReplicatedMult(BenchState state) throws Exception {
+        ArrayList<BigInteger> res = new ArrayList<>(100);
+        ArrayList<BigInteger> A = new ArrayList<>(PARTIES);
+        for (int i = 0; i < PARTIES; i++) {
+            A.add(BenchState.N.subtract(BigInteger.valueOf(123456789*i+1)));
+        }
+        for (int i =0; i < 100; i++) {
+            // operation to ensure actual computation don't get optimized away
+            res.add(((ArrayList<BigInteger>) state.replicated.multShares(A, A, state.Q)).get(0));
         }
         return res;
     }

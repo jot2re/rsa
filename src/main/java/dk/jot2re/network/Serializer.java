@@ -44,7 +44,7 @@ public class Serializer {
                     }
                 }
             } else {
-                logger.error("serializing " + data.getClass().descriptorString());
+                logger.warn("serializing unknown class " + data.getClass().descriptorString());
                 writer.writeObject(data);
             }
             writer.flush();

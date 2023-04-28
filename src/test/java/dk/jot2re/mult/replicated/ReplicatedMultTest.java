@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.*;
@@ -19,7 +20,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static dk.jot2re.DefaultSecParameters.*;
+import static dk.jot2re.DefaultSecParameters.COMP_SEC;
+import static dk.jot2re.DefaultSecParameters.STAT_SEC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,24 +35,26 @@ public class ReplicatedMultTest {
     @ParameterizedTest
     @ValueSource(ints = {3})
     void sunshine(int parties) throws Exception {
-        BigInteger[] A = new BigInteger[parties];
-        BigInteger[] B = new BigInteger[parties];
+        int bitlength = 1536+4;
+        Random rand = new Random(42);
+        BigInteger modulo =  BigInteger.probablePrime(bitlength, rand);
+        ArrayList<BigInteger> A = new ArrayList<>(parties);
+        ArrayList<BigInteger> B = new ArrayList<>(parties);
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.DUMMY, true);
         Map<Integer, INetwork> nets = RSATestUtils.getNetworks(parties);
-        Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
-            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            A.add(new BigInteger(bitlength, rand));
+            B.add(new BigInteger(bitlength, rand));
         }
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-        List<Future<BigInteger>> C = new ArrayList<>(parties);
+        List<Future<Serializable>> C = new ArrayList<>(parties);
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
                 mults.get(finalI).init(nets.get(finalI), RSATestUtils.getRandom(finalI));
                 long start = System.currentTimeMillis();
-                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], MODULO);
+                Serializable res =mults.get(finalI).mult(A.get(finalI), B.get(finalI), modulo);
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
                 return res;
@@ -60,13 +64,13 @@ public class ReplicatedMultTest {
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
         System.out.println(((MultCounter) mults.get(0)).toString());
 
-        BigInteger refA = Arrays.stream(A).reduce(BigInteger.ZERO, BigInteger::add);
-        BigInteger refB = Arrays.stream(B).reduce(BigInteger.ZERO, BigInteger::add);
+        BigInteger refA = A.stream().reduce(BigInteger.ZERO, BigInteger::add);
+        BigInteger refB = B.stream().reduce(BigInteger.ZERO, BigInteger::add);
         BigInteger refC = BigInteger.ZERO;
-        for (Future<BigInteger> cur : C) {
-            refC = refC.add(cur.get());
+        for (Future<Serializable> cur : C) {
+            refC = refC.add((BigInteger) cur.get());
         }
-        assertEquals(refA.multiply(refB).mod(MODULO), refC.mod(MODULO));
+        assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
 
         Field privateField = MultCounter.class.getDeclaredField("network");
         privateField.setAccessible(true);

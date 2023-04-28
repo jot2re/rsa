@@ -48,7 +48,9 @@ public class IPSOTSender {
         if (offset < 0 || offset + amount >= batchSize) {
             makeBatch();
         }
-        Pair<ArrayList<BigInteger>, ArrayList<BigInteger>> uValues = network.receive(resources.getOtherId());
+        ArrayList<BigInteger> first = network.receive(resources.getOtherId());
+        ArrayList<BigInteger> second = network.receive(resources.getOtherId());
+        Pair<ArrayList<BigInteger>, ArrayList<BigInteger>> uValues = new Pair<>(first, second);
         if (uValues.getFirst().size() != amount || uValues.getSecond().size() != amount) {
             throw new MaliciousException("Unexpected adjustment size");
         }
