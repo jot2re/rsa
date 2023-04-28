@@ -10,10 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class BFProtocol extends AbstractProtocol {
     private static final Logger logger = LoggerFactory.getLogger(BFProtocol.class);
@@ -64,9 +61,24 @@ public class BFProtocol extends AbstractProtocol {
 
     protected boolean executePivot(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
         Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
-        network.sendToAll(dto.getGammas());
-        network.sendToAll(dto.getNuShares());
-        Map<Integer, ArrayList<BigInteger>> receivedDto = network.receiveFromAllPeers();
+        /** needed for bench **/
+        Map<Integer, ArrayList<BigInteger>> receivedDto = new HashMap<>(dto.getGammas().size());
+        for (int i = 0; i < dto.getGammas().size(); i++) {
+            network.sendToAll(dto.getGammas().get(i));
+            network.sendToAll(dto.getNuShares().get(i));
+        }
+        for (int i = 0; i < dto.getGammas().size(); i++) {
+            Map<Integer, BigInteger> gamma = network.receiveFromAllPeers();
+            for (int j :gamma.keySet()) {
+                if (receivedDto.get(j) == null) {
+                    receivedDto.put(j, new ArrayList<>(dto.getGammas().size()));
+                }
+                receivedDto.get(j).add(gamma.get(j));
+            }
+        }
+//        network.sendToAll(dto.getGammas());
+//        network.sendToAll(dto.getNuShares());
+//        Map<Integer, ArrayList<BigInteger>> receivedDto = network.receiveFromAllPeers();
         if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
             return false;
         }
@@ -74,12 +86,33 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     protected boolean executeOther(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        ArrayList<BigInteger> gamma = network.receive(0);
-        ArrayList<BigInteger> nu = network.receive(0);
+        /** needed for bench **/
+        ArrayList<BigInteger> gamma = new ArrayList(params.getStatBits());
+        ArrayList<BigInteger> nu = new ArrayList<>(params.getStatBits());
+        for (int i = 0; i < params.getStatBits(); i++) {
+            gamma.add(network.receive(0));
+            nu.add(network.receive(0));
+        }
+//        ArrayList<BigInteger> gamma = network.receive(0);
+//        ArrayList<BigInteger> nu = network.receive(0);
         Phase1Pivot receivedDto = new Phase1Pivot(gamma, nu);
         ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
-        network.sendToAll(myNuShare);
-        Map<Integer, ArrayList<BigInteger>> nuShares = network.receiveFromNonPivotPeers();
+        /** needed for bench **/
+        for (BigInteger cur : myNuShare) {
+            network.sendToAll(cur);
+        }
+        Map<Integer, ArrayList<BigInteger>> nuShares = new HashMap<>(params.getStatBits());
+        for (int i = 0; i < params.getStatBits(); i++) {
+            Map<Integer, BigInteger> curNuShares = network.receiveFromNonPivotPeers();
+            for (int j :curNuShares.keySet()) {
+                if (nuShares.get(j) == null) {
+                    nuShares.put(j, new ArrayList<>(params.getStatBits()));
+                }
+                nuShares.get(j).add(curNuShares.get(j));
+            }
+        }
+//        network.sendToAll(myNuShare);
+//        Map<Integer, ArrayList<BigInteger>> nuShares = network.receiveFromNonPivotPeers();
         nuShares.put(0, receivedDto.getNuShares());
         if (!executePhase2(nuShares, myNuShare,  N)) {
             return false;

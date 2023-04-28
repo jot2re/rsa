@@ -20,7 +20,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
     // TODO negative tests
 
         @ParameterizedTest
-//    @CsvSource({"2,linear", "3,linear", "5,linear", "2,log", "3,log", "5,log", "2,const", "3,const", "5,const"})
+//    @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1024,log", "3,1024,log", "5,1024,log", "2,1024,const", "3,1024,const", "5,1024,const"})
     @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1536,linear", "3,1536,linear", "5,1536,linear", "2,2048,linear", "3,2048,linear", "5,2048,linear"})
     public void sunshine(int parties, int bitlength, String type) throws Exception {
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, bitlength, rand);
@@ -44,7 +44,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
             long start = System.currentTimeMillis();
             boolean res = protocol.execute(pShares.get(network.myId()), qShares.get(network.myId()), N);
             long stop = System.currentTimeMillis();
-//            System.out.println("time: " + (stop-start));
+            System.out.println("time: " + (stop-start));
             return res;
         };
 
@@ -58,6 +58,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
         NetworkFactory netFactory = new NetworkFactory(parties);
         Map<Integer, INetwork> nets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         runProtocolTest(nets, parameters, protocolRunner, checker);
+//        System.out.println("" + parties + ", " + type);
 //        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
             long sent = (((DummyNetwork) nets.get(0)).getBytesSent()-((DummyMult) parameters.get(0).getMult()).bytesSend());
 //        System.out.println("Net sent " + sent);

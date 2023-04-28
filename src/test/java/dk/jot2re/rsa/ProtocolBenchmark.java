@@ -19,6 +19,7 @@ import dk.jot2re.rsa.our.sub.membership.MembershipLinear;
 import dk.jot2re.rsa.our.sub.membership.MembershipLog;
 import dk.jot2re.rsa.our.sub.multToAdd.MultToAdd;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -29,12 +30,18 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-//@Fork(jvmArgs = {"-Xms2G", "-Xmx2G"})
+import static dk.jot2re.rsa.RSATestUtils.*;
+
+@Fork( jvmArgs = {"-Xms512m", "-Xmx512m"})
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@BenchmarkMode({Mode.AverageTime})
+@Warmup(iterations = 5, time = 5)
+@Measurement(iterations = 10, time = 1)
+@Timeout(time = 10)
 public class ProtocolBenchmark extends AbstractProtocolTest {
 
-    private static final int BITS = 1024;
     private static final int PARTIES = 3;
-    private static final int STATSEC = 120;
+    private static final int STATSEC = 100;
     private static final int COMPSEC = 256;
     private static final String TYPE = "linear";
     private static final boolean PIVOT = true;
@@ -52,6 +59,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger A;
         public static BigInteger B;
         public static BigInteger Q;
+        @Param({ "1024", "1536", "2048" })
+        public static int BITS;
 
         @Setup(Level.Invocation)
         public void setupVariables() throws Exception {
@@ -78,6 +87,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         Options opt = new OptionsBuilder()
                 .include(ProtocolBenchmark.class.getSimpleName())
                 .forks(1)
+                .param(args[0], args[1])
                 .build();
 
         new Runner(opt).run();
@@ -103,10 +113,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
-//    @Fork(value = 1, warmups = 2)
-//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-//    @Benchmark
-//    @BenchmarkMode({Mode.AverageTime})
+    @Benchmark
+    @Measurement(iterations = 10, time = 5)
     public boolean executeOur(BenchState state) throws Exception {
         return state.ourProtocol.execute(state.p, state.q, state.N);
     }
@@ -137,10 +145,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
 
-//    @Fork(value = 1, warmups = 2)
-//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
 //    @Benchmark
-//    @BenchmarkMode({Mode.AverageTime})
+//    @Measurement(iterations = 10, time = 1)
     public Serializable executeShamirMult(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
@@ -150,10 +156,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return res;
     }
 
-//    @Fork(value = 1, warmups = 2)
-//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
 //    @Benchmark
-//    @BenchmarkMode({Mode.AverageTime})
+//    @Measurement(iterations = 10, time = 1)
     public Serializable executeShamirInput(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
@@ -163,10 +167,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return res;
     }
 
-//    @Fork(value = 1, warmups = 2)
-//    @OutputTimeUnit(TimeUnit.MICROSECONDS)
-//    @Benchmark
-//    @BenchmarkMode({Mode.AverageTime})
+    @Benchmark
+    @Measurement(iterations = 10, time = 1)
     public Serializable executeReplicatedInput(BenchState state) throws Exception {
         ArrayList<BigInteger> res = new ArrayList<>(100);
         for (int i =0; i < 100; i++) {
@@ -176,21 +178,17 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return res;
     }
 
-    @Fork(value = 1, warmups = 2)
-    @OutputTimeUnit(TimeUnit.MICROSECONDS)
     @Benchmark
-    @BenchmarkMode({Mode.AverageTime})
-    public Serializable executeReplicatedMult(BenchState state) throws Exception {
-        ArrayList<BigInteger> res = new ArrayList<>(100);
+    @Measurement(iterations = 10, time = 1)
+    public void executeReplicatedMult(BenchState state, Blackhole hole) throws Exception {
         ArrayList<BigInteger> A = new ArrayList<>(PARTIES);
         for (int i = 0; i < PARTIES; i++) {
             A.add(BenchState.N.subtract(BigInteger.valueOf(123456789*i+1)));
         }
         for (int i =0; i < 100; i++) {
             // operation to ensure actual computation don't get optimized away
-            res.add(((ArrayList<BigInteger>) state.replicated.multShares(A, A, state.Q)).get(0));
+            hole.consume(state.replicated.multShares(A, A, state.Q));
         }
-        return res;
     }
 
     public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot) {
@@ -202,26 +200,17 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
-//    @Fork(value = 1, warmups = 2)
-//@OutputTimeUnit(TimeUnit.MICROSECONDS)
-//    @Benchmark
-//    @BenchmarkMode({Mode.AverageTime})
+    @Benchmark
+    @Measurement(iterations = 10, time = 10)
     public boolean executeBF(BenchState state) throws Exception {
         return state.bfProtocol.execute(state.p, state.q, state.N);
     }
 
     public static OurParameters getOurBenchParameters(int bits, int statSec, int pivotId) {
         try {
-            // M > 2^2*bits TODO is that correct?
-            BigInteger M = RSATestUtils.prime(2*bits+1, new Random(42));
-            // P > mN, we assume at most 2048 parties
-            BigInteger P = RSATestUtils.prime(2*bits+3, new Random(42));
-            // Q > P
-            BigInteger Q = RSATestUtils.prime(2*bits+4, new Random(42));
-            // Unique but deterministic seed for each set of parameters
-//            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
-            // Note that seed is only updated if different from 0
-//            rand.setSeed(pivotId);
+            BigInteger M = MMap.get(bits);
+            BigInteger P = PMap.get(bits);
+            BigInteger Q = QMap.get(bits);
             IMult pivotMult = new PlainMult(pivotId);
             return new OurParameters(bits, statSec, P, Q, M, pivotMult);
         } catch (Exception e) {
