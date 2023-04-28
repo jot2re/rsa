@@ -36,22 +36,15 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
             throw new RuntimeException("empty set");
         }
         if (m == 1) {
-            BigInteger rho = RSAUtil.sample(random, modulo);
-            Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
-            Serializable temp = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
-            return params.getMult().multShares(rhoShare, temp, modulo);
+            return params.getMult().addConst(xShare, set.get(0).negate(), modulo);
         }
         if (m == 2) {
-            BigInteger rho = RSAUtil.sample(random, modulo);
-            Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
             Serializable left = params.getMult().addConst(xShare, set.get(0).negate(), modulo);
             Serializable right = params.getMult().addConst(xShare, set.get(1).negate(), modulo);
-            Serializable temp = params.getMult().multShares(left, right, modulo);
-            return params.getMult().multShares(rhoShare, temp, modulo);
+            return params.getMult().multShares(left, right, modulo);
         }
         // Step 1; sample
-        Map<Integer, Serializable> rShares = new HashMap<>(m);
-        rShares.put(1, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
+        Map<Integer, Serializable> rShares = new HashMap<>(m-1);
         Map<Integer, Serializable> alphaShares = new HashMap<>(m-1);
         for (int i = 2; i <= m; i++) {
             rShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
@@ -68,13 +61,13 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
         }
         // Step 3; compute products
         Map<Integer, Serializable> tShares = new HashMap<>(m);
-        for (int i: invertedRShares.keySet()) {
+        tShares.put(1, xShare);
+        for (int i = 2; i <= m; i++) {
             tShares.put(i, params.getMult().multShares(xShare, invertedRShares.get(i), modulo));
         }
         Map<Integer, Serializable> vShares = new HashMap<>(m-1);
         for (int i: alphaShares.keySet()) {
-            Serializable temp = params.getMult().multShares(alphaShares.get(i), tShares.get(i), modulo);
-            vShares.put(i, params.getMult().multShares(temp, rShares.get(1), modulo));
+            vShares.put(i, params.getMult().multShares(alphaShares.get(i), tShares.get(i), modulo));
         }
         Map<Integer, Serializable> wShares = new HashMap<>(m-1);
         for (int i = 2; i <= m; i++) {
