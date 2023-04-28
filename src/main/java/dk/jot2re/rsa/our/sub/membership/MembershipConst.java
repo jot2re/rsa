@@ -50,10 +50,6 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
             return params.getMult().multShares(rhoShare, temp, modulo);
         }
         // Step 1; sample
-        long start, stop;
-        start = System.currentTimeMillis();
-        BigInteger rho = RSAUtil.sample(random, modulo);
-        Serializable rhoShare = params.getMult().shareFromAdditive(rho, modulo);
         Map<Integer, Serializable> rShares = new HashMap<>(m);
         rShares.put(1, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
         Map<Integer, Serializable> alphaShares = new HashMap<>(m-1);
@@ -61,10 +57,7 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
             rShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
             alphaShares.put(i, params.getMult().shareFromAdditive(RSAUtil.sample(random, modulo), modulo));
         }
-        stop = System.currentTimeMillis();
-        System.out.println("step 1: " + (stop-start));
         // Step 2; invert
-        start = System.currentTimeMillis();
         Map<Integer, Serializable> invertedRShares = new HashMap<>(m);
         for (int i: rShares.keySet()) {
             invertedRShares.put(i, inverter.execute(rShares.get(i), modulo));
@@ -73,10 +66,7 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
         for (int i: alphaShares.keySet()) {
             invertedAlphaShares.put(i, inverter.execute(alphaShares.get(i), modulo));
         }
-        stop = System.currentTimeMillis();
-        System.out.println("step 2: " + (stop-start));
         // Step 3; compute products
-        start = System.currentTimeMillis();
         Map<Integer, Serializable> tShares = new HashMap<>(m);
         for (int i: invertedRShares.keySet()) {
             tShares.put(i, params.getMult().multShares(xShare, invertedRShares.get(i), modulo));
@@ -90,10 +80,7 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
         for (int i = 2; i <= m; i++) {
             wShares.put(i, params.getMult().multShares(tShares.get(i-1), rShares.get(i), modulo));
         }
-        stop = System.currentTimeMillis();
-        System.out.println("step 3: " + (stop-start));
         // ... and open these
-        start = System.currentTimeMillis();
         Map<Integer, BigInteger> vValues = new HashMap<>(m-1);
         for (int i: vShares.keySet()) {
             vValues.put(i, params.getMult().open(vShares.get(i), modulo));
@@ -102,10 +89,7 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
         for (int i: wShares.keySet()) {
             wValues.put(i, params.getMult().open(wShares.get(i), modulo));
         }
-        stop = System.currentTimeMillis();
-        System.out.println("step 3 open : " + (stop-start));
         // Step 4; compute y values
-        start = System.currentTimeMillis();
         Map<Integer, BigInteger> yValues = new HashMap<>(m-1);
         for (int i: vValues.keySet()) {
             BigInteger currentY = vValues.get(i);
@@ -114,16 +98,10 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
             }
             yValues.put(i, currentY);
         }
-        stop = System.currentTimeMillis();
-        System.out.println("step 4 open : " + (stop-start));
         // Step 5; compute coefficients
-        start = System.currentTimeMillis();
         BigInteger[] coef = computePolyConsts(set, modulo);
-        stop = System.currentTimeMillis();
-        System.out.println("step 5 : " + (stop-start));
         // Step 6; compute result
         //      x term
-        start = System.currentTimeMillis();
         Serializable zShare = params.getMult().multConst(xShare, coef[1], modulo);
         if (network.myId() == 0) {
             //  constant term
@@ -138,9 +116,7 @@ public class MembershipConst extends AbstractProtocol implements IMembership {
         //      x^m term
         zShare = params.getMult().add(zShare,
                 params.getMult().multConst(invertedAlphaShares.get(m), yValues.get(m), modulo), modulo);
-        stop = System.currentTimeMillis();
-        System.out.println("step 6 : " + (stop-start));
-        return params.getMult().multShares(zShare, rhoShare, modulo);
+        return zShare;
     }
 
     protected BigInteger[] computePolyConsts(List<BigInteger> roots, BigInteger modulo) {

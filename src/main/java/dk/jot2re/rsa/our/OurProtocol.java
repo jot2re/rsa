@@ -147,14 +147,14 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
                 params.getMult().shareFromAdditive(share, params.getQ()), params.getQ());
         BigInteger gammaAdd = RSAUtil.addConst(network.myId(), addGammaShare, BigInteger.ONE, N);
         BigInteger gammaSub = RSAUtil.subConst(network.myId(), addGammaShare, BigInteger.ONE, N);
-        if (!validateGamma(gammaSub, inverseShareP, inverseShareQ, N) &
-                !validateGamma(gammaAdd, inverseShareP, inverseShareQ, N)) {
-            return false;
-        }
-        return true;
+        Serializable ySub = divisibility(gammaSub, inverseShareP, inverseShareQ, N);
+        Serializable yAdd = divisibility(gammaAdd, inverseShareP, inverseShareQ, N);
+        Serializable yShare = params.getMult().multShares(ySub, yAdd, params.getQ());
+        BigInteger y = params.getMult().open(yShare, params.getQ());
+        return y.equals(BigInteger.ZERO);
     }
 
-    protected boolean validateGamma(BigInteger delta, Serializable inverseShareP, Serializable inverseShareQ, BigInteger N) throws NetworkException {
+    protected Serializable divisibility(BigInteger delta, Serializable inverseShareP, Serializable inverseShareQ, BigInteger N) throws NetworkException {
         Serializable deltaP = params.getMult().shareFromAdditive(delta, params.getP());
         Serializable aShare = params.getMult().multShares(deltaP, inverseShareP, params.getP());
         Serializable deltaQ = params.getMult().shareFromAdditive(delta, params.getQ());
@@ -162,9 +162,7 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
         Serializable zShare = params.getMult().sub(aShare, bShare, params.getQ());
         Serializable temp = params.getMult().multConst(zShare, params.getPInverseModQ(), params.getQ());
 //        Serializable zAdjusted = params.getMult().addConst(temp, BigInteger.ONE, params.getQ());
-        Serializable yShare = membership.execute(temp, partySet, params.getQ());
-        BigInteger y = params.getMult().open(yShare, params.getQ());
-        return y.equals(BigInteger.ZERO);
+        return membership.execute(temp, partySet, params.getQ());
     }
 
     public OurParameters getParams() {
