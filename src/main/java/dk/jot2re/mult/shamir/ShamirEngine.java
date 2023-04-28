@@ -120,15 +120,15 @@ public class ShamirEngine {
      * @param xCoord
      * @return
      */
-    protected static BigInteger lagrangeConst(int xCoord, int degree, BigInteger modulo) {
-        BigInteger numerator = BigInteger.ONE;
-        BigInteger denominator = BigInteger.ONE;
-        for (int i = 1; i < degree+2; i++) {
+    protected static BigInteger lagrangeConst(long xCoord, int degree, BigInteger modulo) {
+        long numerator = 1;
+        long denominator = 1;
+        for (long i = 1; i < degree+2; i++) {
             if (i != xCoord) {
-                numerator = numerator.multiply(BigInteger.valueOf(i));
-                denominator = denominator.multiply(BigInteger.valueOf(i - xCoord));
+                numerator = numerator * i;
+                denominator = denominator * (i - xCoord);
             }
         }
-        return numerator.multiply(denominator.modInverse(modulo)).mod(modulo);
+        return BigInteger.valueOf(numerator).multiply(BigInteger.valueOf(denominator).modInverse(modulo)).mod(modulo);
     }
 }
