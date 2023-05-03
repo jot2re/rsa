@@ -13,7 +13,7 @@ import java.util.List;
 
 public class IPSOTReceiver {
     private static final Logger logger = LoggerFactory.getLogger(IPSOTReceiver.class);
-    private final int amount;
+    private int amount;
     private final RotReceiver receiver;
     private final OtExtensionResourcePool resources;
     private final INetwork network;
@@ -32,7 +32,6 @@ public class IPSOTReceiver {
         this.resources = resources;
         this.network = network;
         this.batchSize = batchSize;
-        this.amount = resources.getComputationalSecurityParameter()+resources.getLambdaSecurityParam();
     }
 
     public void makeBatch() {
@@ -44,6 +43,7 @@ public class IPSOTReceiver {
 
     // TODO based on statistical sec and modulo we can calculate what expansion size to use
     public List<BigInteger> receive(BigInteger value, BigInteger modulo, int expansionSizeBytes) {
+        amount = modulo.bitLength() + resources.getLambdaSecurityParam();
         // Check if there is still an unused random OT stored, if not, execute a
         // random OT extension
         if (offset < 0 || offset+amount >= batchSize) {
