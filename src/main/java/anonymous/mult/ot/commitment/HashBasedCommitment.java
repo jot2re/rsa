@@ -102,7 +102,7 @@ public class HashBasedCommitment implements  Serializable{
    *
    * @return the byte array commitment
    */
-  byte[] getCommitmentValue() {
+  public byte[] getCommitmentValue() {
     return commitmentVal;
   }
 
@@ -112,7 +112,7 @@ public class HashBasedCommitment implements  Serializable{
    * @param commitmentValue
    *          the commitment value
    */
-  void setCommitmentValue(byte[] commitmentValue) {
+  public void setCommitmentValue(byte[] commitmentValue) {
     this.commitmentVal = commitmentValue;
   }
 }
