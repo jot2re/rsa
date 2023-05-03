@@ -77,7 +77,7 @@ public class IPSMult extends AbstractAdditiveMult {
 
     @Override
     public BigInteger multShares(BigInteger shareA, BigInteger shareB, BigInteger modulo) {
-        this.amountBits = resources.getCompSec()+resources.getStatSec();
+        this.amountBits = modulo.bitLength()+resources.getStatSec();
         if (safeExpansion) {
             this.expansionSizeBytes = (modulo.bitLength()/8) + ceil(resources.getStatSec(), 8);
         } else {

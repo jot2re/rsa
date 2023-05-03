@@ -16,7 +16,7 @@ import java.util.List;
 
 public class IPSOTSender {
     private static final Logger logger = LoggerFactory.getLogger(IPSOTSender.class);
-    private final int amount;
+    private int amount;
     private final RotSender sender;
     private final OtExtensionResourcePool resources;
     private final INetwork network;
@@ -33,7 +33,6 @@ public class IPSOTSender {
         this.resources = resources;
         this.network = network;
         this.batchSize = batchSize;
-        this.amount = resources.getComputationalSecurityParameter()+resources.getLambdaSecurityParam();
     }
 
     public void makeBatch() {
@@ -43,6 +42,7 @@ public class IPSOTSender {
     }
 
     public List<BigInteger> send(BigInteger value, BigInteger modulo, int expansionSizeBytes) {
+        amount = modulo.bitLength() + resources.getLambdaSecurityParam();
         // Check if there is still an unused random OT stored, if not, execute a
         // random OT extension
         if (offset < 0 || offset + amount >= batchSize) {
