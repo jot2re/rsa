@@ -30,6 +30,21 @@ public class GilboaMultTest {
         sunshine(MODULO_BITLENGTH, MODULO);
     }
 
+    @Test
+    void sunshine1032() throws Exception {
+        sunshine(1032, BigInteger.TWO.pow(1032).subtract(BigInteger.ONE));
+    }
+
+    @Test
+    void sunshine1540() throws Exception {
+        sunshine(1537, BigInteger.TWO.pow(1544).subtract(BigInteger.ONE));
+    }
+
+    @Test
+    void sunshine2052() throws Exception {
+        sunshine(2050, BigInteger.TWO.pow(2056).subtract(BigInteger.ONE));
+    }
+
     void sunshine(int bitLength, BigInteger modulo) throws Exception {
         int parties = 2;
         BigInteger[] A = new BigInteger[parties];

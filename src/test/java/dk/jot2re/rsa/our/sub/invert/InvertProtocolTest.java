@@ -43,7 +43,7 @@ public class InvertProtocolTest extends AbstractProtocolTest {
             assertEquals(refValue, finalValue);
         };
 
-        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(PRIME_BITLENGTH, STAT_SEC, parties, false);
         Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         runProtocolTest(networks, parameters, protocolRunner, checker);
     }

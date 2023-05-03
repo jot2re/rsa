@@ -49,7 +49,7 @@ public class BFProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(bitlength, statSec, parties);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(bitlength, statSec, parties, false);
         Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         runProtocolTest(networks, parameters, protocolRunner, checker);
 //        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());

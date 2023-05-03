@@ -1,8 +1,7 @@
 package dk.jot2re.rsa.our;
 
 import dk.jot2re.AbstractProtocolTest;
-import dk.jot2re.mult.DummyMult;
-import dk.jot2re.network.DummyNetwork;
+import dk.jot2re.mult.MultCounter;
 import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.rsa.RSATestUtils;
@@ -20,8 +19,8 @@ public class OurProtocolTest extends AbstractProtocolTest {
     // TODO negative tests
 
         @ParameterizedTest
-//    @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1024,log", "3,1024,log", "5,1024,log", "2,1024,const", "3,1024,const", "5,1024,const"})
-    @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1536,linear", "3,1536,linear", "5,1536,linear", "2,2048,linear", "3,2048,linear", "5,2048,linear"})
+    @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1024,log", "3,1024,log", "5,1024,log", "2,1024,const", "3,1024,const", "5,1024,const"})
+//    @CsvSource({"2,1024,linear", "3,1024,linear", "5,1024,linear", "2,1536,linear", "3,1536,linear", "5,1536,linear", "2,2048,linear", "3,2048,linear", "5,2048,linear"})
     public void sunshine(int parties, int bitlength, String type) throws Exception {
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, bitlength, rand);
         Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, bitlength, rand);
@@ -54,17 +53,18 @@ public class OurProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(bitlength, STAT_SEC, parties, false);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(bitlength, STAT_SEC, parties, true);
         NetworkFactory netFactory = new NetworkFactory(parties);
         Map<Integer, INetwork> nets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         runProtocolTest(nets, parameters, protocolRunner, checker);
-//        System.out.println("" + parties + ", " + type);
-//        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
-            long sent = (((DummyNetwork) nets.get(0)).getBytesSent()-((DummyMult) parameters.get(0).getMult()).bytesSend());
-//        System.out.println("Net sent " + sent);
-            long received = (((DummyNetwork) nets.get(0)).getBytesReceived()-((DummyMult) parameters.get(0).getMult()).bytesReceived());
-//        System.out.println("Net rec " + received);
-            System.out.println("" + parties + ", " + bitlength + ", " + (received+sent)/2);
+        System.out.println("" + parties + ", " + type);
+        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
+//            long sent = (((DummyNetwork) nets.get(0)).getBytesSent()-((DummyMult) parameters.get(0).getMult()).bytesSend());
+////        System.out.println("Net sent " + sent);
+//            long received = (((DummyNetwork) nets.get(0)).getBytesReceived()-((DummyMult) parameters.get(0).getMult()).bytesReceived());
+////        System.out.println("Net rec " + received);
+//            System.out.println("" + parties + ", " + bitlength + ", " + (received+sent)/2);
+//            System.out.println("Rounds " + ((DummyNetwork) nets.get(0)).getRounds());
     }
 
 }

@@ -40,8 +40,6 @@ import static dk.jot2re.rsa.RSATestUtils.*;
 @Timeout(time = 10)
 public class ProtocolBenchmark extends AbstractProtocolTest {
 
-    private static final int PARTIES = 3;
-    private static final int STATSEC = 100;
     private static final int COMPSEC = 256;
     private static final String TYPE = "linear";
     private static final boolean PIVOT = true;
@@ -59,8 +57,12 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger A;
         public static BigInteger B;
         public static BigInteger Q;
-        @Param({ "1024", "1536", "2048" })
-        public static int BITS;
+        @Param({ "1090", "1536", "2048" })
+        public static int BITS = 1536;
+        @Param({"2", "3", "5"})
+        public static int PARTIES;
+//        @Param({ "40", "60", "80", "100" })
+        private static int STATSEC = 100;
 
         @Setup(Level.Invocation)
         public void setupVariables() throws Exception {
@@ -114,7 +116,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
     @Benchmark
-    @Measurement(iterations = 10, time = 5)
+    @Measurement(iterations = 10, time = 3)
     public boolean executeOur(BenchState state) throws Exception {
         return state.ourProtocol.execute(state.p, state.q, state.N);
     }
@@ -131,17 +133,20 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
     public static IMult setupReplicated(int parties) {
-        MultFactory factory = new MultFactory(parties);
-        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.PLAIN, false);
-        NetworkFactory netFactory = new NetworkFactory(parties);
-        Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.PLAIN);
-        mults.get(0).init(networks.get(0), rand);
-        ArrayList<BigInteger> resp = new ArrayList<>(PARTIES);
-        for (int i = 0; i < PARTIES; i++) {
-            resp.add(BenchState.N.subtract(BigInteger.valueOf(123456789*i+1)));
+        if (parties == 3) {
+            MultFactory factory = new MultFactory(parties);
+            Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.REPLICATED, NetworkFactory.NetworkType.PLAIN, false);
+            NetworkFactory netFactory = new NetworkFactory(parties);
+            Map<Integer, INetwork> networks = netFactory.getNetworks(NetworkFactory.NetworkType.PLAIN);
+            mults.get(0).init(networks.get(0), rand);
+            ArrayList<BigInteger> resp = new ArrayList<>(parties);
+            for (int i = 0; i < parties; i++) {
+                resp.add(BenchState.N.subtract(BigInteger.valueOf(123456789 * i + 1)));
+            }
+            ((PlainNetwork) networks.get(0)).setDefaultResponse(resp);
+            return mults.get(0);
         }
-        ((PlainNetwork) networks.get(0)).setDefaultResponse(resp);
-        return mults.get(0);
+        return null;
     }
 
 
@@ -167,8 +172,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return res;
     }
 
-    @Benchmark
-    @Measurement(iterations = 10, time = 1)
+//    @Benchmark
+//    @Measurement(iterations = 10, time = 1)
     public Serializable executeReplicatedInput(BenchState state) throws Exception {
         ArrayList<BigInteger> res = new ArrayList<>(100);
         for (int i =0; i < 100; i++) {
@@ -178,11 +183,11 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return res;
     }
 
-    @Benchmark
-    @Measurement(iterations = 10, time = 1)
+//    @Benchmark
+//    @Measurement(iterations = 10, time = 1)
     public void executeReplicatedMult(BenchState state, Blackhole hole) throws Exception {
-        ArrayList<BigInteger> A = new ArrayList<>(PARTIES);
-        for (int i = 0; i < PARTIES; i++) {
+        ArrayList<BigInteger> A = new ArrayList<>(BenchState.PARTIES);
+        for (int i = 0; i < BenchState.PARTIES; i++) {
             A.add(BenchState.N.subtract(BigInteger.valueOf(123456789*i+1)));
         }
         for (int i =0; i < 100; i++) {
@@ -200,8 +205,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
-    @Benchmark
-    @Measurement(iterations = 10, time = 10)
+//    @Benchmark
+//    @Measurement(iterations = 10, time = 10)
     public boolean executeBF(BenchState state) throws Exception {
         return state.bfProtocol.execute(state.p, state.q, state.N);
     }

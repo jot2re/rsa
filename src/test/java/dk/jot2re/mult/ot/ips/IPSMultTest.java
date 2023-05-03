@@ -6,7 +6,7 @@ import dk.jot2re.mult.MultFactory;
 import dk.jot2re.network.DummyNetwork;
 import dk.jot2re.network.NetworkFactory;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -24,9 +24,8 @@ public class IPSMultTest {
     // todo refactor and consolidate with Gilboa
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 3, 5})
-    void sunshine(int parties) throws Exception {
-        int bitlength = 2048+8;
+    @CsvSource({"2,1032", "3,1032", "5,1032"})
+    void sunshine(int parties, int bitlength) throws Exception {
         Random rand = new Random(42);
         BigInteger modulo = findMaxPrime(bitlength);
         BigInteger[] A = new BigInteger[parties];

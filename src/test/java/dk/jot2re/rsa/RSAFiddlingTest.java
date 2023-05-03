@@ -32,7 +32,7 @@ public class RSAFiddlingTest {
     @CsvSource({"2,2", "2,5", "3,2", "3,13", "5,8"})
     public void testMultList(int parties, int amount) throws Exception {
         int bits = 32;
-        Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(bits, 20, parties);
+        Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(bits, 20, parties, false);
         Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         BigInteger modulo = BigInteger.probablePrime(bits, new Random(42));
         BigInteger[] ref = new BigInteger[amount];
