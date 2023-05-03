@@ -55,7 +55,7 @@ public class CompiledProtocol {
             ArrayList<BigInteger> adjustedInput = input(privateInput);
             ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
             List<Future<List<BigInteger>>> compRes = new ArrayList<>(2);
-            // TODO HERE finish setup and
+            // TODO change protocol to output hidden message
             compRes.add(executor.submit(() ->internalProtocolBrain.executeList(adjustedInput, publicInput)));
             compRes.add(executor.submit(() ->internalProtocolPinky.executeList(adjustedInput, publicInput)));
             executor.shutdown();
@@ -77,36 +77,47 @@ public class CompiledProtocol {
         }
     }
 
+
     private ArrayList<BigInteger> input(List<BigInteger> privateInput) {
         Map<Integer, ArrayList<BigInteger>> sharedInput = shareInput(privateInput);
         ArrayList<BigInteger> actualInputs = sharedInput.get(network.myId());
         for (int i: sharedInput.keySet()) {
-            if (i != network.myId()) {
                 broadcast(i, sharedInput.get(i));
                 ArrayList<BigInteger> recievedShares = receiveBroadcast(i);
                 for (int j = 0; j < recievedShares.size(); j++) {
                     actualInputs.set(j, actualInputs.get(j).add(recievedShares.get(j)));
                 }
-            }
         }
         return actualInputs;
     }
 
     protected void broadcast(int virtualId, ArrayList<BigInteger> value) {
-        network.send(virtualId, value);
-        network.send(BaseNetwork.getSubmissivePinkyId(virtualId, parties), value);
+        if (virtualId != network.myId()) {
+            network.send(virtualId, value);
+        }
+        if (BaseNetwork.getSubmissivePinkyId(virtualId, parties) != network.myId()) {
+            network.send(BaseNetwork.getSubmissivePinkyId(virtualId, parties), value);
+        }
     }
 
     protected ArrayList<BigInteger> receiveBroadcast(int sendingParty) {
         // todo just send a hash instead
-        ArrayList<BigInteger> res = network.receive(sendingParty);
-        network.send(BaseNetwork.getSubmissivePinkyId(network.myId(), parties), res);
-        ArrayList<BigInteger> pinkyRes = network.receive(BaseNetwork.getSubmissivePinkyId(network.myId(), parties));
-        if (!res.equals(pinkyRes)) {
-            logger.error("Bad broadcast");
+        ArrayList<BigInteger> res = null;
+        if (sendingParty != network.myId()) {
+            res = network.receive(sendingParty);
+        }
+        ArrayList<BigInteger> pinkyRes = null;
+        if (BaseNetwork.getSubmissivePinkyId(sendingParty, parties) != network.myId()) {
+            pinkyRes = network.receive(BaseNetwork.getSubmissivePinkyId(sendingParty, parties));
+        }
+        if (res != null && pinkyRes != null && !res.equals(pinkyRes)) {
+                logger.error("Bad broadcast");
 //            throw new RuntimeException("bad broadcast");
         }
-        return res;
+        if (res != null) {
+            return res;
+        }
+        return pinkyRes;
     }
 
     protected Map<Integer, ArrayList<BigInteger>> shareInput(List<BigInteger> input) {

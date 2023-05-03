@@ -98,7 +98,7 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
             }
         }
         if (!verifyInputs(pShare, qShare, N)) {
-            logger.error("Product of P and Q is not the canidate N");
+            logger.error("Product of P and Q is not the candidate N");
             return false;
         }
         return true;

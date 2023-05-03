@@ -1,7 +1,7 @@
 package dk.jot2re.mult.replicated;
 
+import dk.jot2re.AbstractProtocol;
 import dk.jot2re.mult.IMult;
-import dk.jot2re.network.INetwork;
 import dk.jot2re.network.NetworkException;
 import dk.jot2re.rsa.our.RSAUtil;
 
@@ -9,13 +9,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
-public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
+public class ReplicatedMult extends AbstractProtocol implements IMult<ArrayList<BigInteger>> {
     private final ReplictedMultResourcePool resourcePool;
     private final int maxCorrupt;
-    private INetwork network;
-    private Random random;
+    private boolean initialized = false;
 
     public ReplicatedMult(ReplictedMultResourcePool resourcePool) {
         if (resourcePool.getParties() != 3) {
@@ -23,12 +21,6 @@ public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
         }
         this.resourcePool = resourcePool;
         this.maxCorrupt = (resourcePool.getParties()-1)/2;
-    }
-
-    @Override
-    public void init(INetwork network, Random random) {
-        this.network = network;
-        this.random = random;
     }
 
     @Override

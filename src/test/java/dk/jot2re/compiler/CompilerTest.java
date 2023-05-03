@@ -5,6 +5,7 @@ import dk.jot2re.network.NetworkFactory;
 import dk.jot2re.rsa.RSATestUtils;
 import dk.jot2re.rsa.our.OurParameters;
 import dk.jot2re.rsa.our.OurProtocol;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompilerTest extends AbstractProtocolTest {
-//    @Test
+    @Test
     public void sunshine() throws Exception {
         int parties = 3;
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
@@ -57,7 +58,6 @@ public class CompilerTest extends AbstractProtocolTest {
         for (Future<BigInteger> cur : res) {
             assertEquals(BigInteger.ONE, cur.get());
         }
-
 
 //        runProtocolTest(brainNets, pinkyNets, parameters, protocolRunner, checker);
 //        System.out.println(((MultCounter) parameters.get(0).getMult()).toString());
