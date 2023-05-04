@@ -25,24 +25,17 @@ public class CompiledProtocol extends AbstractCompiledProtocol {
     public List<BigInteger> execute(List<BigInteger> privateInput, List<BigInteger> publicInput) {
         try {
             ArrayList<BigInteger> adjustedInput = input(privateInput);
-//            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-//            List<Future<List<BigInteger>>> compRes = new ArrayList<>(2);
-//            // TODO change protocol to output hidden message
-//            compRes.add(executor.submit(() ->internalProtocolBrain.executeList(adjustedInput, publicInput)));
-//            compRes.add(executor.submit(() ->internalProtocolPinky.executeList(adjustedInput, publicInput)));
-//            executor.shutdown();
-//            executor.awaitTermination(5, TimeUnit.SECONDS);
             List<BigInteger> brainRes = internalProtocolBrain.executeList(adjustedInput, publicInput);
             List<BigInteger> pinkyRes = internalProtocolPinky.executeList(adjustedInput, publicInput);
 
             BigInteger res = BigInteger.ONE;
             if (!check()) {
-                logger.error("Check did not pass");
+//                logger.error("Check did not pass");
                 res = BigInteger.ZERO;
 //                throw new MaliciousException("Corruption happened");
             }
             if (!lastMsg(pinkyRes, brainRes)) {
-                logger.error("Last msg did not pass");
+//                logger.error("Last msg did not pass");
                 res = BigInteger.ZERO;
                 //                throw new MaliciousException("Corruption happened");
             }
@@ -56,14 +49,20 @@ public class CompiledProtocol extends AbstractCompiledProtocol {
     private ArrayList<BigInteger> input(List<BigInteger> privateInput) {
         Map<Integer, ArrayList<BigInteger>> sharedInput = shareInput(privateInput);
         ArrayList<BigInteger> actualInputs = sharedInput.get(network.myId());
+        Map<Integer, ArrayList<BigInteger>> toValidate = new HashMap<>();
         for (int i: sharedInput.keySet()) {
-//            networks.getBrainNetwork().send(i, sharedInput.get(i));
-//            ArrayList<BigInteger> recievedShares = networks.getBrainNetwork().receive(i);
-                broadcast(i, sharedInput.get(i));
-                ArrayList<BigInteger> recievedShares = receiveBroadcast(i);
+            if (i != network.myId()) {
+                network.send(i, sharedInput.get(i));
+            }
+        }
+        for (int i: network.peers()) {
+            ArrayList<BigInteger> recievedShares = network.receive(i);
                 for (int j = 0; j < recievedShares.size(); j++) {
                     actualInputs.set(j, actualInputs.get(j).add(recievedShares.get(j)));
                 }
+        }
+        for (int i : toValidate.keySet()) {
+            broadcastValidation(network, i, Arrays.asList(i, BaseNetwork.getSubmissivePinkyId(network)), toValidate.get(i));
         }
         return actualInputs;
     }

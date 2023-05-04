@@ -4,6 +4,7 @@ import anonymous.network.INetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
@@ -59,6 +60,7 @@ public abstract class AbstractCompiledProtocol {
         }
         ArrayList<BigInteger> pinkyRes = null;
         if (BaseNetwork.getMyVirtualPinkyId(sendingParty, parties) != network.myId()) {
+            network.send(BaseNetwork.getMyVirtualPinkyId( network.myId(), parties), res);
             pinkyRes = network.receive(BaseNetwork.getMyVirtualPinkyId(sendingParty, parties));
         }
         if (res != null && pinkyRes != null && !res.equals(pinkyRes)) {
@@ -76,10 +78,31 @@ public abstract class AbstractCompiledProtocol {
         byte[] brainDigest = networks.getBrainNetwork().getDigestRes();
         byte[] pinkyDigest = networks.getPinkyNetwork().getDigestRes();
         if (!Arrays.equals(brainDigest, pinkyDigest)) {
-            logger.error("Different digests");
+//            logger.error("Different digests");
             return false;
         }
         return true;
+    }
+
+    public static void broadcastValidation(INetwork network, int sender, List<Integer> parties, Serializable data) {
+        try {
+            for (int i :parties) {
+                if (i != sender) {
+                    network.send(i, data);
+                }
+            }
+            for (int i : parties) {
+                if (i != sender) {
+                    Serializable cand = network.receive(i);
+                    if (!cand.equals(data)) {
+                        logger.error("Inconsistent data received");
+//                        throw new RuntimeException("Inconsistent data received");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not broadcast", e);
+        }
     }
 
 }

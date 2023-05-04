@@ -11,7 +11,7 @@ import static anonymous.DefaultSecParameters.getDigest;
 
 public abstract class BaseNetwork implements INetwork {
     protected final MessageDigest digest = getDigest();
-    protected final INetwork internalNetwork;
+    public final INetwork internalNetwork;
     protected final Serializer serializer;
 
     public BaseNetwork(INetwork internalNetwork) {

@@ -113,7 +113,7 @@ public class PostprocessingProtocol extends AbstractCompiledProtocol  {
             network.sendToAll(com.getCommitmentValue());
             Map<Integer, byte[]> otherCom = network.receiveFromAllPeers();
             for (int i : network.peers()) {
-                otherCom.put(i, (byte[]) globalBroadcastValidation(network, i, otherCom.get(i)));
+                broadcastValidation(network, i, network.peers(), otherCom.get(i));
             }
             network.sendToAll(opening);
             Map<Integer, byte[]> otherOpening = network.receiveFromAllPeers();
@@ -128,30 +128,6 @@ public class PostprocessingProtocol extends AbstractCompiledProtocol  {
             return res;
         } catch (Exception e) {
             throw new RuntimeException("Could not do coin tossing", e);
-        }
-    }
-
-    public static Serializable globalBroadcastValidation(INetwork network, int sender, Serializable data) {
-        try {
-//            Serializable data = network.receive(sender);
-            for (int i : network.peers()) {
-                if (i != sender) {
-                    network.send(i, data);
-                }
-            }
-            // TODO mixing up reception of the previous sendToAll
-            for (int i : network.peers()) {
-                if (i != sender) {
-                    Serializable cand = network.receive(i);
-                    if (!cand.equals(data)) {
-                        logger.error("Inconsistent data received");
-//                        throw new RuntimeException("Inconsistent data received");
-                    }
-                }
-            }
-            return data;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not broadcast", e);
         }
     }
 }
