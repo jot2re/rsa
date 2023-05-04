@@ -68,11 +68,15 @@ public class RSATestUtils {
         }
     }
 
-    public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties) {
-        return getOurParameters(bits, statSec, parties, false);
+    public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties, boolean decorated) {
+        return getOurParameters(bits, statSec, parties, decorated, MultFactory.MultType.DUMMY);
     }
 
-    public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties, boolean decorated) {
+    public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties) {
+        return getOurParameters(bits, statSec, parties, false, MultFactory.MultType.DUMMY);
+    }
+
+    public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties, boolean decorated, MultFactory.MultType multType) {
         try {
             // TODO the 8 increments are needed for OT mult protocols but not others
             // M > 2^(2*bits)
@@ -83,7 +87,7 @@ public class RSATestUtils {
             BigInteger Q = RSATestUtils.prime(2*bits+24, new Random(42));
             MultFactory multFactory = new MultFactory(parties);
             Map<Integer, OurParameters> params = new HashMap<>(parties);
-            Map<Integer, IMult> mults = multFactory.getMults(MULT_TYPE, NETWORK_TYPE, decorated);
+            Map<Integer, IMult> mults = multFactory.getMults(multType, NETWORK_TYPE, decorated);
             for (int i = 0; i < parties; i++) {
                 // Unique but deterministic seed for each set of parameters
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");

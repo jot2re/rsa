@@ -1,10 +1,12 @@
 package anonymous.compiler;
 
-import anonymous.rsa.RSATestUtils;
-import anonymous.rsa.our.OurProtocol;
 import anonymous.AbstractProtocolTest;
+import anonymous.mult.MultFactory;
 import anonymous.network.NetworkFactory;
+import anonymous.rsa.RSATestUtils;
 import anonymous.rsa.our.OurParameters;
+import anonymous.rsa.our.OurProtocol;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompilerTest extends AbstractProtocolTest {
-//    @Test
+    @Test
     public void sunshine() throws Exception {
         int parties = 3;
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);
@@ -31,8 +33,8 @@ public class CompilerTest extends AbstractProtocolTest {
         BigInteger N = p.multiply(q);
 
         // NOTE that we need copies of both, since the network for mult is stored in the parameters!!! Terrible decision! TODO FIX!
-        Map<Integer, OurParameters> brainParameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
-        Map<Integer, OurParameters> pinkyParameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties);
+        Map<Integer, OurParameters> brainParameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties, false, MultFactory.MultType.REPLICATED);
+        Map<Integer, OurParameters> pinkyParameters = RSATestUtils.getOurParameters(PRIME_BITLENGTH, STAT_SEC, parties, false, MultFactory.MultType.REPLICATED);
         CompiledNetworkFactory netFactory = new CompiledNetworkFactory(new NetworkFactory(parties));
         Map<Integer, NetworkPair> networks = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
@@ -54,6 +56,7 @@ public class CompilerTest extends AbstractProtocolTest {
         executor.shutdown();
         assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
 
+        //TODO ensure correctness of pinky com! Result should 1!
         for (Future<BigInteger> cur : res) {
             assertEquals(BigInteger.ONE, cur.get());
         }
