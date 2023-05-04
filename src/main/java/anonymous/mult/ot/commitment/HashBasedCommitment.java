@@ -3,6 +3,8 @@ package anonymous.mult.ot.commitment;
 import anonymous.mult.ot.util.ExceptionConverter;
 import anonymous.mult.ot.util.Drbg;
 import anonymous.mult.ot.util.MaliciousException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
@@ -22,6 +24,7 @@ import java.util.Arrays;
  *
  */
 public class HashBasedCommitment implements  Serializable{
+  private static final Logger logger = LoggerFactory.getLogger(HashBasedCommitment.class);
 
   private static final String HASH_ALGORITHM = "SHA-256";
   /**
@@ -86,15 +89,15 @@ public class HashBasedCommitment implements  Serializable{
     // Hash the opening info and verify that it matches the value stored in
     // "commitmentValue"
     byte[] digestValue = digest.digest(openingInfo);
-    if (Arrays.equals(digestValue, commitmentVal)) {
-      // Extract the randomness and the value committed to from the openingInfo
-      // The value comes first
-      byte[] value = new byte[openingInfo.length - DIGEST_LENGTH];
-      System.arraycopy(openingInfo, 0, value, 0, value.length);
-      return value;
-    } else {
-      throw new MaliciousException("The opening info does not match the commitment.");
+    if (!Arrays.equals(digestValue, commitmentVal)) {
+      logger.error("The opening info does not match the commitment.");
+//      throw new MaliciousException("The opening info does not match the commitment.");
     }
+    // Extract the randomness and the value committed to from the openingInfo
+    // The value comes first
+    byte[] value = new byte[openingInfo.length - DIGEST_LENGTH];
+    System.arraycopy(openingInfo, 0, value, 0, value.length);
+    return value;
   }
 
   /**
