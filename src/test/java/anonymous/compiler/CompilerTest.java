@@ -5,6 +5,7 @@ import anonymous.network.NetworkFactory;
 import anonymous.rsa.RSATestUtils;
 import anonymous.rsa.our.OurParameters;
 import anonymous.rsa.our.OurProtocol;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -21,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CompilerTest extends AbstractProtocolTest {
-//    @Test
+    @Test
+    // TODO
     public void sunshine() throws Exception {
         int parties = 3;
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, PRIME_BITLENGTH, rand);

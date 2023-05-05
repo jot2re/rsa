@@ -2,6 +2,7 @@ package anonymous.rsa.our;
 
 import anonymous.AbstractProtocol;
 import anonymous.compiler.ICompilableProtocol;
+import anonymous.network.INetwork;
 import anonymous.network.NetworkException;
 import anonymous.rsa.our.sub.invert.Invert;
 import anonymous.rsa.our.sub.membership.IMembership;
@@ -9,14 +10,12 @@ import anonymous.rsa.our.sub.membership.MembershipConst;
 import anonymous.rsa.our.sub.membership.MembershipLinear;
 import anonymous.rsa.our.sub.membership.MembershipLog;
 import anonymous.rsa.our.sub.multToAdd.MultToAdd;
-import anonymous.network.INetwork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -108,7 +107,9 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
     public List<BigInteger> executeList(List<BigInteger> privateInput, List<BigInteger> publicInput) {
         try {
             boolean res = execute(privateInput.get(0), privateInput.get(1), publicInput.get(0));
-            return Arrays.asList(res ? BigInteger.ONE : BigInteger.ZERO);
+            ArrayList<BigInteger> arrayRes =  new ArrayList<>(1);
+            arrayRes.add(res ? BigInteger.ONE : BigInteger.ZERO);
+            return arrayRes;
         } catch (Exception e) {
             throw new RuntimeException("Party " + network.myId() + " with error " +e.getMessage());
         }

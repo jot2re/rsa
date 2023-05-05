@@ -15,8 +15,7 @@ public class PinkyNetwork extends BaseNetwork {
 
     @Override
     public void send(int recipientId, Serializable data) {
-        //todo some limit on what should be stored
-        digest.update(serializer.serialize(data));
+        sndDigests.get(recipientId).update(serializer.serialize(data));
     }
 
     @Override

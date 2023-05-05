@@ -57,7 +57,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger A;
         public static BigInteger B;
         public static BigInteger Q;
-        @Param({ "1090", "1536", "2048" })
+        @Param({ "1024", "1536", "2048" })
         public static int BITS = 1536;
         @Param({"2", "3", "5"})
         public static int PARTIES;

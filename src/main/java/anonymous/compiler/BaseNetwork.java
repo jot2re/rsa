@@ -5,18 +5,24 @@ import anonymous.network.Serializer;
 
 import java.io.Serializable;
 import java.security.MessageDigest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static anonymous.DefaultSecParameters.getDigest;
 
 public abstract class BaseNetwork implements INetwork {
-    protected final MessageDigest digest = getDigest();
+    protected Map<Integer, MessageDigest> sndDigests;
     public final INetwork internalNetwork;
     protected final Serializer serializer;
 
     public BaseNetwork(INetwork internalNetwork) {
         this.internalNetwork = internalNetwork;
         this.serializer = new Serializer();
+        this.sndDigests = new HashMap<>(internalNetwork.getNoOfParties());
+        for (int i = 0; i < internalNetwork.getNoOfParties(); i++) {
+            sndDigests.put(i, getDigest());
+        }
     }
 
     @Override
@@ -35,8 +41,6 @@ public abstract class BaseNetwork implements INetwork {
             return null;
         }
         T brainRes = internalNetwork.receive(senderId);
-        byte[] serializedData = serializer.serialize(brainRes);
-        digest.update(serializedData);
         return brainRes;
     }
 
@@ -55,8 +59,9 @@ public abstract class BaseNetwork implements INetwork {
         return internalNetwork.myId();
     }
 
-    public byte[] getDigestRes() {
-        return digest.digest();
+
+    public byte[] getDigestSnd(int party) {
+        return sndDigests.get(party).digest();
     }
 
     public static int getSubmissivePinkyId(INetwork network) {
