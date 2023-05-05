@@ -46,15 +46,15 @@ public class Main {
 
     public static final NetworkFactory.NetworkType NETWORK_TYPE = NetworkFactory.NetworkType.DUMMY;
     public static void main(String[] args) throws Exception {
-//        System.out.println("COMPILER");
-//        benchCompiler(2048);
-//        benchCompiler(3072);
-//        benchCompiler(4096);
+        System.out.println("COMPILER");
+        benchCompiler(2048);
+        benchCompiler(3072);
+        benchCompiler(4096);
         System.out.println("POST");
         postprocessing(2048);
         postprocessing(2048);
-//        postprocessing(3072);
-//        postprocessing(4096);
+        postprocessing(3072);
+        postprocessing(4096);
     }
 
     public static void benchCompiler(int bitlength) throws Exception {

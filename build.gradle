@@ -3,7 +3,7 @@ plugins {
     id "me.champeau.jmh" version "0.7.0"
 }
 
-group 'dk.jot2re'
+group 'anonymous'
 version '1.0-SNAPSHOT'
 
 repositories {
