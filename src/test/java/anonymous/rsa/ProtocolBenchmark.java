@@ -62,7 +62,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         @Param({"2", "3", "5"})
         public static int PARTIES;
 //        @Param({ "40", "60", "80", "100" })
-        private static int STATSEC = 100;
+        private static int STATSEC = 60;
 
         @Setup(Level.Invocation)
         public void setupVariables() throws Exception {
