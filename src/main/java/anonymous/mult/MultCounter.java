@@ -11,6 +11,7 @@ import java.util.Random;
 public class MultCounter<T extends Serializable> implements IMult<T> {
     private long timeSpent = 0;
     private long bytesSent;
+    private long bytesReceived;
     private int mults = 0;
     private int constMults = 0;
     private int fromAdd = 0;
@@ -19,14 +20,20 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     private int sharings = 0;
     private long startTime;
     private long stopTime;
-    private long startBytes;
-    private long stopBytes;
+    private long startBytesSend;
+    private long stopBytesSend;
+    private long startBytesReceived;
+    private long stopBytesReceived;
     private DummyNetwork network;
     private final IMult<T> internalMult;
     private boolean initialized = false;
 
     public MultCounter(IMult<T> internalMult) {
         this.internalMult = internalMult;
+    }
+
+    public IMult getDecorated() {
+        return internalMult;
     }
 
     private void start() {
@@ -49,12 +56,15 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     }
 
     private void startBytes() {
-        startBytes = network.getBytesSent();
+        startBytesSend = network.getBytesSent();
+        startBytesReceived = network.getBytesReceived();
     }
 
     private void stopBytes() {
-        stopBytes = network.getBytesSent();
-        bytesSent += stopBytes-startBytes;
+        stopBytesSend = network.getBytesSent();
+        stopBytesReceived = network.getBytesReceived();
+        bytesSent += stopBytesSend - startBytesSend;
+        bytesReceived += stopBytesReceived - startBytesReceived;
     }
 
     public long getBytesSent() {
@@ -62,7 +72,7 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
     }
 
     public long getBytesReceived() {
-        return bytesSent*(network.getNoOfParties()-1);
+        return bytesReceived;
     }
 
     public long getTimeSpent() {

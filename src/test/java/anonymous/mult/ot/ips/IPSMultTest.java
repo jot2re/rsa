@@ -1,12 +1,12 @@
 package anonymous.mult.ot.ips;
 
-import anonymous.mult.MultFactory;
 import anonymous.mult.IMult;
 import anonymous.mult.MultCounter;
+import anonymous.mult.MultFactory;
 import anonymous.network.DummyNetwork;
 import anonymous.network.NetworkFactory;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
@@ -16,8 +16,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static anonymous.DefaultSecParameters.MODULO;
-import static anonymous.DefaultSecParameters.MODULO_BITLENGTH;
+import static anonymous.DefaultSecParameters.findMaxPrime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,16 +24,17 @@ public class IPSMultTest {
     // todo refactor and consolidate with Gilboa
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 3, 5})
-    void sunshine(int parties) throws Exception {
+    @CsvSource({"2,1032", "3,1032", "5,1032"})
+    void sunshine(int parties, int bitlength) throws Exception {
+        BigInteger modulo = findMaxPrime(bitlength);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.IPS, NetworkFactory.NetworkType.DUMMY, true);
         Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
-            A[i] = new BigInteger(MODULO_BITLENGTH, rand);
-            B[i] = new BigInteger(MODULO_BITLENGTH, rand);
+            A[i] = new BigInteger(bitlength-2, rand);
+            B[i] = new BigInteger(bitlength-2, rand);
         }
         Field privateField = MultCounter.class.getDeclaredField("network");
         privateField.setAccessible(true);
@@ -45,7 +45,7 @@ public class IPSMultTest {
             C.add(executor.submit(() -> {
                 ((DummyNetwork) privateField.get(mults.get(finalI))).resetCount();
                 long start = System.currentTimeMillis();
-                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], MODULO);
+                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], modulo);
                 long stop = System.currentTimeMillis();
                 System.out.println("sender " + (stop-start));
                 return res;
@@ -61,7 +61,7 @@ public class IPSMultTest {
         for (Future<BigInteger> cur : C) {
             refC = refC.add(cur.get());
         }
-        assertEquals(refA.multiply(refB).mod(MODULO), refC.mod(MODULO));
+        assertEquals(refA.multiply(refB).mod(modulo), refC.mod(modulo));
 
 
         DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));

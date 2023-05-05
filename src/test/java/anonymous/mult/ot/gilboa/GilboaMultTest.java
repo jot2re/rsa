@@ -15,14 +15,24 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static anonymous.DefaultSecParameters.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GilboaMultTest {
+
     @Test
-    void sunshineBounded() throws Exception {
-        sunshine(PRIME_BITLENGTH-1, MODULO);
+    void sunshine1032() throws Exception {
+        sunshine(1032, BigInteger.TWO.pow(1032).subtract(BigInteger.ONE));
+    }
+
+    @Test
+    void sunshine1540() throws Exception {
+        sunshine(1537, BigInteger.TWO.pow(1544).subtract(BigInteger.ONE));
+    }
+
+    @Test
+    void sunshine2052() throws Exception {
+        sunshine(2050, BigInteger.TWO.pow(2056).subtract(BigInteger.ONE));
     }
 
     void sunshine(int bitLength, BigInteger modulo) throws Exception {

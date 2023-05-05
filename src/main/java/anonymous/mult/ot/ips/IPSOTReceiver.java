@@ -50,7 +50,8 @@ public class IPSOTReceiver {
             makeBatch();
         }
         Pair<ArrayList<BigInteger>, ArrayList<BigInteger>> uValues = sampleSharing(value, modulo);
-        network.send(resources.getOtherId(), uValues);
+        network.send(resources.getOtherId(), uValues.getFirst());
+        network.send(resources.getOtherId(), uValues.getSecond());
         ArrayList<byte[]> adjustments = network.receive(resources.getOtherId());
         if (adjustments.size() != amount) {
             throw new MaliciousException("Unexpected adjustment size");

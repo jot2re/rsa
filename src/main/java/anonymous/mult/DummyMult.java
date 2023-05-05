@@ -1,9 +1,13 @@
 package anonymous.mult;
 
+import anonymous.mult.ot.util.Fiddling;
+
 import java.math.BigInteger;
 
 public class DummyMult extends AbstractAdditiveMult {
     private int multCalls = 0;
+    private long bytesSent = 0l;
+    private long bytesReceived = 0l;
     public DummyMult() {
     }
 
@@ -20,11 +24,13 @@ public class DummyMult extends AbstractAdditiveMult {
                 // All except the pivot party picks their own shares
                 BigInteger shareC = new BigInteger(modulo.bitLength(), random);
                 network.send(0, shareC);
+                bytesSent += Fiddling.ceil(3*modulo.bitLength(), 8);
                 return shareC;
             }
             BigInteger A = shareA;
             BigInteger B = shareB;
             BigInteger C = BigInteger.ZERO;
+            bytesReceived += (network.getNoOfParties()-1)* Fiddling.ceil(3*modulo.bitLength(), 8);
             for (int i : network.peers()) {
                 A = A.add(network.receive(i));
                 B = B.add(network.receive(i));
@@ -41,6 +47,14 @@ public class DummyMult extends AbstractAdditiveMult {
         } catch (Exception e) {
             throw new RuntimeException("Failed to multiply", e);
         }
+    }
+
+    public long bytesSend() {
+        return bytesSent;
+    }
+
+    public long bytesReceived() {
+        return bytesReceived;
     }
 
     public int getMultCalls() {
