@@ -1,7 +1,7 @@
 package anonymous.compiler;
 
-import anonymous.network.INetwork;
 import anonymous.network.NetworkFactory;
+import anonymous.network.INetwork;
 
 import java.util.HashMap;
 import java.util.Map;

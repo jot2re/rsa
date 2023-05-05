@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -43,45 +42,31 @@ public abstract class AbstractCompiledProtocol {
         }
     }
 
-    protected void broadcast(int virtualId, ArrayList<BigInteger> value) {
-        if (virtualId != network.myId()) {
-            network.send(virtualId, value);
-        }
-        if (BaseNetwork.getSubmissivePinkyId(virtualId, parties) != network.myId()) {
-            network.send(BaseNetwork.getSubmissivePinkyId(virtualId, parties), value);
-        }
-    }
-
-    protected ArrayList<BigInteger> receiveBroadcast(int sendingParty) {
-        // todo just send a hash instead
-        ArrayList<BigInteger> res = null;
-        if (sendingParty != network.myId()) {
-            res = network.receive(sendingParty);
-        }
-        ArrayList<BigInteger> pinkyRes = null;
-        if (BaseNetwork.getMyVirtualPinkyId(sendingParty, parties) != network.myId()) {
-            network.send(BaseNetwork.getMyVirtualPinkyId( network.myId(), parties), res);
-            pinkyRes = network.receive(BaseNetwork.getMyVirtualPinkyId(sendingParty, parties));
-        }
-        if (res != null && pinkyRes != null && !res.equals(pinkyRes)) {
-            logger.error("Bad broadcast");
-//            throw new RuntimeException("bad broadcast");
-        }
-        if (res != null) {
-            return res;
-        }
-        return pinkyRes;
-    }
-
-
     protected boolean check() {
-        byte[] brainDigest = networks.getBrainNetwork().getDigestRes();
-        byte[] pinkyDigest = networks.getPinkyNetwork().getDigestRes();
-        if (!Arrays.equals(brainDigest, pinkyDigest)) {
-//            logger.error("Different digests");
-            return false;
+        for (int i = 0; i < network.getNoOfParties(); i++) {
+            if (i != network.myId()) {
+                network.send(i, networks.getBrainNetwork().getDigestSnd(i));
+            }
+            if (BaseNetwork.getMyVirtualPinkyId(i, parties) != network.myId()) {
+                network.send(BaseNetwork.getMyVirtualPinkyId(i, parties), networks.getPinkyNetwork().getDigestSnd(i));
+            }
         }
-        return true;
+        byte[] recDigest = null;
+        boolean res = true;
+        for (int i = 0; i < network.getNoOfParties(); i++) {
+            if (i != network.myId()) {
+                recDigest =network.receive(i);
+            }
+            byte[] recPinky = null;
+            if (BaseNetwork.getSubmissivePinkyId(i, parties) != network.myId()) {
+                recPinky = network.receive(BaseNetwork.getSubmissivePinkyId(i, parties));
+            }
+            if (!Arrays.equals(recDigest, recPinky)) {
+            logger.error("Different digests");
+            res = false;
+            }
+        }
+        return res;
     }
 
     public static void broadcastValidation(INetwork network, int sender, List<Integer> parties, Serializable data) {

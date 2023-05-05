@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -108,7 +107,9 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
     public List<BigInteger> executeList(List<BigInteger> privateInput, List<BigInteger> publicInput) {
         try {
             boolean res = execute(privateInput.get(0), privateInput.get(1), publicInput.get(0));
-            return Arrays.asList(res ? BigInteger.ONE : BigInteger.ZERO);
+            ArrayList<BigInteger> arrayRes =  new ArrayList<>(1);
+            arrayRes.add(res ? BigInteger.ONE : BigInteger.ZERO);
+            return arrayRes;
         } catch (Exception e) {
             throw new RuntimeException("Party " + network.myId() + " with error " +e.getMessage());
         }

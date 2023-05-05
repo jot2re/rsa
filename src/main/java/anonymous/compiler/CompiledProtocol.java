@@ -25,8 +25,8 @@ public class CompiledProtocol extends AbstractCompiledProtocol {
     public List<BigInteger> execute(List<BigInteger> privateInput, List<BigInteger> publicInput) {
         try {
             ArrayList<BigInteger> adjustedInput = input(privateInput);
-            List<BigInteger> brainRes = internalProtocolBrain.executeList(adjustedInput, publicInput);
-            List<BigInteger> pinkyRes = internalProtocolPinky.executeList(adjustedInput, publicInput);
+            ArrayList<BigInteger> brainRes = (ArrayList<BigInteger>) internalProtocolBrain.executeList(adjustedInput, publicInput);
+            ArrayList<BigInteger> pinkyRes = (ArrayList<BigInteger>) internalProtocolPinky.executeList(adjustedInput, publicInput);
 
             BigInteger res = BigInteger.ONE;
             if (!check()) {
@@ -85,33 +85,42 @@ public class CompiledProtocol extends AbstractCompiledProtocol {
         return res;
     }
 
-    protected boolean lastMsg(List<BigInteger> brainResult, List<BigInteger> pinkyResult) {
-        boolean res = true;
-        if (brainResult.size() != pinkyResult.size()) {
-            res = false;
-            logger.error("Different size output of the protocols");
-        }
-        for (int i = 0; i < brainResult.size(); i++) {
-            if (!brainResult.get(i).equals(pinkyResult.get(i))) {
-                res = false;
-                logger.error("Inconsistent results");
+    protected boolean lastMsg(ArrayList<BigInteger> brainResult, ArrayList<BigInteger> pinkyResult) {
+//        boolean res = true;
+//        if (brainResult.size() != pinkyResult.size()) {
+//            res = false;
+//            logger.error("Different size output of the protocols");
+//        }
+//        for (int i = 0; i < brainResult.size(); i++) {
+//            if (!brainResult.get(i).equals(pinkyResult.get(i))) {
+//                res = false;
+//                logger.error("Inconsistent results");
+//            }
+//        }
+            for (int i = 0; i < network.getNoOfParties(); i++) {
+                if (i != network.myId()) {
+                    network.send(i, brainResult);
+                }
+                if (BaseNetwork.getMyVirtualPinkyId(i, parties) != network.myId()) {
+                    network.send(BaseNetwork.getMyVirtualPinkyId(i, parties), pinkyResult);
+                }
             }
-        }
-        try {
-            networks.getBrainNetwork().sendToAll(brainResult.get(0));
-            networks.getPinkyNetwork().sendToAll(pinkyResult.get(0));
-            Map<Integer, BigInteger> otherBrainShares = networks.getBrainNetwork().receiveFromAllPeers();
-            Map<Integer, BigInteger> otherPinkyShares = networks.getPinkyNetwork().receiveFromAllPeers();
-            BigInteger brainRes = otherBrainShares.values().stream().reduce(brainResult.get(0), (a, b) -> a.add(b));
-            BigInteger pinkyRes = otherPinkyShares.values().stream().reduce(pinkyResult.get(0), (a, b) -> a.add(b));
-            if (!brainRes.equals(pinkyRes)) {
-                res = false;
-                logger.error("Inconsistent pinky and brain received results");
+            ArrayList<BigInteger> recDigest = null;
+            boolean res = true;
+            for (int i = 0; i < network.getNoOfParties(); i++) {
+                if (i != network.myId()) {
+                    recDigest = network.receive(i);
+                }
+                ArrayList<BigInteger> recPinky = null;
+                if (BaseNetwork.getSubmissivePinkyId(i, parties) != network.myId()) {
+                    recPinky = network.receive(BaseNetwork.getSubmissivePinkyId(i, parties));
+                }
+                if (recDigest != null & recPinky != null && !recDigest.equals(recPinky)) {
+                    logger.error("Inconsistent pinky and brain received results");
+                    res = false;
+                }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Could not send last result");
-        }
-        return res;
+            return res;
     }
 
 }

@@ -20,7 +20,7 @@ public class BrainNetwork extends BaseNetwork {
         // We don't want to send data to ourselves, but only store it
         internalNetwork.send(recipientId, data);
         pinkyNetwork.send(recipientId, data);
-        digest.update(serializer.serialize(data));
+        sndDigests.get(recipientId).update(serializer.serialize(data));
     }
 
     @Override

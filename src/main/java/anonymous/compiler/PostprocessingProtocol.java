@@ -78,8 +78,8 @@ public class PostprocessingProtocol extends AbstractCompiledProtocol  {
             throw new RuntimeException("Could not set common randomness");
         }
         for (Multiplication cur: multiplications) {
-            if (!validate(brainParam, cur) ) {
-                // TODO when compiler works properly
+            if (!validate(brainParam, cur) ){
+                // TODO enable pinky when compiler works
 //                || !validate(pinkyParam, cur)) {
                 return false;
             }
