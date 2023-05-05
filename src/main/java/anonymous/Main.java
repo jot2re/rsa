@@ -48,6 +48,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         System.out.println("COMPILER");
         benchCompiler(2048);
+        benchCompiler(2048);
         benchCompiler(3072);
         benchCompiler(4096);
         System.out.println("POST");
