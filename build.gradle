@@ -1,17 +1,35 @@
 plugins {
     id 'java'
+    id "me.champeau.jmh" version "0.7.0"
 }
 
-group 'dk.jot2re'
+group 'anonymous'
 version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'anonymous.Main'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.8.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-params:5.8.1")
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.5'
+    testImplementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.36'
+    testImplementation group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.36'
+    // this is the line that solves the missing /META-INF/BenchmarkList error
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
 }
 
 test {
