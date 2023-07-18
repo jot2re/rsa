@@ -72,6 +72,10 @@ public class RSATestUtils {
     }
 
     public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties, boolean decorated) {
+        return getBFParameters(bits, statSec, parties, decorated, false);
+    }
+
+    public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties, boolean decorated, boolean jni) {
         try {
             MultFactory multFactory = new MultFactory(parties);
             Map<Integer, INetwork> networks = getNetworks(parties);
@@ -82,7 +86,7 @@ public class RSATestUtils {
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
                 // Note that seed is only updated if different from 0
                 rand.setSeed(networks.get(i).myId() + 1);
-                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, mults.get(i)));
+                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, mults.get(i), jni));
             }
             return params;
         } catch (Exception e) {

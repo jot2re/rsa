@@ -5,6 +5,7 @@ import anonymous.network.NetworkException;
 import anonymous.network.INetwork;
 import anonymous.rsa.bf.dto.Phase1Pivot;
 import anonymous.rsa.our.RSAUtil;
+import org.dfdeshom.math.GMP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,26 +122,76 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     protected Phase1Pivot executePhase1Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
+        if (params.isJni()) {
+            return executePhase1PivotJni(pShare, qShare, N);
+        } else {
+            Phase1Pivot dto = new Phase1Pivot();
+            for (int i = 0; i < params.getStatBits(); i++) {
+                BigInteger gamma = sampleGamma(N);
+                BigInteger exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
+                BigInteger exponentDenominator = BigInteger.valueOf(4);
+                BigInteger exponent = exponentNumerator.divide(exponentDenominator);
+                BigInteger nuShare = gamma.modPow(exponent, N);
+                dto.addElements(gamma, nuShare);
+            }
+            return dto;
+        }
+    }
+
+    public Phase1Pivot executePhase1PivotJni(BigInteger javaPShare, BigInteger javaQShare, BigInteger javaN) {
+        GMP pShare = new GMP(javaPShare.toString());
+        GMP qShare = new GMP(javaQShare.toString());
+        GMP N = new GMP(javaN.toString());
         Phase1Pivot dto = new Phase1Pivot();
         for (int i = 0; i < params.getStatBits(); i++) {
-            BigInteger gamma = sampleGamma(N);
-            BigInteger exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
-            BigInteger exponentDenominator = BigInteger.valueOf(4);
-            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-            BigInteger nuShare = gamma.modPow(exponent, N);
-            dto.addElements(gamma, nuShare);
+            BigInteger javaGamma = sampleGamma(javaN);
+            GMP gamma = new GMP(javaGamma.toString());
+            GMP exponentNumerator = new GMP(1);
+            exponentNumerator.add(N, exponentNumerator);
+            exponentNumerator.subtract(pShare, exponentNumerator);
+            exponentNumerator.subtract(qShare, exponentNumerator);
+            GMP exponentDenominator = new GMP(4);
+            GMP exponent = new GMP();
+            exponentNumerator.divide(exponentDenominator, exponent);
+            GMP nuShare = new GMP();
+            gamma.modPow(exponent, N, nuShare);
+            dto.addElements(javaGamma, new BigInteger(nuShare.toString()));
         }
         return dto;
     }
 
     protected ArrayList<BigInteger> executePhase1Other(List<BigInteger> gammas, BigInteger pShare, BigInteger qShare, BigInteger N) {
+        if (params.isJni()) {
+            return executePhase1OtherJni(gammas, pShare, qShare, N);
+        } else {
+            ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
+            for (int i = 0; i < params.getStatBits(); i++) {
+                BigInteger exponentNumerator = pShare.negate().subtract(qShare);
+                BigInteger exponentDenominator = BigInteger.valueOf(4);
+                BigInteger exponent = exponentNumerator.divide(exponentDenominator);
+                BigInteger nuShare = gammas.get(i).modPow(exponent, N);
+                dto.add(nuShare);
+            }
+            return dto;
+        }
+    }
+
+    public ArrayList<BigInteger> executePhase1OtherJni(List<BigInteger> javaGammas, BigInteger javaPShare, BigInteger javaQShare, BigInteger javaN) {
         ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
+        GMP pShare = new GMP(javaPShare.toString());
+        GMP qShare = new GMP(javaQShare.toString());
+        GMP N = new GMP(javaN.toString());
         for (int i = 0; i < params.getStatBits(); i++) {
-            BigInteger exponentNumerator = pShare.negate().subtract(qShare);
-            BigInteger exponentDenominator = BigInteger.valueOf(4);
-            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-            BigInteger nuShare = gammas.get(i).modPow(exponent, N);
-            dto.add(nuShare);
+            GMP exponentNumerator = new GMP();
+            pShare.add(qShare, exponentNumerator);
+            GMP exponentDenominator = new GMP(4);
+            GMP exponent = new GMP();
+            exponentNumerator.divide(exponentDenominator, exponent);
+            GMP curGamma = new GMP(javaGammas.get(i).toString());
+            GMP temp = new GMP();
+            curGamma.modInverse(N, temp);
+            temp.modPow(exponent, N, temp);
+            dto.add(new BigInteger(temp.toString()));
         }
         return dto;
     }
@@ -176,7 +227,7 @@ public class BFProtocol extends AbstractProtocol {
         return s.gcd(N).equals(BigInteger.ONE);
     }
 
-    private BigInteger sampleGamma(BigInteger N) {
+    protected BigInteger sampleGamma(BigInteger N) {
         BigInteger candidate;
         do {
             candidate = new BigInteger(N.bitLength() + params.getStatBits(), random);

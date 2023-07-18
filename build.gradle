@@ -30,8 +30,13 @@ dependencies {
     testImplementation group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.36'
     // this is the line that solves the missing /META-INF/BenchmarkList error
     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
+    implementation fileTree(dir: 'libs', include: '*.jar')
 }
 
 test {
     useJUnitPlatform()
+//    systemProperty(
+//            "java.library.path",
+//            "${project.projectDir}/libs"
+//    )
 }

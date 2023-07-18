@@ -5,6 +5,8 @@ import anonymous.rsa.RSATestUtils;
 import anonymous.mult.DummyMult;
 import anonymous.network.DummyNetwork;
 import anonymous.network.INetwork;
+import org.dfdeshom.math.GMP;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -49,7 +51,7 @@ public class BFProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(bitlength, statSec, parties, false);
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(bitlength, statSec, parties, false, true);
         Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         runProtocolTest(networks, parameters, protocolRunner, checker);
 //        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
@@ -69,5 +71,26 @@ public class BFProtocolTest extends AbstractProtocolTest {
     @CsvSource({"1,9,1", "28,9,1", "14,561,1", "1353,566480805,0", "1353,566480807,1","7,23,-1"})
     public void jacobiTest(int a, int n, int res) {
         assertEquals(res, BFProtocol.jacobiSymbol(BigInteger.valueOf(a), BigInteger.valueOf(n)));
+    }
+
+    @Test
+    public void jniTestMult() {
+        GMP a = new GMP("42");
+        GMP b = new GMP("1337");
+        b.multiply(a, b);
+        BigInteger gmpRes = new BigInteger(b.toString());
+        assertEquals(BigInteger.valueOf(42*1337), gmpRes);
+    }
+
+    @Test
+    public void jniTestPowMod() {
+        GMP base = new GMP("2");
+        GMP exp = new GMP("8");
+        GMP mod = new GMP(251);
+        GMP res = new GMP();
+        base.modPow(exp, mod, res);
+        BigInteger gmpRes = new BigInteger(res.toString());
+        // 2^8 mod 251 = 5
+        assertEquals(BigInteger.valueOf(5), gmpRes);
     }
 }
