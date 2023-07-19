@@ -17,6 +17,9 @@ public class BFProtocol extends AbstractProtocol {
     private static final Logger logger = LoggerFactory.getLogger(BFProtocol.class);
     private final BFParameters params;
     private boolean initialized = false;
+    private BigInteger exponent;
+    private GMP jniN;
+    private GMP jniExponent;
 
     public BFProtocol(BFParameters params) {
         this.params = params;
@@ -53,6 +56,21 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        BigInteger exponentDenominator = BigInteger.valueOf(4);
+        BigInteger exponentNumerator;
+        if (network.myId() == 0) {
+            exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
+        } else {
+            exponentNumerator = pShare.add(qShare);
+        }
+        exponent = exponentNumerator.divide(exponentDenominator);
+        if (params.isJni()) {
+            // Preprocess the global JNI values to avoid converting multiple times
+            logger.debug("Doing JNI");
+            System.out.println("doing JNI");
+            jniN = new GMP(N.toString());
+            jniExponent = new GMP(exponent.toString());
+        }
         if (network.myId() == 0) {
             return executePivot(pShare, qShare, N);
         } else {
@@ -61,7 +79,7 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     protected boolean executePivot(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
+        Phase1Pivot dto = executePhase1Pivot(N);
         /** needed for bench **/
         Map<Integer, ArrayList<BigInteger>> receivedDto = new HashMap<>(dto.getGammas().size());
         for (int i = 0; i < dto.getGammas().size(); i++) {
@@ -97,7 +115,7 @@ public class BFProtocol extends AbstractProtocol {
 //        ArrayList<BigInteger> gamma = network.receive(0);
 //        ArrayList<BigInteger> nu = network.receive(0);
         Phase1Pivot receivedDto = new Phase1Pivot(gamma, nu);
-        ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
+        ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), N);
         /** needed for bench **/
         for (BigInteger cur : myNuShare) {
             network.sendToAll(cur);
@@ -121,16 +139,13 @@ public class BFProtocol extends AbstractProtocol {
         return executePhase3Other(pShare, qShare, N);
     }
 
-    protected Phase1Pivot executePhase1Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
+    protected Phase1Pivot executePhase1Pivot(BigInteger N) {
         if (params.isJni()) {
-            return executePhase1PivotJni(pShare, qShare, N);
+            return executePhase1PivotJni(N);
         } else {
             Phase1Pivot dto = new Phase1Pivot();
             for (int i = 0; i < params.getStatBits(); i++) {
                 BigInteger gamma = sampleGamma(N);
-                BigInteger exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
-                BigInteger exponentDenominator = BigInteger.valueOf(4);
-                BigInteger exponent = exponentNumerator.divide(exponentDenominator);
                 BigInteger nuShare = gamma.modPow(exponent, N);
                 dto.addElements(gamma, nuShare);
             }
@@ -138,49 +153,36 @@ public class BFProtocol extends AbstractProtocol {
         }
     }
 
-    public Phase1Pivot executePhase1PivotJni(BigInteger pShare, BigInteger qShare, BigInteger N) {
+    public Phase1Pivot executePhase1PivotJni(BigInteger N) {
         Phase1Pivot dto = new Phase1Pivot();
         for (int i = 0; i < params.getStatBits(); i++) {
             BigInteger gamma = sampleGamma(N);
-            BigInteger exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
-            BigInteger exponentDenominator = BigInteger.valueOf(4);
-            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
 
             GMP jniGamma = new GMP(gamma.toString());
-            GMP jniExponent = new GMP(exponent.toString());
-            GMP jniN = new GMP(N.toString());
             jniGamma.modPow(jniExponent, jniN, jniGamma);
             dto.addElements(gamma, new BigInteger(jniGamma.toString()));
         }
         return dto;
     }
 
-    protected ArrayList<BigInteger> executePhase1Other(List<BigInteger> gammas, BigInteger pShare, BigInteger qShare, BigInteger N) {
+    protected ArrayList<BigInteger> executePhase1Other(List<BigInteger> gammas, BigInteger N) {
         if (params.isJni()) {
-            return executePhase1OtherJni(gammas, pShare, qShare, N);
+            return executePhase1OtherJni(gammas);
         } else {
             ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
             for (int i = 0; i < params.getStatBits(); i++) {
-                BigInteger exponentNumerator = pShare.negate().subtract(qShare);
-                BigInteger exponentDenominator = BigInteger.valueOf(4);
-                BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-                BigInteger nuShare = gammas.get(i).modPow(exponent, N);
+                BigInteger nuShare = gammas.get(i).modInverse(N);
+                nuShare = nuShare.modPow(exponent, N);
                 dto.add(nuShare);
             }
             return dto;
         }
     }
 
-    public ArrayList<BigInteger> executePhase1OtherJni(List<BigInteger> gammas, BigInteger pShare, BigInteger qShare, BigInteger N) {
+    public ArrayList<BigInteger> executePhase1OtherJni(List<BigInteger> gammas) {
         ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
         for (int i = 0; i < params.getStatBits(); i++) {
-            BigInteger exponentNumerator = pShare.add(qShare);
-            BigInteger exponentDenominator = BigInteger.valueOf(4);
-            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-
-            GMP jniExponent = new GMP(exponent.toString());
             GMP jniGamma = new GMP(gammas.get(i).toString());
-            GMP jniN = new GMP(N.toString());
             jniGamma.modInverse(jniN, jniGamma);
             jniGamma.modPow(jniExponent, jniN, jniGamma);
             dto.add(new BigInteger(jniGamma.toString()));

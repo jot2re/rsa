@@ -66,6 +66,49 @@ public class BFProtocolTest extends AbstractProtocolTest {
 //        System.out.println("Net avr snd/rec " + (received+sent)/2);
     }
 
+    @ParameterizedTest
+    @CsvSource({"2,1024,40", "3,1536,60", "5,2048,80"})
+    public void sunshineWOJNI(int parties, int bitlength, int statSec) throws Exception {
+        Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, bitlength, rand);
+        Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, bitlength, rand);
+        BigInteger p = pShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
+        BigInteger q = qShares.values().stream().reduce(BigInteger.ZERO, (a, b)-> a.add(b));
+        BigInteger N = p.multiply(q);
+
+        RunProtocol<Boolean> protocolRunner = (param, network) -> {
+            BFProtocol protocol = new BFProtocol((BFParameters) param);
+            protocol.init(network, RSATestUtils.getRandom(network.myId()));
+            if (!protocol.validateParameters(pShares.get(network.myId()), qShares.get(network.myId()), N)) {
+                return false;
+            }
+            long start = System.currentTimeMillis();
+            boolean res = protocol.execute(pShares.get(network.myId()), qShares.get(network.myId()), N);
+            long stop = System.currentTimeMillis();
+//            System.out.println("time: " + (stop-start));
+            return res;
+        };
+
+        ResultCheck<Boolean> checker = (res) -> {
+            for (Future<Boolean> cur : res) {
+                assertTrue(cur.get());
+            }
+        };
+
+        Map<Integer, BFParameters> parameters = RSATestUtils.getBFParameters(bitlength, statSec, parties, false, false);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        runProtocolTest(networks, parameters, protocolRunner, checker);
+//        System.out.println("Mult calls " + ((DummyMult) parameters.get(0).getMult()).getMultCalls());
+//        System.out.println("Rounds " + ((DummyNetwork) networks.get(0)).getRounds());
+//        System.out.println("Nettime " + ((DummyNetwork) networks.get(0)).getNetworkTime());
+//        System.out.println("Nettrans " + ((DummyNetwork) networks.get(0)).getTransfers());
+        long sent = (((DummyNetwork) networks.get(0)).getBytesSent()-((DummyMult) parameters.get(0).getMult()).bytesSend());
+//        System.out.println("Net sent " + sent);
+        long received = (((DummyNetwork) networks.get(0)).getBytesReceived()-((DummyMult) parameters.get(0).getMult()).bytesReceived());
+//        System.out.println("Net rec " + received);
+        System.out.println("" + parties + ", " + bitlength + ", " + statSec + ", " + (received+sent)/2);
+//        System.out.println("Net avr snd/rec " + (received+sent)/2);
+    }
+
     // First 3 tests are from https://www.mathworks.com/help/symbolic/jacobisymbol.html
     @ParameterizedTest
     @CsvSource({"1,9,1", "28,9,1", "14,561,1", "1353,566480805,0", "1353,566480807,1","7,23,-1"})
