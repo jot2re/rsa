@@ -10,6 +10,7 @@ import anonymous.rsa.our.sub.membership.MembershipConst;
 import anonymous.rsa.our.sub.membership.MembershipLinear;
 import anonymous.rsa.our.sub.membership.MembershipLog;
 import anonymous.rsa.our.sub.multToAdd.MultToAdd;
+import org.dfdeshom.math.GMP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,15 +133,7 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
     }
 
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
-        BigInteger multGammaShare;
-        if (network.myId() == 0) {
-            BigInteger v = RSAUtil.sample(random, N);
-            network.sendToAll(v);
-            multGammaShare = v.modPow(share.subtract(BigInteger.valueOf(1)).shiftRight(1), N);
-        } else {
-            BigInteger v = network.receive(0);
-            multGammaShare = v.modPow(share.shiftRight(1), N);
-        }
+        BigInteger multGammaShare = gammaShare(share, N);
         BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
         Serializable inverseShareP = inverter.execute(
                 params.getMult().shareFromAdditive(share, params.getP()), params.getP());
@@ -153,6 +146,35 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
         Serializable yShare = params.getMult().multShares(ySub, yAdd, params.getQ());
         BigInteger y = params.getMult().open(yShare, params.getQ());
         return y.equals(BigInteger.ZERO);
+    }
+
+    private BigInteger gammaShare(BigInteger share, BigInteger N) throws NetworkException {
+        if (network.myId() == 0) {
+            BigInteger v = RSAUtil.sample(random, N);
+            network.sendToAll(v);
+            BigInteger exp = share.subtract(BigInteger.valueOf(1)).shiftRight(1);
+            if (params.isJni()) {
+                GMP jniV = new GMP(v.toString());
+                GMP jniExp = new GMP(exp.toString());
+                GMP jniN = new GMP(N.toString());
+                jniV.modPow(jniExp, jniN, jniV);
+                return new BigInteger(jniV.toString());
+            } else {
+                return v.modPow(exp, N);
+            }
+        } else {
+            BigInteger v = network.receive(0);
+            BigInteger exp = share.shiftRight(1);
+            if (params.isJni()) {
+                GMP jniV = new GMP(v.toString());
+                GMP jniExp = new GMP(exp.toString());
+                GMP jniN = new GMP(N.toString());
+                jniV.modPow(jniExp, jniN, jniV);
+                return new BigInteger(jniV.toString());
+            } else {
+                return v.modPow(share.shiftRight(1), N);
+            }
+        }
     }
 
     protected Serializable divisibility(BigInteger delta, Serializable inverseShareP, Serializable inverseShareQ, BigInteger N) throws NetworkException {

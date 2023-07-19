@@ -43,6 +43,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     private static final int COMPSEC = 256;
     private static final String TYPE = "linear";
     private static final boolean PIVOT = true;
+    private static final boolean JNI = true;
     private static final Random rand = ExceptionConverter.safe(()->SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not init random)");
 
     @State(Scope.Thread)
@@ -57,9 +58,9 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger A;
         public static BigInteger B;
         public static BigInteger Q;
-        @Param({ "1024", "1536", "2048" })
+        @Param({ "1024"})//, "1536", "2048" })
         public static int BITS = 1536;
-        @Param({"2", "3", "5"})
+        @Param({"2"})//, "3", "5"})
         public static int PARTIES;
 //        @Param({ "40", "60", "80", "100" })
         private static int STATSEC = 100;
@@ -79,7 +80,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             BenchState.Q = BigInteger.probablePrime(2*BITS+4, rand);
 
             BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT);
-            BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT);
+            BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT, JNI);
             BenchState.shamir = setupShamir(PARTIES);
             BenchState.replicated = setupReplicated(PARTIES);
         }
@@ -115,8 +116,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
-    @Benchmark
-    @Measurement(iterations = 10, time = 3)
+//    @Benchmark
+//    @Measurement(iterations = 10, time = 3)
     public boolean executeOur(BenchState state) throws Exception {
         return state.ourProtocol.execute(state.p, state.q, state.N);
     }
@@ -196,17 +197,17 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         }
     }
 
-    public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot) {
+    public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot, boolean jni) {
         PlainNetwork network = new PlainNetwork(pivot ? 0 : 1, parties, pivot ? 0 : 1, null);
-        BFParameters parameters = getBFBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1);
+        BFParameters parameters = getBFBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1, jni);
         network.setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
         BFProtocol prot = new BFProtocol(parameters);
         prot.init(network, rand);
         return prot;
     }
 
-//    @Benchmark
-//    @Measurement(iterations = 10, time = 10)
+    @Benchmark
+    @Measurement(iterations = 10, time = 10)
     public boolean executeBF(BenchState state) throws Exception {
         return state.bfProtocol.execute(state.p, state.q, state.N);
     }
@@ -224,7 +225,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         }
     }
 
-    public static BFParameters getBFBenchParameters(int bits, int statSec, int parties, int pivotId) {
+    public static BFParameters getBFBenchParameters(int bits, int statSec, int parties, int pivotId, boolean jni) {
         try {
             // Unique but deterministic seed for each set of parameters
             SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
@@ -242,7 +243,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
                 map.put(j, array);
             }
             emulatedMsgs.add(map);
-            return new BFParameters(bits, statSec, pivotMult);
+            return new BFParameters(bits, statSec, pivotMult, jni);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);
