@@ -1,6 +1,7 @@
 package anonymous.rsa.our;
 
 import anonymous.AbstractProtocolTest;
+import anonymous.mult.MultFactory;
 import anonymous.network.NetworkFactory;
 import anonymous.rsa.RSATestUtils;
 import anonymous.mult.MultCounter;
@@ -53,7 +54,7 @@ public class OurProtocolTest extends AbstractProtocolTest {
             }
         };
 
-        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(bitlength, STAT_SEC, parties, true);
+        Map<Integer, OurParameters> parameters = RSATestUtils.getOurParameters(bitlength, STAT_SEC, parties, true, MultFactory.MultType.DUMMY,  true);
         NetworkFactory netFactory = new NetworkFactory(parties);
         Map<Integer, INetwork> nets = netFactory.getNetworks(NetworkFactory.NetworkType.DUMMY);
         runProtocolTest(nets, parameters, protocolRunner, checker);

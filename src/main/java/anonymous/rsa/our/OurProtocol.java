@@ -34,6 +34,7 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
     // List of the set of parties, shifted to ensure positive indexes, plus 1 to account for overflow
     private List<BigInteger> partySet;
     private boolean initialized = false;
+    private GMP jniN;
 
     public OurProtocol(OurParameters params, IMembership membership, Invert inverter, MultToAdd multToAdd) {
         this.params = params;
@@ -133,6 +134,10 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
     }
 
     protected boolean verifyPrimality(BigInteger share, BigInteger N) throws NetworkException {
+        if (params.isJni()) {
+            logger.debug("Doing JNI");
+            jniN = new GMP(N.toString());
+        }
         BigInteger multGammaShare = gammaShare(share, N);
         BigInteger addGammaShare = multToAdd.execute(multGammaShare, N);
         Serializable inverseShareP = inverter.execute(
@@ -156,7 +161,6 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
             if (params.isJni()) {
                 GMP jniV = new GMP(v.toString());
                 GMP jniExp = new GMP(exp.toString());
-                GMP jniN = new GMP(N.toString());
                 jniV.modPow(jniExp, jniN, jniV);
                 return new BigInteger(jniV.toString());
             } else {
@@ -168,7 +172,6 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
             if (params.isJni()) {
                 GMP jniV = new GMP(v.toString());
                 GMP jniExp = new GMP(exp.toString());
-                GMP jniN = new GMP(N.toString());
                 jniV.modPow(jniExp, jniN, jniV);
                 return new BigInteger(jniV.toString());
             } else {
