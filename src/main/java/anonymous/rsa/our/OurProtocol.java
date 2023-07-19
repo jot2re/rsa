@@ -2,6 +2,7 @@ package anonymous.rsa.our;
 
 import anonymous.AbstractProtocol;
 import anonymous.compiler.ICompilableProtocol;
+import anonymous.mult.ot.util.Fiddling;
 import anonymous.network.INetwork;
 import anonymous.network.NetworkException;
 import anonymous.rsa.our.sub.invert.Invert;
@@ -162,7 +163,9 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
                 GMP jniV = new GMP(v.toString());
                 GMP jniExp = new GMP(exp.toString());
                 jniV.modPow(jniExp, jniN, jniV);
-                return new BigInteger(jniV.toString());
+                byte[] vBytes = new byte[Fiddling.ceil(jniV.bitLength(), 8)];
+                jniV.toByteArray(vBytes);
+                return new BigInteger(1, vBytes);
             } else {
                 return v.modPow(exp, N);
             }
@@ -173,7 +176,9 @@ public class OurProtocol extends AbstractProtocol implements ICompilableProtocol
                 GMP jniV = new GMP(v.toString());
                 GMP jniExp = new GMP(exp.toString());
                 jniV.modPow(jniExp, jniN, jniV);
-                return new BigInteger(jniV.toString());
+                byte[] vBytes = new byte[Fiddling.ceil(jniV.bitLength(), 8)];
+                jniV.toByteArray(vBytes);
+                return new BigInteger(1, vBytes);
             } else {
                 return v.modPow(share.shiftRight(1), N);
             }

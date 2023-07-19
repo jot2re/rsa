@@ -1,6 +1,7 @@
 package anonymous.rsa.bf;
 
 import anonymous.AbstractProtocol;
+import anonymous.mult.ot.util.Fiddling;
 import anonymous.network.NetworkException;
 import anonymous.network.INetwork;
 import anonymous.rsa.bf.dto.Phase1Pivot;
@@ -68,8 +69,10 @@ public class BFProtocol extends AbstractProtocol {
             // Preprocess the global JNI values to avoid converting multiple times
             logger.debug("Doing JNI");
             System.out.println("doing JNI");
-            jniN = new GMP(N.toString());
-            jniExponent = new GMP(exponent.toString());
+            jniN = new GMP();
+            jniN.fromByteArray(N.toByteArray());
+            jniExponent = new GMP();
+            jniExponent.fromByteArray(exponent.toByteArray());
         }
         if (network.myId() == 0) {
             return executePivot(pShare, qShare, N);
@@ -157,10 +160,13 @@ public class BFProtocol extends AbstractProtocol {
         Phase1Pivot dto = new Phase1Pivot();
         for (int i = 0; i < params.getStatBits(); i++) {
             BigInteger gamma = sampleGamma(N);
-
-            GMP jniGamma = new GMP(gamma.toString());
+            GMP jniGamma = new GMP();
+            jniGamma.fromByteArray(gamma.toByteArray());
             jniGamma.modPow(jniExponent, jniN, jniGamma);
-            dto.addElements(gamma, new BigInteger(jniGamma.toString()));
+            // TODO should be checked to ensure that is no issue in edge cases
+            byte[] gammaBytes = new byte[Fiddling.ceil(jniGamma.bitLength(), 8)];
+            jniGamma.toByteArray(gammaBytes);
+            dto.addElements(gamma, new BigInteger(1, gammaBytes));
         }
         return dto;
     }
@@ -182,10 +188,12 @@ public class BFProtocol extends AbstractProtocol {
     public ArrayList<BigInteger> executePhase1OtherJni(List<BigInteger> gammas) {
         ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
         for (int i = 0; i < params.getStatBits(); i++) {
-            GMP jniGamma = new GMP(gammas.get(i).toString());
-            jniGamma.modInverse(jniN, jniGamma);
-            jniGamma.modPow(jniExponent, jniN, jniGamma);
-            dto.add(new BigInteger(jniGamma.toString()));
+            GMP jniNu = new GMP(gammas.get(i).toString());
+            jniNu.modInverse(jniN, jniNu);
+            jniNu.modPow(jniExponent, jniN, jniNu);
+            byte[] nuBytes = new byte[Fiddling.ceil(jniNu.bitLength(), 8)];
+            jniNu.toByteArray(nuBytes);
+            dto.add(new BigInteger(1, nuBytes));
         }
         return dto;
     }

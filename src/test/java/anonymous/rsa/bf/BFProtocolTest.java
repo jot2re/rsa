@@ -21,6 +21,7 @@ public class BFProtocolTest extends AbstractProtocolTest {
     // TODO negative tests
     @ParameterizedTest
     @CsvSource({"2,1024,40", "2,1024,60", "2,1024,80", "2,1024,100", "3,1024,40", "3,1024,60", "3,1024,80", "3,1024,100", "5,1024,40", "5,1024,60", "5,1024,80", "5,1024,100",
+            "7,1024,40", "9,1024,40",
             "2,1536,40", "2,1536,60", "2,1536,80", "2,1536,100", "3,1536,40", "3,1536,60", "3,1536,80", "3,1536,100", "5,1536,40", "5,1536,60", "5,1536,80", "5,1536,100",
             "2,2048,40", "2,2048,60", "2,2048,80", "2,2048,100", "3,2048,40", "3,2048,60", "3,2048,80", "3,2048,100", "5,2048,40", "5,2048,60", "5,2048,80", "5,2048,100"})
 //    @CsvSource({"2,1024,40", "3,1536,60", "5,2048,80"})
@@ -67,7 +68,7 @@ public class BFProtocolTest extends AbstractProtocolTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2,1024,40", "3,1536,60", "5,2048,80"})
+    @CsvSource({"2,1024,40", "3,1536,60", "5,2048,80", "7,2048,40", "9,2048,40"})
     public void sunshineWOJNI(int parties, int bitlength, int statSec) throws Exception {
         Map<Integer, BigInteger> pShares = RSATestUtils.randomPrime(parties, bitlength, rand);
         Map<Integer, BigInteger> qShares = RSATestUtils.randomPrime(parties, bitlength, rand);
