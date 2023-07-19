@@ -20,6 +20,7 @@ public class ShamirEngine {
     private BigInteger[] fiveBigVals = new BigInteger[5];
     private BigInteger[] sevenBigVals = new BigInteger[7];
     private BigInteger[] nineBigVals = new BigInteger[9];
+    private BigInteger[] elevenBigVals = new BigInteger[11];
 
     public ShamirEngine(int parties, Random rng) {
         if (parties > 15) {
@@ -44,13 +45,12 @@ public class ShamirEngine {
         }
         N = modulo;
         if (parties == 5) {
-            BigInteger fiveValsDen = BigInteger.valueOf(12).modInverse(N);
             fiveBigVals = new BigInteger[]{
-                    BigInteger.valueOf(-17).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(94).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-114).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(62).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-13).multiply(fiveValsDen).mod(N),
+                    BigInteger.valueOf(5),
+                    BigInteger.valueOf(-10),
+                    BigInteger.valueOf(10),
+                    BigInteger.valueOf(-5),
+                    BigInteger.valueOf(1),
             };
 //           final int[][] fiveValsNum = new int[][] {
 //                new int[] {-17, 94, -114, 62, -13},
@@ -60,31 +60,45 @@ public class ShamirEngine {
 //                new int[] {-325, 950, -1050, 550, -113},
 //        };
         }
-        // TODO 7 and 9 are dummy data
         if (parties == 7) {
-            BigInteger fiveValsDen = BigInteger.valueOf(25).modInverse(N);
             sevenBigVals = new BigInteger[]{
-                    BigInteger.valueOf(-1754).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(94514).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-1144).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(62584).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-1354).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(6884).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-15354).multiply(fiveValsDen).mod(N),
+                    BigInteger.valueOf(7),
+                    BigInteger.valueOf(-21),
+                    BigInteger.valueOf(35),
+                    BigInteger.valueOf(-35),
+                    BigInteger.valueOf(21),
+                    BigInteger.valueOf(-7),
+                    BigInteger.valueOf(1),
             };
         }
+        // {{1,1,1,1,1,1,1,1,1},{1,2,4,8,16,32,64,128,256},{1,3,9,27,81, 243,729,2187,6561},{1,4,16,64,256,1024,4096,16384,65536},{1,5,25,125,625,3125,15625,78125,390625},{1,6,36,216,1296,7776,46656,279936,1679616},{1,7,49,343,2401,16807,117649,823543,5764801},{1,8,64,512,4096,32768,262144,2097152,16777216},{1,9,81,729,6561,59049,531441,4782969,43046721}}^-1
+        // TODO 9 and 11 are not the correct constant
         if (parties == 9) {
-            BigInteger fiveValsDen = BigInteger.valueOf(15641).modInverse(N);
             nineBigVals = new BigInteger[]{
-                    BigInteger.valueOf(-175324).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(94543214).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-1132444).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(4242324).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-464364).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(643643).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-6436433).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(54643643).multiply(fiveValsDen).mod(N),
-                    BigInteger.valueOf(-5678645).multiply(fiveValsDen).mod(N),
+                    BigInteger.valueOf(9),
+                    BigInteger.valueOf(-36),
+                    BigInteger.valueOf(45),
+                    BigInteger.valueOf(-63),
+                    BigInteger.valueOf(63),
+                    BigInteger.valueOf(-45),
+                    BigInteger.valueOf(36),
+                    BigInteger.valueOf(-9),
+                    BigInteger.valueOf(1),
+            };
+        }
+        if (parties == 11) {
+            elevenBigVals = new BigInteger[]{
+                    BigInteger.valueOf(11),
+                    BigInteger.valueOf(-55),
+                    BigInteger.valueOf(77),
+                    BigInteger.valueOf(-99),
+                    BigInteger.valueOf(121),
+                    BigInteger.valueOf(-121),
+                    BigInteger.valueOf(99),
+                    BigInteger.valueOf(-77),
+                    BigInteger.valueOf(55),
+                    BigInteger.valueOf(-11),
+                    BigInteger.valueOf(1),
             };
         }
     }
@@ -172,6 +186,9 @@ public class ShamirEngine {
         }
         if (parties == 9) {
             return nineBigVals[otherId];
+        }
+        if (parties == 11) {
+            return elevenBigVals[otherId];
         }
         throw new RuntimeException("not found yet");
     }
