@@ -78,8 +78,8 @@ public class ShamirMultTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {3,5})
-    void degreeReduction(int parties) throws Exception {
+    @ValueSource(ints = {3,5,7,9})
+    void bgwDegreeReduction(int parties) throws Exception {
         Random rand = new Random(42);
         BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
         MultFactory factory = new MultFactory(parties);
@@ -100,6 +100,54 @@ public class ShamirMultTest {
                 BigInteger res = null;
                 for (int j = 0; j < 100; j++) {
                     res = ((ShamirMult) mults.get(finalI)).bgwDegreeReduction(sharesOfA.get(finalI).multiply(sharesOfB.get(finalI)).mod(modulo), modulo);
+                }
+                long stop = System.currentTimeMillis();
+                System.out.println("Time: " + (stop-start));
+                return res;
+            }));
+        }
+        executor.shutdown();
+        assertTrue(executor.awaitTermination(20000, TimeUnit.SECONDS));
+
+        List<BigInteger> resShares = new ArrayList<>();
+        for (Future<BigInteger> cur : C) {
+            resShares.add(cur.get());
+        }
+        BigInteger refC = engine.combine(engine.getThreshold(), resShares, modulo);
+        assertEquals(aValue.multiply(bValue).mod(modulo), refC.mod(modulo));
+
+        Field privateField = AbstractProtocol.class.getDeclaredField("network");
+        privateField.setAccessible(true);
+        DummyNetwork network = (DummyNetwork) privateField.get(mults.get(0));
+        System.out.println("Rounds " + network.getRounds());
+        System.out.println("Nettime " + network.getNetworkTime());
+        System.out.println("Nettrans " + network.getTransfers());
+        System.out.println("Net bytes " + network.getBytesSent());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {3,5,7,9})
+    void regularDegreeReduction(int parties) throws Exception {
+        Random rand = new Random(42);
+        BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
+        MultFactory factory = new MultFactory(parties);
+        Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.SHAMIR, NetworkFactory.NetworkType.DUMMY);
+        Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
+        BigInteger aValue = new BigInteger(MODULO_BITLENGTH, rand);
+        BigInteger bValue = new BigInteger(MODULO_BITLENGTH, rand);
+        ShamirEngine engine = new ShamirEngine(parties, new Random(42));
+        Map<Integer, BigInteger> sharesOfA = engine.share(aValue, modulo);
+        Map<Integer, BigInteger> sharesOfB = engine.share(bValue, modulo);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        List<Future<BigInteger>> C = new ArrayList<>(parties);
+        for (int i = 0; i < parties; i++) {
+            int finalI = i;
+            C.add(executor.submit(() -> {
+                mults.get(finalI).init(networks.get(finalI), RSATestUtils.getRandom(finalI));
+                long start = System.currentTimeMillis();
+                BigInteger res = null;
+                for (int j = 0; j < 100; j++) {
+                    res = ((ShamirMult) mults.get(finalI)).degreeReduction(sharesOfA.get(finalI).multiply(sharesOfB.get(finalI)).mod(modulo), modulo);
                 }
                 long stop = System.currentTimeMillis();
                 System.out.println("Time: " + (stop-start));
