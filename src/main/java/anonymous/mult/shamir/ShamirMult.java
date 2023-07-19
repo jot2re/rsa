@@ -46,8 +46,8 @@ public class ShamirMult extends AbstractProtocol implements IMult<BigInteger> {
             throw new NullPointerException("Input for multiplication as to be non-null");
         }
         try {
-//            return bgwDegreeReduction(shareA.multiply(shareB).mod(modulo), modulo);
-            return degreeReduction(shareA.multiply(shareB).mod(modulo), modulo);
+            return bgwDegreeReduction(shareA.multiply(shareB).mod(modulo), modulo);
+//            return degreeReduction(shareA.multiply(shareB).mod(modulo), modulo);
         } catch (Exception e) {
             throw new RuntimeException("Failed to multiply", e);
         }

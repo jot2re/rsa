@@ -79,7 +79,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             BenchState.B = new BigInteger(BITS, rand);
             BenchState.Q = BigInteger.probablePrime(2*BITS+4, rand);
 
-            BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT);
+            BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT, JNI);
             BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT, JNI);
             BenchState.shamir = setupShamir(PARTIES);
             BenchState.replicated = setupReplicated(PARTIES);
@@ -96,8 +96,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         new Runner(opt).run();
     }
 
-    public static OurProtocol setupOur(int parties, int bitlength, int statsec, String type, boolean pivot) throws Exception {
-        OurParameters parameters = getOurBenchParameters(bitlength, statsec, pivot ? 0 : 1);
+    public static OurProtocol setupOur(int parties, int bitlength, int statsec, String type, boolean pivot, boolean jni) throws Exception {
+        OurParameters parameters = getOurBenchParameters(bitlength, statsec, pivot ? 0 : 1, jni);
         IMembership membership = switch (type) {
             case "const" -> new MembershipConst(parameters);
             case "log" -> new MembershipLog(parameters);
@@ -116,8 +116,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
-//    @Benchmark
-//    @Measurement(iterations = 10, time = 3)
+    @Benchmark
+    @Measurement(iterations = 10, time = 3)
     public boolean executeOur(BenchState state) throws Exception {
         return state.ourProtocol.execute(state.p, state.q, state.N);
     }
@@ -206,19 +206,19 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return prot;
     }
 
-    @Benchmark
-    @Measurement(iterations = 10, time = 10)
+//    @Benchmark
+//    @Measurement(iterations = 10, time = 10)
     public boolean executeBF(BenchState state) throws Exception {
         return state.bfProtocol.execute(state.p, state.q, state.N);
     }
 
-    public static OurParameters getOurBenchParameters(int bits, int statSec, int pivotId) {
+    public static OurParameters getOurBenchParameters(int bits, int statSec, int pivotId, boolean jni) {
         try {
             BigInteger M = MMap.get(bits);
             BigInteger P = PMap.get(bits);
             BigInteger Q = QMap.get(bits);
             IMult pivotMult = new PlainMult(pivotId);
-            return new OurParameters(bits, statSec, P, Q, M, pivotMult);
+            return new OurParameters(bits, statSec, P, Q, M, pivotMult, jni);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);
