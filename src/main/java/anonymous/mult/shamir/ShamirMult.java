@@ -124,7 +124,7 @@ public class ShamirMult extends AbstractProtocol implements IMult<BigInteger> {
         othersShares.put(resourcePool.getMyId(), myShare);
         BigInteger res = BigInteger.ZERO;
         for (int i = 0; i < othersShares.size(); i++) {
-            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(resourcePool.getMyId(), i, modulo)));
+            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(i)));
         }
         return res.mod(modulo);
         // TODO can be optimized with sharing a seed for generating shares s.t. only last party needs to receive a point on the poly

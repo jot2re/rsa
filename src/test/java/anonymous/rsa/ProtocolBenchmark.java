@@ -35,13 +35,10 @@ import static anonymous.rsa.RSATestUtils.*;
 @Fork( jvmArgs = {"-Xms512m", "-Xmx512m"})
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @BenchmarkMode({Mode.AverageTime})
-@Warmup(iterations = 5, time = 5)
-@Measurement(iterations = 10, time = 1)
-@Timeout(time = 10)
 public class ProtocolBenchmark extends AbstractProtocolTest {
 
     private static final int COMPSEC = 256;
-    private static final String TYPE = "linear";
+    private static final String TYPE = "log";
     private static final boolean PIVOT = true;
     private static final boolean JNI = true;
     private static final Random rand = ExceptionConverter.safe(()->SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not init random)");
@@ -58,12 +55,12 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger A;
         public static BigInteger B;
         public static BigInteger Q;
-        @Param({ "1024"})//, "1536", "2048" })
-        public static int BITS = 1536;
-        @Param({"2"})//, "3", "5"})
+        @Param({ "1024", "1536", "2048" })
+        public static int BITS;// = 1536;
+        @Param({"3", "5", "7", "9"})
         public static int PARTIES;
 //        @Param({ "40", "60", "80", "100" })
-        private static int STATSEC = 100;
+        private static int STATSEC = 80;
 
         @Setup(Level.Invocation)
         public void setupVariables() throws Exception {
@@ -117,7 +114,10 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
     @Benchmark
-    @Measurement(iterations = 10, time = 3)
+    @Measurement(iterations = 30, time = 5)
+    @Warmup(iterations = 10, time = 5)
+    @Timeout(time = 10)
+    @Fork(value = 1, warmups = 0)
     public boolean executeOur(BenchState state) throws Exception {
         return state.ourProtocol.execute(state.p, state.q, state.N);
     }
@@ -152,7 +152,10 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
 
 
 //    @Benchmark
-//    @Measurement(iterations = 10, time = 1)
+//    @Measurement(iterations = 30, time = 1)
+//    @Warmup(iterations = 10, time = 1)
+//    @Timeout(time = 10)
+//    @Fork(value = 1, warmups = 0)
     public Serializable executeShamirMult(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
@@ -163,7 +166,10 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
 //    @Benchmark
-//    @Measurement(iterations = 10, time = 1)
+//    @Measurement(iterations = 30, time = 1)
+//    @Warmup(iterations = 10, time = 1)
+//    @Timeout(time = 10)
+//    @Fork(value = 1, warmups = 0)
     public Serializable executeShamirInput(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
