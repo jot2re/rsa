@@ -40,7 +40,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     private static final int COMPSEC = 256;
     private static final String TYPE = "log";
     private static final boolean PIVOT = true;
-    private static final boolean JNI = true;
+    private static final boolean JNI = false;
     private static final Random rand = ExceptionConverter.safe(()->SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not init random)");
 
     @State(Scope.Thread)
