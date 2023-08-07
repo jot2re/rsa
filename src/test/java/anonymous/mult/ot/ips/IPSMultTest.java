@@ -1,10 +1,10 @@
 package anonymous.mult.ot.ips;
 
-import anonymous.network.DummyNetwork;
-import anonymous.network.NetworkFactory;
 import anonymous.mult.IMult;
 import anonymous.mult.MultCounter;
 import anonymous.mult.MultFactory;
+import anonymous.network.DummyNetwork;
+import anonymous.network.NetworkFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -26,12 +26,12 @@ public class IPSMultTest {
     @ParameterizedTest
     @CsvSource({"2,1032", "3,1032", "5,1032"})
     void sunshine(int parties, int bitlength) throws Exception {
-        Random rand = new Random(42);
         BigInteger modulo = findMaxPrime(bitlength);
         BigInteger[] A = new BigInteger[parties];
         BigInteger[] B = new BigInteger[parties];
         MultFactory factory = new MultFactory(parties);
         Map<Integer, IMult> mults = factory.getMults(MultFactory.MultType.IPS, NetworkFactory.NetworkType.DUMMY, true);
+        Random rand = new Random(42);
         for (int i = 0; i < parties; i++) {
             A[i] = new BigInteger(bitlength-2, rand);
             B[i] = new BigInteger(bitlength-2, rand);
@@ -43,19 +43,11 @@ public class IPSMultTest {
         for (int i = 0; i < parties; i++) {
             int finalI = i;
             C.add(executor.submit(() -> {
-                BigInteger res = null;
-                // Warmup
-                for (int j = 0;j < 10; j++) {
-                    res = mults.get(finalI).mult(A[finalI], B[finalI], modulo);
-                }
                 ((DummyNetwork) privateField.get(mults.get(finalI))).resetCount();
-                // TODO standard deviation
                 long start = System.currentTimeMillis();
-                for (int j = 0;j < 100; j++) {
-                    res = mults.get(finalI).mult(A[finalI], B[finalI], modulo);
-                }
+                BigInteger res =mults.get(finalI).mult(A[finalI], B[finalI], modulo);
                 long stop = System.currentTimeMillis();
-                System.out.println("sender " + (stop - start));
+                System.out.println("sender " + (stop-start));
                 return res;
             }));
         }

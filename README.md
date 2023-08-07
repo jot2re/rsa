@@ -12,13 +12,13 @@ You need the following installed:
 
 Once you have them installed, run:
 
-    $ gradle build
+    $ ./gradlew build
 
 The build script will run a few tests, resulting a few pem files created in `build/test-results/` directory.
-Testing will take several minutes on a modern machine. 
+Testing will take several minutes on a modern machine.
 
 ## Benchmark
-Benchmarks are specified in `ProtocolBenchmark.java` and uses JMH. 
+Benchmarks are specified in `ProtocolBenchmark.java` and uses JMH.
 By default only our protocol is benchmarked. To execute the benchmark run:
 
-    $ gradle jmh
+    $ ./gradlew jmh
