@@ -183,7 +183,7 @@ public class MultCounter<T extends Serializable> implements IMult<T> {
                 "Sharings:          " + sharings + "\n" +
                 "Opens:             " + opens + "\n" +
                 "Total bytes sent:  " + bytesSent + "\n" +
-                "Total bytes rec*:  " + ((network.getNoOfParties()-1)*bytesSent) + "\n" +
-                "Total time:        " + timeSpent/1000 + " micro sec";
+                "Total bytes rec*:  " + bytesReceived + "\n" +
+                "Total time:        " + (timeSpent) + " nano sec";
     }
 }

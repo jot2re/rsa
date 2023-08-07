@@ -1,7 +1,7 @@
 package anonymous.mult.ot;
 
-import anonymous.mult.ot.ot.base.Ot;
 import anonymous.mult.ot.cointossing.CoinTossing;
+import anonymous.mult.ot.ot.base.Ot;
 import anonymous.mult.ot.ot.otextension.OtExtensionResourcePool;
 import anonymous.mult.ot.ot.otextension.OtExtensionResourcePoolImpl;
 import anonymous.mult.ot.ot.otextension.RotList;
@@ -23,7 +23,7 @@ public class OTMultResourcePool {
         this(myId, compSec, statSec, network, drbg, makeSeedOts(myId, compSec, drbg, ots));
     }
 
-    private static Map<Integer, RotList> makeSeedOts(int myId,  int compSec, Drbg drbg, Map<Integer, Ot> ots) {
+    private static Map<Integer, RotList> makeSeedOts(int myId, int compSec, Drbg drbg, Map<Integer, Ot> ots) {
         Map<Integer, RotList> res = new HashMap<>(ots.size());
         for (int i = 0; i < ots.size()+1; i++) {
             if (i != myId) {

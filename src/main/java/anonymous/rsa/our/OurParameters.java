@@ -12,7 +12,11 @@ public class OurParameters extends BFParameters {
     private final BigInteger PInverseModQ;
 
     public OurParameters(int primeBits, int statBits, BigInteger P, BigInteger Q, BigInteger M, IMult mult) {
-        super(primeBits, statBits, mult);
+        this(primeBits, statBits, P, Q, M, mult, false);
+    }
+
+    public OurParameters(int primeBits, int statBits, BigInteger P, BigInteger Q, BigInteger M, IMult mult, boolean jni) {
+        super(primeBits, statBits, mult, jni);
         this.P = P;
         this.Q = Q;
         this.M = M;

@@ -1,23 +1,23 @@
 package anonymous.rsa;
 
 import anonymous.AbstractProtocolTest;
-import anonymous.mult.IMult;
-import anonymous.mult.MultFactory;
-import anonymous.mult.PlainMult;
 import anonymous.mult.ot.util.ExceptionConverter;
-import anonymous.network.INetwork;
-import anonymous.network.NetworkFactory;
 import anonymous.network.PlainNetwork;
-import anonymous.rsa.bf.BFParameters;
-import anonymous.rsa.bf.BFProtocol;
-import anonymous.rsa.our.OurParameters;
-import anonymous.rsa.our.OurProtocol;
 import anonymous.rsa.our.sub.invert.Invert;
 import anonymous.rsa.our.sub.membership.IMembership;
 import anonymous.rsa.our.sub.membership.MembershipConst;
 import anonymous.rsa.our.sub.membership.MembershipLinear;
 import anonymous.rsa.our.sub.membership.MembershipLog;
 import anonymous.rsa.our.sub.multToAdd.MultToAdd;
+import anonymous.mult.IMult;
+import anonymous.mult.MultFactory;
+import anonymous.mult.PlainMult;
+import anonymous.network.INetwork;
+import anonymous.network.NetworkFactory;
+import anonymous.rsa.bf.BFParameters;
+import anonymous.rsa.bf.BFProtocol;
+import anonymous.rsa.our.OurParameters;
+import anonymous.rsa.our.OurProtocol;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
@@ -35,14 +35,12 @@ import static anonymous.rsa.RSATestUtils.*;
 @Fork( jvmArgs = {"-Xms512m", "-Xmx512m"})
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @BenchmarkMode({Mode.AverageTime})
-@Warmup(iterations = 5, time = 5)
-@Measurement(iterations = 10, time = 1)
-@Timeout(time = 10)
 public class ProtocolBenchmark extends AbstractProtocolTest {
 
     private static final int COMPSEC = 256;
-    private static final String TYPE = "linear";
+    private static final String TYPE = "log";
     private static final boolean PIVOT = true;
+    private static final boolean JNI = true;
     private static final Random rand = ExceptionConverter.safe(()->SecureRandom.getInstance("SHA1PRNG", "SUN"), "Could not init random)");
 
     @State(Scope.Thread)
@@ -58,11 +56,11 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         public static BigInteger B;
         public static BigInteger Q;
         @Param({ "1024", "1536", "2048" })
-        public static int BITS = 1536;
-        @Param({"2", "3", "5"})
+        public static int BITS;// = 1536;
+        @Param({"3", "5", "7", "9"})
         public static int PARTIES;
 //        @Param({ "40", "60", "80", "100" })
-        private static int STATSEC = 60;
+        private static int STATSEC = 80;
 
         @Setup(Level.Invocation)
         public void setupVariables() throws Exception {
@@ -78,8 +76,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
             BenchState.B = new BigInteger(BITS, rand);
             BenchState.Q = BigInteger.probablePrime(2*BITS+4, rand);
 
-            BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT);
-            BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT);
+            BenchState.ourProtocol = setupOur(PARTIES, BITS, STATSEC, TYPE, PIVOT, JNI);
+            BenchState.bfProtocol = setupBF(PARTIES, BITS, STATSEC, PIVOT, JNI);
             BenchState.shamir = setupShamir(PARTIES);
             BenchState.replicated = setupReplicated(PARTIES);
         }
@@ -95,8 +93,8 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         new Runner(opt).run();
     }
 
-    public static OurProtocol setupOur(int parties, int bitlength, int statsec, String type, boolean pivot) throws Exception {
-        OurParameters parameters = getOurBenchParameters(bitlength, statsec, pivot ? 0 : 1);
+    public static OurProtocol setupOur(int parties, int bitlength, int statsec, String type, boolean pivot, boolean jni) throws Exception {
+        OurParameters parameters = getOurBenchParameters(bitlength, statsec, pivot ? 0 : 1, jni);
         IMembership membership = switch (type) {
             case "const" -> new MembershipConst(parameters);
             case "log" -> new MembershipLog(parameters);
@@ -116,7 +114,10 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
     @Benchmark
-    @Measurement(iterations = 10, time = 3)
+    @Measurement(iterations = 30, time = 5)
+    @Warmup(iterations = 10, time = 5)
+    @Timeout(time = 10)
+    @Fork(value = 1, warmups = 0)
     public boolean executeOur(BenchState state) throws Exception {
         return state.ourProtocol.execute(state.p, state.q, state.N);
     }
@@ -151,7 +152,10 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
 
 
 //    @Benchmark
-//    @Measurement(iterations = 10, time = 1)
+//    @Measurement(iterations = 30, time = 1)
+//    @Warmup(iterations = 10, time = 1)
+//    @Timeout(time = 10)
+//    @Fork(value = 1, warmups = 0)
     public Serializable executeShamirMult(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
@@ -162,7 +166,10 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
     }
 
 //    @Benchmark
-//    @Measurement(iterations = 10, time = 1)
+//    @Measurement(iterations = 30, time = 1)
+//    @Warmup(iterations = 10, time = 1)
+//    @Timeout(time = 10)
+//    @Fork(value = 1, warmups = 0)
     public Serializable executeShamirInput(BenchState state) throws Exception {
         BigInteger res = BigInteger.ZERO;
         for (int i =0; i < 100; i++) {
@@ -196,9 +203,9 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         }
     }
 
-    public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot) {
+    public static BFProtocol setupBF(int parties, int bitlength, int statsec, boolean pivot, boolean jni) {
         PlainNetwork network = new PlainNetwork(pivot ? 0 : 1, parties, pivot ? 0 : 1, null);
-        BFParameters parameters = getBFBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1);
+        BFParameters parameters = getBFBenchParameters(bitlength, statsec, parties, pivot ? 0 : 1, jni);
         network.setDefaultResponse(BenchState.N.subtract(BigInteger.valueOf(123456789)));
         BFProtocol prot = new BFProtocol(parameters);
         prot.init(network, rand);
@@ -211,20 +218,20 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
         return state.bfProtocol.execute(state.p, state.q, state.N);
     }
 
-    public static OurParameters getOurBenchParameters(int bits, int statSec, int pivotId) {
+    public static OurParameters getOurBenchParameters(int bits, int statSec, int pivotId, boolean jni) {
         try {
             BigInteger M = MMap.get(bits);
             BigInteger P = PMap.get(bits);
             BigInteger Q = QMap.get(bits);
             IMult pivotMult = new PlainMult(pivotId);
-            return new OurParameters(bits, statSec, P, Q, M, pivotMult);
+            return new OurParameters(bits, statSec, P, Q, M, pivotMult, jni);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);
         }
     }
 
-    public static BFParameters getBFBenchParameters(int bits, int statSec, int parties, int pivotId) {
+    public static BFParameters getBFBenchParameters(int bits, int statSec, int parties, int pivotId, boolean jni) {
         try {
             // Unique but deterministic seed for each set of parameters
             SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
@@ -242,7 +249,7 @@ public class ProtocolBenchmark extends AbstractProtocolTest {
                 map.put(j, array);
             }
             emulatedMsgs.add(map);
-            return new BFParameters(bits, statSec, pivotMult);
+            return new BFParameters(bits, statSec, pivotMult, jni);
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);

@@ -11,7 +11,11 @@ public class BFParameters extends Parameters {
         this.mult = mult;
     }
     public BFParameters(int primeBits, int statBits, IMult mult) {
-        super(primeBits, statBits);
+        this(primeBits, statBits, mult, false);
+    }
+
+    public BFParameters(int primeBits, int statBits, IMult mult, boolean jni) {
+        super(primeBits, statBits, jni);
         this.mult = mult;
     }
 

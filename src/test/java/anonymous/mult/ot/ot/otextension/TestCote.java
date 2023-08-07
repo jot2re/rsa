@@ -1,13 +1,13 @@
 package anonymous.mult.ot.ot.otextension;
 
 
-import anonymous.mult.ot.helper.HelperForTests;
 import anonymous.mult.ot.cointossing.CoinTossing;
+import anonymous.mult.ot.helper.HelperForTests;
 import anonymous.mult.ot.util.AesCtrDrbg;
+import anonymous.network.PlainNetwork;
 import anonymous.mult.ot.util.Drbg;
 import anonymous.mult.ot.util.StrictBitVector;
 import anonymous.network.INetwork;
-import anonymous.network.PlainNetwork;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

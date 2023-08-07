@@ -1,10 +1,10 @@
 package anonymous.mult.ot.gilboa;
 
+import anonymous.network.DummyNetwork;
+import anonymous.network.NetworkFactory;
 import anonymous.mult.IMult;
 import anonymous.mult.MultCounter;
 import anonymous.mult.MultFactory;
-import anonymous.network.DummyNetwork;
-import anonymous.network.NetworkFactory;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;

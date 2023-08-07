@@ -1,7 +1,7 @@
 package anonymous.mult.ot.commitment;
 
-import anonymous.mult.ot.util.Drbg;
 import anonymous.mult.ot.util.ExceptionConverter;
+import anonymous.mult.ot.util.Drbg;
 import anonymous.mult.ot.util.MaliciousException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

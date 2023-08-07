@@ -1,7 +1,7 @@
 package anonymous.mult.replicated;
 
-import anonymous.AbstractProtocol;
 import anonymous.mult.IMult;
+import anonymous.network.INetwork;
 import anonymous.network.NetworkException;
 import anonymous.rsa.our.RSAUtil;
 
@@ -9,11 +9,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-public class ReplicatedMult extends AbstractProtocol implements IMult<ArrayList<BigInteger>> {
+public class ReplicatedMult implements IMult<ArrayList<BigInteger>> {
     private final ReplictedMultResourcePool resourcePool;
     private final int maxCorrupt;
-    private boolean initialized = false;
+    private INetwork network;
+    private Random random;
 
     public ReplicatedMult(ReplictedMultResourcePool resourcePool) {
         if (resourcePool.getParties() != 3) {
@@ -21,6 +23,12 @@ public class ReplicatedMult extends AbstractProtocol implements IMult<ArrayList<
         }
         this.resourcePool = resourcePool;
         this.maxCorrupt = (resourcePool.getParties()-1)/2;
+    }
+
+    @Override
+    public void init(INetwork network, Random random) {
+        this.network = network;
+        this.random = random;
     }
 
     @Override

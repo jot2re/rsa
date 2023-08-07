@@ -1,8 +1,8 @@
 package anonymous.mult;
 
+import anonymous.network.NetworkFactory;
 import anonymous.rsa.RSATestUtils;
 import anonymous.network.INetwork;
-import anonymous.network.NetworkFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 

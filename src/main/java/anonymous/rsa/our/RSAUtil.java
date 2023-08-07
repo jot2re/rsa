@@ -1,8 +1,9 @@
 package anonymous.rsa.our;
 
-import anonymous.network.INetwork;
+import anonymous.DefaultSecParameters;
 import anonymous.network.NetworkException;
 import anonymous.rsa.bf.BFParameters;
+import anonymous.network.INetwork;
 
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -10,21 +11,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static anonymous.DefaultSecParameters.REJECTION_SAMPLING;
-import static anonymous.DefaultSecParameters.STAT_SEC;
-
 public class RSAUtil {
     // TODO move to mult func
 
     public static BigInteger sample(Random random, BigInteger modulo) {
-        if (REJECTION_SAMPLING) {
+        if (DefaultSecParameters.REJECTION_SAMPLING) {
             BigInteger share = new BigInteger(modulo.bitLength(), random);
             while (share.compareTo(modulo) >= 0) {
                 share = new BigInteger(modulo.bitLength(), random);
             }
             return share;
         } else {
-            BigInteger r = new BigInteger(modulo.bitLength()+STAT_SEC, random);
+            BigInteger r = new BigInteger(modulo.bitLength()+ DefaultSecParameters.STAT_SEC, random);
             return r.mod(modulo);
         }
     }

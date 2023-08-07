@@ -1,11 +1,11 @@
 package anonymous.mult.ot.cointossing;
 
-import anonymous.network.INetwork;
 import anonymous.mult.ot.commitment.HashBasedCommitment;
 import anonymous.mult.ot.util.AesCtrDrbg;
 import anonymous.mult.ot.util.ByteArrayHelper;
 import anonymous.mult.ot.util.Drbg;
 import anonymous.mult.ot.util.StrictBitVector;
+import anonymous.network.INetwork;
 
 /**
  * Class implementing two-party coin-tossing. That is, agreement on a random

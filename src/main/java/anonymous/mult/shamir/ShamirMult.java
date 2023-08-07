@@ -1,12 +1,12 @@
 package anonymous.mult.shamir;
 
-import anonymous.mult.IMult;
 import anonymous.AbstractProtocol;
-import anonymous.mult.ot.util.MaliciousException;
-import anonymous.mult.ot.util.Pair;
+import anonymous.mult.IMult;
 import anonymous.network.INetwork;
 import anonymous.network.NetworkException;
 import anonymous.rsa.our.RSAUtil;
+import anonymous.mult.ot.util.MaliciousException;
+import anonymous.mult.ot.util.Pair;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -123,7 +123,7 @@ public class ShamirMult extends AbstractProtocol implements IMult<BigInteger> {
         othersShares.put(resourcePool.getMyId(), myShare);
         BigInteger res = BigInteger.ZERO;
         for (int i = 0; i < othersShares.size(); i++) {
-            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(resourcePool.getMyId(), i, modulo)));
+            res = res.add(othersShares.get(i).multiply(engine.degreeRedConst(i)));
         }
         return res.mod(modulo);
         // TODO can be optimized with sharing a seed for generating shares s.t. only last party needs to receive a point on the poly

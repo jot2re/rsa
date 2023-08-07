@@ -1,11 +1,11 @@
 package anonymous.rsa.our.sub.membership;
 
+import anonymous.rsa.our.sub.invert.Invert;
 import anonymous.AbstractProtocol;
 import anonymous.network.INetwork;
 import anonymous.network.NetworkException;
 import anonymous.rsa.bf.BFParameters;
 import anonymous.rsa.our.RSAUtil;
-import anonymous.rsa.our.sub.invert.Invert;
 
 import java.io.Serializable;
 import java.math.BigInteger;

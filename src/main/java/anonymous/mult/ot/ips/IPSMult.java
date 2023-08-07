@@ -1,11 +1,12 @@
 package anonymous.mult.ot.ips;
 
 import anonymous.mult.AbstractAdditiveMult;
+import anonymous.mult.ot.DefaultOTParameters;
 import anonymous.mult.ot.OTMultResourcePool;
-import anonymous.mult.ot.util.Fiddling;
-import anonymous.network.INetwork;
 import anonymous.mult.ot.ot.otextension.RotFactory;
 import anonymous.mult.ot.util.ExceptionConverter;
+import anonymous.mult.ot.util.Fiddling;
+import anonymous.network.INetwork;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -13,8 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import static anonymous.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
 
 
 public class IPSMult extends AbstractAdditiveMult {
@@ -39,7 +38,7 @@ public class IPSMult extends AbstractAdditiveMult {
     public IPSMult(OTMultResourcePool resources) {
         this.resources = resources;
         this.safeExpansion = true;
-        this.adjustedBatchSize = DEFAULT_BATCH_SIZE - resources.getCompSec()- resources.getStatSec();
+        this.adjustedBatchSize = DefaultOTParameters.DEFAULT_BATCH_SIZE - resources.getCompSec()- resources.getStatSec();
 
     }
 

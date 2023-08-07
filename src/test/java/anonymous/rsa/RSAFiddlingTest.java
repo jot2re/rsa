@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static anonymous.rsa.RSATestUtils.share;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RSAFiddlingTest {
@@ -22,7 +23,7 @@ public class RSAFiddlingTest {
     void testShare(int parties) {
         BigInteger modulo = BigInteger.TWO.pow(60);
         BigInteger ref = BigInteger.valueOf(1337);
-        Map<Integer, BigInteger> shares = RSATestUtils.share(ref, parties, modulo, new Random(42));
+        Map<Integer, BigInteger> shares = share(ref, parties, modulo, new Random(42));
         assertEquals(ref, shares.values().stream().reduce(BigInteger.ZERO, (a, b) -> a.add(b).mod(modulo)));
         assertEquals(shares.size(), parties);
     }
@@ -31,7 +32,7 @@ public class RSAFiddlingTest {
     @CsvSource({"2,2", "2,5", "3,2", "3,13", "5,8"})
     public void testMultList(int parties, int amount) throws Exception {
         int bits = 32;
-        Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(bits, 20, parties);
+        Map<Integer, BFParameters> params = RSATestUtils.getBFParameters(bits, 20, parties, false);
         Map<Integer, INetwork> networks = RSATestUtils.getNetworks(parties);
         BigInteger modulo = BigInteger.probablePrime(bits, new Random(42));
         BigInteger[] ref = new BigInteger[amount];

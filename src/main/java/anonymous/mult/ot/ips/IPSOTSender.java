@@ -1,12 +1,12 @@
 package anonymous.mult.ot.ips;
 
+import anonymous.mult.ot.ot.otextension.OtExtensionResourcePool;
+import anonymous.mult.ot.ot.otextension.RotSender;
+import anonymous.network.INetwork;
 import anonymous.mult.ot.util.ByteArrayHelper;
 import anonymous.mult.ot.util.MaliciousException;
 import anonymous.mult.ot.util.Pair;
 import anonymous.mult.ot.util.StrictBitVector;
-import anonymous.network.INetwork;
-import anonymous.mult.ot.ot.otextension.OtExtensionResourcePool;
-import anonymous.mult.ot.ot.otextension.RotSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

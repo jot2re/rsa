@@ -1,8 +1,8 @@
 package anonymous.mult;
 
 import anonymous.AbstractProtocol;
-import anonymous.rsa.our.RSAUtil;
 import anonymous.network.NetworkException;
+import anonymous.rsa.our.RSAUtil;
 
 import java.math.BigInteger;
 import java.util.Map;

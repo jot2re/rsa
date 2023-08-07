@@ -1,7 +1,7 @@
 package anonymous.mult.ot.ot.otextension;
 
-import anonymous.mult.ot.ot.base.DummyOt;
 import anonymous.mult.ot.cointossing.CoinTossing;
+import anonymous.mult.ot.ot.base.DummyOt;
 import anonymous.mult.ot.util.AesCtrDrbg;
 import anonymous.mult.ot.util.AesCtrDrbgFactory;
 import anonymous.mult.ot.util.Drbg;

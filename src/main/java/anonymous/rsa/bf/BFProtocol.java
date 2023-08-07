@@ -1,24 +1,26 @@
 package anonymous.rsa.bf;
 
 import anonymous.AbstractProtocol;
-import anonymous.network.INetwork;
+import anonymous.mult.ot.util.Fiddling;
 import anonymous.network.NetworkException;
+import anonymous.network.INetwork;
 import anonymous.rsa.bf.dto.Phase1Pivot;
 import anonymous.rsa.our.RSAUtil;
+import org.dfdeshom.math.GMP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class BFProtocol extends AbstractProtocol {
     private static final Logger logger = LoggerFactory.getLogger(BFProtocol.class);
     private final BFParameters params;
     private boolean initialized = false;
+    private BigInteger exponent;
+    private GMP jniN;
+    private GMP jniExponent;
 
     public BFProtocol(BFParameters params) {
         this.params = params;
@@ -55,6 +57,23 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     public boolean execute(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
+        BigInteger exponentDenominator = BigInteger.valueOf(4);
+        BigInteger exponentNumerator;
+        if (network.myId() == 0) {
+            exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
+        } else {
+            exponentNumerator = pShare.add(qShare);
+        }
+        exponent = exponentNumerator.divide(exponentDenominator);
+        if (params.isJni()) {
+            // Preprocess the global JNI values to avoid converting multiple times
+            logger.debug("Doing JNI");
+            System.out.println("doing JNI");
+            jniN = new GMP();
+            jniN.fromByteArray(N.toByteArray());
+            jniExponent = new GMP();
+            jniExponent.fromByteArray(exponent.toByteArray());
+        }
         if (network.myId() == 0) {
             return executePivot(pShare, qShare, N);
         } else {
@@ -63,10 +82,25 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     protected boolean executePivot(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        Phase1Pivot dto = executePhase1Pivot(pShare, qShare, N);
-        network.sendToAll(dto.getGammas());
-        network.sendToAll(dto.getNuShares());
-        Map<Integer, ArrayList<BigInteger>> receivedDto = network.receiveFromAllPeers();
+        Phase1Pivot dto = executePhase1Pivot(N);
+        /** needed for bench **/
+        Map<Integer, ArrayList<BigInteger>> receivedDto = new HashMap<>(dto.getGammas().size());
+        for (int i = 0; i < dto.getGammas().size(); i++) {
+            network.sendToAll(dto.getGammas().get(i));
+            network.sendToAll(dto.getNuShares().get(i));
+        }
+        for (int i = 0; i < dto.getGammas().size(); i++) {
+            Map<Integer, BigInteger> gamma = network.receiveFromAllPeers();
+            for (int j :gamma.keySet()) {
+                if (receivedDto.get(j) == null) {
+                    receivedDto.put(j, new ArrayList<>(dto.getGammas().size()));
+                }
+                receivedDto.get(j).add(gamma.get(j));
+            }
+        }
+//        network.sendToAll(dto.getGammas());
+//        network.sendToAll(dto.getNuShares());
+//        Map<Integer, ArrayList<BigInteger>> receivedDto = network.receiveFromAllPeers();
         if (!executePhase2(receivedDto, dto.getNuShares(), N)) {
             return false;
         }
@@ -74,12 +108,33 @@ public class BFProtocol extends AbstractProtocol {
     }
 
     protected boolean executeOther(BigInteger pShare, BigInteger qShare, BigInteger N) throws NetworkException {
-        ArrayList<BigInteger> gamma = network.receive(0);
-        ArrayList<BigInteger> nu = network.receive(0);
+        /** needed for bench **/
+        ArrayList<BigInteger> gamma = new ArrayList(params.getStatBits());
+        ArrayList<BigInteger> nu = new ArrayList<>(params.getStatBits());
+        for (int i = 0; i < params.getStatBits(); i++) {
+            gamma.add(network.receive(0));
+            nu.add(network.receive(0));
+        }
+//        ArrayList<BigInteger> gamma = network.receive(0);
+//        ArrayList<BigInteger> nu = network.receive(0);
         Phase1Pivot receivedDto = new Phase1Pivot(gamma, nu);
-        ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), pShare, qShare, N);
-        network.sendToAll(myNuShare);
-        Map<Integer, ArrayList<BigInteger>> nuShares = network.receiveFromNonPivotPeers();
+        ArrayList<BigInteger> myNuShare = executePhase1Other(receivedDto.getGammas(), N);
+        /** needed for bench **/
+        for (BigInteger cur : myNuShare) {
+            network.sendToAll(cur);
+        }
+        Map<Integer, ArrayList<BigInteger>> nuShares = new HashMap<>(params.getStatBits());
+        for (int i = 0; i < params.getStatBits(); i++) {
+            Map<Integer, BigInteger> curNuShares = network.receiveFromNonPivotPeers();
+            for (int j :curNuShares.keySet()) {
+                if (nuShares.get(j) == null) {
+                    nuShares.put(j, new ArrayList<>(params.getStatBits()));
+                }
+                nuShares.get(j).add(curNuShares.get(j));
+            }
+        }
+//        network.sendToAll(myNuShare);
+//        Map<Integer, ArrayList<BigInteger>> nuShares = network.receiveFromNonPivotPeers();
         nuShares.put(0, receivedDto.getNuShares());
         if (!executePhase2(nuShares, myNuShare,  N)) {
             return false;
@@ -87,27 +142,58 @@ public class BFProtocol extends AbstractProtocol {
         return executePhase3Other(pShare, qShare, N);
     }
 
-    protected Phase1Pivot executePhase1Pivot(BigInteger pShare, BigInteger qShare, BigInteger N) {
+    protected Phase1Pivot executePhase1Pivot(BigInteger N) {
+        if (params.isJni()) {
+            return executePhase1PivotJni(N);
+        } else {
+            Phase1Pivot dto = new Phase1Pivot();
+            for (int i = 0; i < params.getStatBits(); i++) {
+                BigInteger gamma = sampleGamma(N);
+                BigInteger nuShare = gamma.modPow(exponent, N);
+                dto.addElements(gamma, nuShare);
+            }
+            return dto;
+        }
+    }
+
+    public Phase1Pivot executePhase1PivotJni(BigInteger N) {
         Phase1Pivot dto = new Phase1Pivot();
         for (int i = 0; i < params.getStatBits(); i++) {
             BigInteger gamma = sampleGamma(N);
-            BigInteger exponentNumerator = N.add(BigInteger.ONE).subtract(pShare).subtract(qShare);
-            BigInteger exponentDenominator = BigInteger.valueOf(4);
-            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-            BigInteger nuShare = gamma.modPow(exponent, N);
-            dto.addElements(gamma, nuShare);
+            GMP jniGamma = new GMP();
+            jniGamma.fromByteArray(gamma.toByteArray());
+            jniGamma.modPow(jniExponent, jniN, jniGamma);
+            // TODO should be checked to ensure that is no issue in edge cases
+            byte[] gammaBytes = new byte[Fiddling.ceil(jniGamma.bitLength(), 8)];
+            jniGamma.toByteArray(gammaBytes);
+            dto.addElements(gamma, new BigInteger(1, gammaBytes));
         }
         return dto;
     }
 
-    protected ArrayList<BigInteger> executePhase1Other(List<BigInteger> gammas, BigInteger pShare, BigInteger qShare, BigInteger N) {
+    protected ArrayList<BigInteger> executePhase1Other(List<BigInteger> gammas, BigInteger N) {
+        if (params.isJni()) {
+            return executePhase1OtherJni(gammas);
+        } else {
+            ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
+            for (int i = 0; i < params.getStatBits(); i++) {
+                BigInteger nuShare = gammas.get(i).modInverse(N);
+                nuShare = nuShare.modPow(exponent, N);
+                dto.add(nuShare);
+            }
+            return dto;
+        }
+    }
+
+    public ArrayList<BigInteger> executePhase1OtherJni(List<BigInteger> gammas) {
         ArrayList<BigInteger> dto = new ArrayList<>(params.getStatBits());
         for (int i = 0; i < params.getStatBits(); i++) {
-            BigInteger exponentNumerator = pShare.negate().subtract(qShare);
-            BigInteger exponentDenominator = BigInteger.valueOf(4);
-            BigInteger exponent = exponentNumerator.divide(exponentDenominator);
-            BigInteger nuShare = gammas.get(i).modPow(exponent, N);
-            dto.add(nuShare);
+            GMP jniNu = new GMP(gammas.get(i).toString());
+            jniNu.modInverse(jniN, jniNu);
+            jniNu.modPow(jniExponent, jniN, jniNu);
+            byte[] nuBytes = new byte[Fiddling.ceil(jniNu.bitLength(), 8)];
+            jniNu.toByteArray(nuBytes);
+            dto.add(new BigInteger(1, nuBytes));
         }
         return dto;
     }
@@ -143,7 +229,7 @@ public class BFProtocol extends AbstractProtocol {
         return s.gcd(N).equals(BigInteger.ONE);
     }
 
-    private BigInteger sampleGamma(BigInteger N) {
+    protected BigInteger sampleGamma(BigInteger N) {
         BigInteger candidate;
         do {
             candidate = new BigInteger(N.bitLength() + params.getStatBits(), random);

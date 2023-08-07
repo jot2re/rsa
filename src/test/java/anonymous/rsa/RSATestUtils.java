@@ -1,5 +1,7 @@
 package anonymous.rsa;
 
+import anonymous.mult.ot.util.ExceptionConverter;
+import anonymous.network.NetworkFactory;
 import anonymous.mult.IMult;
 import anonymous.mult.MultFactory;
 import anonymous.mult.ot.util.ExceptionConverter;
@@ -71,11 +73,11 @@ public class RSATestUtils {
         return netFactory.getNetworks(NETWORK_TYPE);
     }
 
-    public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties) {
-        return getBFParameters(bits, statSec, parties, false);
+    public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties, boolean decorated) {
+        return getBFParameters(bits, statSec, parties, decorated, false);
     }
 
-    public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties, boolean decorated) {
+    public static Map<Integer, BFParameters> getBFParameters(int bits, int statSec, int parties, boolean decorated, boolean jni) {
         try {
             MultFactory multFactory = new MultFactory(parties);
             Map<Integer, INetwork> networks = getNetworks(parties);
@@ -86,7 +88,7 @@ public class RSATestUtils {
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
                 // Note that seed is only updated if different from 0
                 rand.setSeed(networks.get(i).myId() + 1);
-                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, mults.get(i)));
+                params.put(networks.get(i).myId(), new BFParameters(bits, statSec, mults.get(i), jni));
             }
             return params;
         } catch (Exception e) {
@@ -104,6 +106,10 @@ public class RSATestUtils {
     }
 
     public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties, boolean decorated, MultFactory.MultType multType) {
+        return getOurParameters(bits, statSec, parties, decorated, multType, false);
+    }
+
+    public static Map<Integer, OurParameters> getOurParameters(int bits, int statSec, int parties, boolean decorated, MultFactory.MultType multType, boolean jni) {
         try {
             // TODO the 8 increments are needed for OT mult protocols but not others
             BigInteger M;
@@ -129,7 +135,7 @@ public class RSATestUtils {
                 SecureRandom rand = SecureRandom.getInstance("SHA1PRNG", "SUN");
                 // Note that seed is only updated if different from 0
                 rand.setSeed(i + 1);
-                params.put(i, new OurParameters(bits, statSec, P, Q, M, mults.get(i)));
+                params.put(i, new OurParameters(bits, statSec, P, Q, M, mults.get(i), jni));
             }
             return params;
         } catch (Exception e) {

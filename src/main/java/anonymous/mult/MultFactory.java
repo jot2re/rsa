@@ -1,5 +1,6 @@
 package anonymous.mult;
 
+import anonymous.DefaultSecParameters;
 import anonymous.mult.ot.OTMultResourcePool;
 import anonymous.mult.ot.gilboa.GilboaMult;
 import anonymous.mult.ot.ips.IPSMult;
@@ -21,8 +22,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.*;
 
-import static anonymous.DefaultSecParameters.*;
-
 public class MultFactory {
     public enum MultType {
         DUMMY,
@@ -41,8 +40,8 @@ public class MultFactory {
     public MultFactory(int parties) {
         this.parties = parties;
         this.networkFactory = new NetworkFactory(parties);
-        this.comSec = COMP_SEC;
-        this.statSec = STAT_SEC;
+        this.comSec = DefaultSecParameters.COMP_SEC;
+        this.statSec = DefaultSecParameters.STAT_SEC;
         this.masterSeed = new SecureRandom().generateSeed(comSec/8);
     }
 
@@ -114,10 +113,10 @@ public class MultFactory {
                 IMult mult = null;
                 if (type.equals(MultType.IPS)) {
                     OTMultResourcePool pool = new OTMultResourcePool(ots, finalI, comSec, statSec, networks.get(finalI), rand);
-                    mult = decorated ? new MultCounter(new IPSMult(pool, 32 * MODULO_BITLENGTH, safeExpansion)) : new IPSMult(pool, 32 * MODULO_BITLENGTH, safeExpansion);
+                    mult = decorated ? new MultCounter(new IPSMult(pool, 32 * DefaultSecParameters.MODULO_BITLENGTH, safeExpansion)) : new IPSMult(pool, 32 * DefaultSecParameters.MODULO_BITLENGTH, safeExpansion);
                 } else if (type.equals(MultType.GILBOA)) {
                     OtExtensionResourcePool pool = (new OtExtensionDummyContext(finalI,1-finalI, comSec, statSec, seed, networks.get(finalI))).createResources(0);
-                    mult = decorated ? new MultCounter(new GilboaMult(pool, 32 * MODULO_BITLENGTH, safeExpansion)) : new GilboaMult(pool, 32 * MODULO_BITLENGTH, safeExpansion);
+                    mult = decorated ? new MultCounter(new GilboaMult(pool, 32 * DefaultSecParameters.MODULO_BITLENGTH, safeExpansion)) : new GilboaMult(pool, 32 * DefaultSecParameters.MODULO_BITLENGTH, safeExpansion);
                 }
                 // the constant mult be a 2-power larger than the amount of parties
                 mult.init(networks.get(finalI), getRandom(finalI));

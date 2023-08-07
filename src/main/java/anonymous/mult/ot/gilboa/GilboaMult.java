@@ -1,9 +1,10 @@
 package anonymous.mult.ot.gilboa;
 
+import anonymous.mult.ot.util.ExceptionConverter;
+import anonymous.mult.ot.util.Fiddling;
 import anonymous.mult.AbstractAdditiveMult;
 import anonymous.mult.ot.ot.otextension.OtExtensionResourcePool;
 import anonymous.mult.ot.ot.otextension.RotFactory;
-import anonymous.mult.ot.util.ExceptionConverter;
 import anonymous.mult.ot.util.StrictBitVector;
 import anonymous.network.INetwork;
 
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.Random;
 
 import static anonymous.mult.ot.DefaultOTParameters.DEFAULT_BATCH_SIZE;
-import static anonymous.mult.ot.util.Fiddling.ceil;
 
 
 public class GilboaMult extends AbstractAdditiveMult {
@@ -42,7 +42,7 @@ public class GilboaMult extends AbstractAdditiveMult {
     }
 
     private Random getRandom(OtExtensionResourcePool resources) {
-        byte[] newSeed = new byte[ceil(resources.getLambdaSecurityParam(), 8)];
+        byte[] newSeed = new byte[Fiddling.ceil(resources.getLambdaSecurityParam(), 8)];
         resources.getRandomGenerator().nextBytes(newSeed);
         SecureRandom rnd = ExceptionConverter.safe(()-> SecureRandom.getInstance("SHA1PRNG"), "Randomness algorithm does not exist");
         rnd.setSeed(newSeed);
@@ -83,7 +83,7 @@ public class GilboaMult extends AbstractAdditiveMult {
     private BigInteger internalMult(BigInteger left, BigInteger right, BigInteger modulo) {
         this.amountBytes = modulo.bitLength() / 8;
         if (safeExpansion) {
-            this.expansionSizeBytes = amountBytes + ceil(resources.getLambdaSecurityParam(), 8);
+            this.expansionSizeBytes = amountBytes + Fiddling.ceil(resources.getLambdaSecurityParam(), 8);
         } else {
             this.expansionSizeBytes = amountBytes;
         }

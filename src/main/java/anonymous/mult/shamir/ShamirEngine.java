@@ -15,7 +15,56 @@ public class ShamirEngine {
     private final int parties;
     private final int threshold;
     private final Random rng;
+    private BigInteger N = BigInteger.ZERO;
+    private final BigInteger[] threeBigVals = new BigInteger[] {BigInteger.valueOf(3), BigInteger.valueOf(-3), BigInteger.valueOf(1)};
+    private final BigInteger[] fiveBigVals = new BigInteger[]{
+            BigInteger.valueOf(5),
+            BigInteger.valueOf(-10),
+            BigInteger.valueOf(10),
+            BigInteger.valueOf(-5),
+            BigInteger.valueOf(1),
+    };
+    private final BigInteger[] sevenBigVals = new BigInteger[]{
+            BigInteger.valueOf(7),
+            BigInteger.valueOf(-21),
+            BigInteger.valueOf(35),
+            BigInteger.valueOf(-35),
+            BigInteger.valueOf(21),
+            BigInteger.valueOf(-7),
+            BigInteger.valueOf(1),
+    };
+    // {{1,1,1,1,1,1,1,1,1},{1,2,4,8,16,32,64,128,256},{1,3,9,27,81, 243,729,2187,6561},{1,4,16,64,256,1024,4096,16384,65536},{1,5,25,125,625,3125,15625,78125,390625},{1,6,36,216,1296,7776,46656,279936,1679616},{1,7,49,343,2401,16807,117649,823543,5764801},{1,8,64,512,4096,32768,262144,2097152,16777216},{1,9,81,729,6561,59049,531441,4782969,43046721}}^-1
+    // TODO 9 and 11 are not the correct constant
+    private final BigInteger[] nineBigVals = new BigInteger[]{
+            BigInteger.valueOf(9),
+            BigInteger.valueOf(-36),
+            BigInteger.valueOf(45),
+            BigInteger.valueOf(-63),
+            BigInteger.valueOf(63),
+            BigInteger.valueOf(-45),
+            BigInteger.valueOf(36),
+            BigInteger.valueOf(-9),
+            BigInteger.valueOf(1),
+    };
+    private final BigInteger[] elevenBigVals = new BigInteger[]{
+            BigInteger.valueOf(11),
+            BigInteger.valueOf(-55),
+            BigInteger.valueOf(77),
+            BigInteger.valueOf(-99),
+            BigInteger.valueOf(121),
+            BigInteger.valueOf(-121),
+            BigInteger.valueOf(99),
+            BigInteger.valueOf(-77),
+            BigInteger.valueOf(55),
+            BigInteger.valueOf(-11),
+            BigInteger.valueOf(1),
+    };
+
     public ShamirEngine(int parties, Random rng) {
+        if (parties > 15) {
+            throw new RuntimeException("Currently only supports at most 15 parties, due to internal use of long. " +
+                    "Needs to be refactored to use BigInteger to work with more parties.");
+        }
         this.parties = parties;
         this.threshold = (parties-1)/2;
         this.rng = rng;
@@ -58,13 +107,23 @@ public class ShamirEngine {
         for (int i = 0; i < parties; i++) {
             BigInteger currentSum = coeff[0];
             for (int j = 1; j < degree+1; j++) {
-                final BigInteger xPower = BigInteger.valueOf(i+1).modPow(BigInteger.valueOf(j), modulo);
-                final BigInteger currentTerm = coeff[j].multiply(xPower).mod(modulo);
+                // Should be used if parties > 15
+//                final BigInteger xPower = BigInteger.valueOf(i+1).modPow(BigInteger.valueOf(j), modulo);
+                final long xPower = pow(i+1, j);
+                final BigInteger currentTerm = coeff[j].multiply(BigInteger.valueOf(xPower)).mod(modulo);
                 currentSum = currentSum.add(currentTerm);
             }
             shares.put(i, currentSum.mod(modulo));
         }
         return shares;
+    }
+
+    public static long pow(long a, long b){
+        long res =1;
+        for (int i = 0; i < b; i++) {
+            res *= a;
+        }
+        return res;
     }
 
     public BigInteger combine(final int degree, final Map<Integer, BigInteger> shares, final BigInteger modulo) {
@@ -88,21 +147,21 @@ public class ShamirEngine {
         return currentSum;
     }
 
-    protected BigInteger degreeRedConst(int myId, int otherId, BigInteger modulo) {
-        final int[] threeVals = new int[] {3, -3, 1};
-        final int[][] fiveValsNum = new int[][] {
-                new int[] {-17, 94, -114, 62, -13},
-                new int[] {-94, 308, -348, 184, -38},
-                new int[] {-171, 522, -582, 306, -63},
-                new int[] {-248, 736, -816, 428, -88},
-                new int[] {-325, 950, -1050, 550, -113},
-        };
-        BigInteger fiveValsDen = BigInteger.valueOf(12).modInverse(modulo);
+    protected BigInteger degreeRedConst(int otherId) {
         if (parties == 3) {
-            return BigInteger.valueOf(threeVals[otherId]);
+            return threeBigVals[otherId];
         }
         if (parties == 5) {
-            return BigInteger.valueOf(fiveValsNum[myId][otherId]).multiply(fiveValsDen).mod(modulo);
+            return fiveBigVals[otherId];
+        }
+        if (parties == 7) {
+            return sevenBigVals[otherId];
+        }
+        if (parties == 9) {
+            return nineBigVals[otherId];
+        }
+        if (parties == 11) {
+            return elevenBigVals[otherId];
         }
         throw new RuntimeException("not found yet");
     }
@@ -129,6 +188,6 @@ public class ShamirEngine {
                 denominator = denominator * (i - xCoord);
             }
         }
-        return BigInteger.valueOf(numerator).multiply(BigInteger.valueOf(denominator).modInverse(modulo)).mod(modulo);
+        return java.math.BigInteger.valueOf(numerator).multiply(java.math.BigInteger.valueOf(denominator).modInverse(modulo)).mod(modulo);
     }
 }
