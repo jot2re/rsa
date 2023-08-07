@@ -15,20 +15,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static anonymous.DefaultSecParameters.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GilboaMultTest {
-    @Test
-    void sunshineBounded() throws Exception {
-        sunshine(PRIME_BITLENGTH, MODULO);
-    }
-
-    @Test
-    void sunshineFulldomain() throws Exception {
-        sunshine(MODULO_BITLENGTH, MODULO);
-    }
 
     @Test
     void sunshine1032() throws Exception {

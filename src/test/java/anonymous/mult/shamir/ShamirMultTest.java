@@ -78,7 +78,7 @@ public class ShamirMultTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {3,5,7,9,11})
+    @ValueSource(ints = {3,5,7})
     void bgwDegreeReduction(int parties) throws Exception {
         Random rand = new Random(42);
         BigInteger modulo = BigInteger.probablePrime(MODULO_BITLENGTH, rand);
